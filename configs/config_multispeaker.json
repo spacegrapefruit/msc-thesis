@@ -1,0 +1,96 @@
+{
+    "output_path": "training_output",
+    "run_name": "Tacotron2-DDC-CV-LT-Multispeaker",
+    "project_name": "MSc-TTS-Thesis",
+    "model": "tacotron2",
+    "tacotron2_DDC_params": {
+        "encoder_type": "default",
+        "decoder_type": "default",
+        "stopnet_type": "default",
+        "use_forward_attn": false
+    },
+    "characters": {
+        "pad": "_",
+        "eos": "~",
+        "bos": "^",
+        "characters": "aąbcčdeęėfghiįyjklmnoprsštuųūvzž",
+        "punctuations": " .,-",
+        "phonemes": null
+    },
+    "audio": {
+        "fft_size": 1024,
+        "win_length": 1024,
+        "hop_length": 256,
+        "frame_length_ms": null,
+        "frame_shift_ms": null,
+        "sample_rate": 16000,
+        "stft_pad_mode": "reflect",
+        "resample": false,
+        "preemphasis": 0.97,
+        "ref_level_db": 20,
+        "do_sound_norm": false,
+        "num_mels": 160,
+        "do_trim_silence": true,
+        "trim_db": 30,
+        "power": 1.5,
+        "griffin_lim_iters": 60,
+        "mel_fmin": 50.0,
+        "mel_fmax": 7600.0,
+        "min_level_db": -100
+    },
+    "out_channels": 160,
+    "decoder_output_dim": 160,
+    "training_seed": 54321,
+    "batch_size": 32,
+    "eval_batch_size": 64,
+    "num_loader_workers": 8,
+    "num_eval_loader_workers": 8,
+    "precompute_num_workers": 8,
+    "run_eval": true,
+    "epochs": 400,
+    "test_delay_epochs": 399,
+    "print_step": 25,
+    "plot_step": 100,
+    "save_step": 2000,
+    "save_n_checkpoints": 5,
+    "print_eval": false,
+    "optimizer": "RAdam",
+    "optimizer_params": {
+        "betas": [
+            0.9,
+            0.998
+        ],
+        "weight_decay": 1e-6
+    },
+    "lr": 1e-4,
+    "lr_scheduler": "NoamLR",
+    "lr_scheduler_params": {
+        "warmup_steps": 4000
+    },
+    "scheduler_after_epoch": false,
+    "use_grad_clip": true,
+    "grad_clip_thresh": 1.0,
+    "mixed_precision": false,
+    "shuffle": false,
+    "drop_last": true,
+    "use_speaker_embedding": true,
+    "speakers_file": null,
+    "speaker_embedding_dim": 512,
+    "num_speakers": 20,
+    "datasets": [
+        {
+            "name": "liepa2_lt_multispeaker",
+            "path": "data/processed/tts_dataset_liepa2_multispeaker/",
+            "meta_file_train": "metadata.csv",
+            "formatter": "ljspeech_multispeaker",
+            "language": "lt"
+        }
+    ],
+    "test_sentences": [
+        "aš labai mėgstu skaityti knygas.",
+        "šiandien oras yra puikus idealiai tinkantis pasivaikščiojimams gamtoje.",
+        "technologijos sparčiai keičia mūsų kasdienį gyvenimą ir darbo būdus.",
+        "muzika turi galią sujungti žmones iš skirtingų kultūrų ir kalbų.",
+        "kelionės atveria protą naujoms idėjoms ir patirtims."
+    ]
+}

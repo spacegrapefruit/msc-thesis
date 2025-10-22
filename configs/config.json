@@ -1,0 +1,83 @@
+{
+    "output_path": "training_output",
+    "run_name": "Tacotron2-DDC-CV-LT",
+    "project_name": "MSc-TTS-Thesis",
+    "model": "tacotron2",
+    "tacotron2_DDC_params": {
+        "num_chars": 256,
+        "encoder_type": "default",
+        "decoder_type": "default",
+        "stopnet_type": "default",
+        "use_forward_attn": false
+    },
+    "characters": {
+        "pad": "_",
+        "eos": "~",
+        "bos": "^",
+        "characters": "aąbcčdeęėfghiįyjklmnoprsštuųūvzž",
+        "punctuations": " .,-",
+        "phonemes": null
+    },
+    "audio": {
+        "fft_size": 1024,
+        "win_length": 1024,
+        "hop_length": 256,
+        "frame_length_ms": null,
+        "frame_shift_ms": null,
+        "sample_rate": 16000,
+        "preemphasis": 0.97,
+        "min_level_db": -100,
+        "ref_level_db": 20,
+        "num_mels": 80,
+        "mel_fmin": 0.0,
+        "mel_fmax": 8000.0,
+        "power": 1.5,
+        "griffin_lim_iters": 60,
+        "do_trim_silence": true,
+        "trim_db": 30
+    },
+    "training_seed": 54322,
+    "batch_size": 32,
+    "eval_batch_size": 64,
+    "num_loader_workers": 8,
+    "num_eval_loader_workers": 8,
+    "run_eval": true,
+    "epochs": 2000,
+    "test_delay_epochs": 1999,
+    "print_step": 25,
+    "plot_step": 100,
+    "save_step": 500,
+    "save_n_checkpoints": 5,
+    "print_eval": false,
+    "optimizer": "AdamW",
+    "optimizer_params": {
+        "betas": [
+            0.9,
+            0.998
+        ],
+        "weight_decay": 1e-6
+    },
+    "lr": 5e-4,
+    "lr_scheduler": "NoamLR",
+    "lr_scheduler_params": {
+        "warmup_steps": 400
+    },
+    "use_grad_clip": true,
+    "grad_clip_thresh": 1.0,
+    "mixed_precision": true,
+    "datasets": [
+        {
+            "name": "liepa2_lt",
+            "path": "data/processed/tts_dataset_liepa2/",
+            "meta_file_train": "metadata.csv",
+            "formatter": "ljspeech"
+        }
+    ],
+    "test_sentences": [
+        "aš labai mėgstu skaityti knygas.",
+        "šiandien oras yra puikus idealiai tinkantis pasivaikščiojimams gamtoje.",
+        "technologijos sparčiai keičia mūsų kasdienį gyvenimą ir darbo būdus.",
+        "muzika turi galią sujungti žmones iš skirtingų kultūrų ir kalbų.",
+        "kelionės atveria protą naujoms idėjoms ir patirtims."
+    ]
+}
