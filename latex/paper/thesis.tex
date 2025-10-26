@@ -1,0 +1,665 @@
+%%%%%
+%%%%%  Use LUALATEX, not LATEX.
+%%%%%
+%%%%
+\documentclass[]{VUMIFTemplateClass}
+
+\usepackage{indentfirst}
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage[hidelinks]{hyperref}
+\usepackage{color,algorithm,algorithmic}
+\usepackage[nottoc]{tocbibind}
+\usepackage{tocloft}
+
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+
+\makeatletter
+\renewcommand{\fnum@algorithm}{\thealgorithm}
+\makeatother
+\renewcommand\thealgorithm{\arabic{algorithm} algorithm}
+
+\usepackage{biblatex}
+\bibliography{bibliografija}
+%% to change the numbering (numeric or alphabetic) of bibliographic sources, make the change in VUMIFTemplateClass.cls, line 139
+
+% Author's MACROS
+\newcommand{\EE}{\mathbb{E}\,} % Mean
+\newcommand{\ee}{{\mathrm e}}  % nice exponent
+\newcommand{\RR}{\mathbb{R}}
+
+\studyprogramme{Data Science}
+\worktype{Master's thesis}
+\worktitle{Normalization in End-to-End TTS for Low-Resource Morphologically Complex Languages}
+\secondworktitle{Work Title in Lithuanian}
+\workauthor{Aleksandr Jan Smoliakov}
+
+\supervisor{Gerda Ana Melnik-Leroy}
+\reviewer{pedagogical/scientific title Name Surname}
+%If present, otherwise delete
+\scientificadvisor{pedagogical/scientific title Name Surname}
+%If present, otherwise delete
+
+\begin{document}
+\selectlanguage{english}
+
+\onehalfspacing
+\input{TitlePage}
+
+% %% TODO Acknowledgements Section
+% \sectionnonumnocontent{Acknowledgements}
+% The author is thankful the Information Technology Research Center, Faculty of Mathematics and Informatics, Vilnius University, for providing the High-Performance Computing (HPC) resources for this research.
+% %%
+% %%
+% %%      If you have used IT resources (CPU-h, GPU-h, other IT resources) provided by MIF for your thesis research, please leave the acknowledgement; if you have not, you can delete it.
+% %%
+% %%
+
+% You can also add here acknowledgements for various other things, such as your supervisor, university, company, etc.
+
+\singlespacing
+\selectlanguage{english}
+% % TODO list of figures, delete if not needed
+% \listoffigures 
+
+% % TODO list of tables, delete if not needed
+% \listoftables
+
+% Table of contents
+\tableofcontents
+\onehalfspacing
+
+\sectionnonum{Introduction}
+
+Text-to-Speech (TTS) synthesis, also known as speech synthesis, is the process
+of converting written text into human-like spoken words. Nowadays TTS is a key
+technology in various applications, including virtual assistants, accessibility
+tools, and language learning platforms.
+
+The goal of creating machines that can speak like humans has captivated
+researchers for centuries. One of the earliest known attempts dates back to
+the 18th century, with Wolfgang von Kempelen's mechanical speech machine that
+utilized a bellows-driven lung and physical models of the tongue and lips.
+
+Over the centuries, advancements in technology and understanding of human
+speech have driven significant progress in this field. Today's state-of-the-art
+systems, dominated by end-to-end (E2E) neural models, have achieved highly
+naturalistic speech with unprecedented acoustic quality. Notably, these
+end-to-end systems have unified the entire synthesis process into a single
+neural network, eliminating the need for complex multi-stage pipelines.
+
+However, this success has come with new dependencies and failure modes that
+force us to reconsider how input should be incorporated into the synthesis
+pipeline.
+
+First of all, E2E models rely on a large amount of high-quality training data
+to achieve optimal performance. This poses challenges, particularly for
+low-resource languages or domains where such data is scarce.
+
+Additionally, these models often struggle with numbers, dates, abbreviations,
+and other non-standard words (NSWs) that are common in real-world text but not
+well represented in training data. This can lead to mispronunciations or
+unnatural prosody, undermining the overall quality of the synthesized speech.
+
+To address these issues, modern TTS systems still benefit from explicit
+linguistic knowledge, such as phonetic transcriptions or text normalization
+(TN) rules, to handle these challenging cases effectively.
+
+This thesis aims to explore the integration of text normalization techniques
+into end-to-end TTS systems, with a focus on improving the objective and
+subjective quality of synthesized speech for a low-resource language --
+Lithuanian.
+
+While the necessity of TN is acknowledged, the specific impact of different TN
+strategies on E2E model performance for morphologically rich, low-resource
+languages like Lithuanian remains underexplored.
+
+The research questions this thesis seeks to answer include:
+\begin{itemize}
+    \item What impact does Lithuanian text normalization have on the quality of
+          synthesized speech in popular end-to-end TTS systems?
+    \item What is the trade-off between the complexity of text normalization
+          rules and the performance of end-to-end TTS models?
+\end{itemize}
+
+TODO Structure of the thesis
+
+\section{Literature review}
+
+Before diving into the specifics of text normalization, it is important to
+establish the broader context of TTS research and its evolution over time.
+
+\subsection{Text-to-speech synthesis}
+
+\subsubsection{Early methods of speech synthesis}
+
+The first known attempts to create artificial speech date back to the late 18th
+century. These early devices were purely mechanical, relying on physical models
+to mimic the human vocal tract. One notable example is Wolfgang von Kempelen's
+invention called the ``Acoustic-Mechanical Speech Machine'', which utilized a
+bellows-driven lung and physical models of the tongue and lips to articulate
+both vowels and consonants. Such early efforts had limited success, being able
+to produce only individual phonemes or simple syllables.
+
+The advancement of electricity and electronics in the late 19th and early 20th
+centuries opened new possibilities for speech synthesis. Homer Dudley's Voder
+(Voice Operation Demonstrator), unveiled in 1937, represented the first
+successful electronic recreation of human speech. This landmark invention
+allowed a skilled human operator to synthesize intelligible speech by
+manipulating a complex arrangement of keyboards and pedals, each controlling
+different acoustic parameters of speech production. The Voder marked a shift
+from mechanical to electronic synthesis methods.
+
+In the decades that followed, two main approaches for speech synthesis emerged:
+concatenative synthesis and parametric synthesis.
+
+% .1 .2
+
+% This evolution reflects a fundamental trade-off between systems that rely on
+% explicit, hand-crafted linguistic knowledge and those that learn implicit
+% patterns from large datasets. While this trajectory helps us understand the
+% remarkable progress in TTS technology, it also highlights persistent
+% challenges, especially for languages that fall outside the well-resourced,
+% linguistically straightforward mainstream.
+
+\subsubsection{Concatenative and parametric TTS}
+
+The concatenative synthesis approach synthesizes speech by piecing together
+pre-recorded segments of human speech. This method involves several steps.
+First, it requires pre-recording a large database of speech segments spoken by
+a human voice actor.3 Each segment is labeled and indexed based on its phonetic
+and prosodic properties.
+
+During synthesis, the system breaks down the input text into short linguistic
+units (such as phonemes or syllables) using a text analysis module. Then, it
+queries the speech database to find the best-matching segments for each unit.
+The retrieved segments are blended and concatenated to form a continuous speech
+waveform. The system may uses signal processing techniques to smooth the
+transitions between segments and adjust pitch and duration to match the desired
+output characteristics.
+
+Concatenative synthesis can produce natural-sounding individual speech units,
+but the final audio often has noticeable glitches and breaks at the points
+where segments are joined together. The segments may not blend smoothly due to
+differences in pitch, duration, and timbre. The prosody also tends to sound
+``choppy'' and unnatural, since stringing disjointed segments together does not
+capture the natural rhythm and intonation patterns of connected speech.5
+
+Finally, concatenative synthesis requires language-specific expertise to design
+and maintain the underlying speech database and selection algorithms. This
+need for extensive data can make it challenging to develop concatenative TTS
+systems for low-resource languages or dialects.
+
+In contrast, statistical parametric speech synthesis (SPSS) uses statistical
+models, typically Hidden Markov Models (HMMs), to generate the parameters that
+control a speech waveform.
+
+This method involves training a statistical model on a large corpus of recorded
+speech. The model learns the relationship between linguistic features (like
+phonemes and prosody) and the acoustic features of the speech signal, such as
+spectral envelope and fundamental frequency. During synthesis, the system takes
+text as input, converts it to a sequence of linguistic features, and then uses
+the trained model to generate a corresponding sequence of acoustic parameters.
+
+Compared to concatenative synthesis, the statistical approach allows for more
+flexibility and control over the speech synthesis process, enabling the
+generation of a wider variety of voices and speaking styles. However, HMM-based
+synthesis had a persistent problem: the statistical averaging built into the
+models tended to over-smooth the acoustic features, creating a characteristic
+``buzzy'' or ``muffled'' sound that lacked the sharpness and detail of natural
+human speech.2
+
+% .1 .2 .3 .4 .5
+
+\subsection{Neural network-based TTS}
+
+The limitations of these complex, multi-stage pipelines opened the door for a
+new approach, the end-to-end (E2E) model. E2E systems learn the entire speech
+synthesis process--from input text directly to acoustic output--using a single
+neural network.8 This approach promised to eliminate the need for hand-crafted
+pipelines that were difficult to design, required extensive expertise, and
+suffered from errors that accumulated across multiple components.10 By learning
+directly from text-audio pairs, E2E models showed they could produce speech
+with higher naturalness and expressiveness than previous methods, representing
+a significant leap in TTS technology.9
+
+% .8 .9 .10
+
+\subsubsection{Architecture of End-to-End TTS models}
+
+The main architecture for modern E2E TTS is the sequence-to-sequence (seq2seq)
+framework, known through e.g. Google's Tacotron model.10 This framework has
+three main parts: an encoder, an attention mechanism, and a decoder.8 The
+encoder--usually a recurrent neural network (RNN) or a more complex module like
+the CBHG (Convolution Bank + Highway network + Gated Recurrent Unit)--processes
+the input text and converts it into a high-level representation.11 The
+attention mechanism acts as a bridge, learning to align the text representation
+with the output audio frames. At each step, it decides which part of the input
+text the model should focus on to generate the next piece of audio.8 The
+decoder, also typically an RNN, takes the encoder output and uses the attention
+context to generate an acoustic representation of the speech, one frame at a
+time.8
+
+% .8 .10 .11
+
+An important design choice in models like Tacotron~\cite{tacotron} is that the
+decoder doesn't directly create the final audio waveform. Instead, it predicts
+an intermediate acoustic representation, typically a mel-spectrogram.6
+
+TODO explain mel-spectrogram in a previous section
+
+% A mel-spectrogram is a
+% time-frequency representation of audio that compresses the frequency
+% information to better match how humans perceive sound. This intermediate step
+% makes the learning task easier for the seq2seq model. The final high-quality
+% audio waveform is then created from this mel-spectrogram by a separate,
+% specialized neural network called a neural vocoder.3 Models like WaveNet,
+% WaveGlow, or HiFi-GAN are trained specifically for this spectrogram-to-waveform
+% conversion and are responsible for the realistic quality of modern synthetic
+% speech.3
+
+% .3 .6
+
+\subsubsection{Popular E2E models}
+
+TODO Tacotron 2, FastSpeech 2, VITS
+
+% Tacotron 2 is a good example of the two-stage approach, combining a seq2seq
+% model for mel-spectrogram prediction with a modified WaveNet vocoder for
+% waveform synthesis.13 What makes this E2E system powerful is its ability to
+% learn complex language patterns directly from data, without explicit
+% programming. For example, Tacotron 2 can learn to pronounce words like ``read''
+% correctly based on context (distinguishing ``read'' /riːd/ from ``read''
+% /rɛd/), adjust its rhythm in response to punctuation like commas, and apply
+% appropriate stress when words are capitalized.13 This ability to implicitly
+% learn subtle aspects of pronunciation and prosody shows the clear advantage of
+% the E2E approach over the rigid, rule-based systems that came before.
+
+% .13
+
+\subsubsection{Limitations of E2E models}
+
+While E2E models have achieved impressive results, they also bring new
+challenges. These models work like ``black boxes'' - they produce high-quality
+speech, but at the cost of transparency, robustness, and data efficiency. A
+major challenge is their significant data requirements. Training a good E2E TTS
+model typically needs tens or hundreds of hours of professionally recorded and
+transcribed speech from a single speaker.8 Many of the world's languages may
+not have this much data available, which makes E2E approaches difficult to use
+for low-resource languages.16
+
+% .8 .16
+
+These models can also be quite fragile. Attention-based seq2seq models often
+struggle when they encounter inputs that are very different from their training
+data, like unusually long sentences or text from unfamiliar topics.18 When this
+happens, the model can fail catastrophically - it might skip words, repeat
+them, or produce meaningless noise. This shows that the model's alignment
+mechanism is brittle and doesn't really understand language in a deep way.19
+Even when working properly, neural models can suffer from "over-smoothing."
+Similarly to HMM-based systems, they learn statistical averages from training
+data, which can make the speech sound clear but lacking in natural variation
+and detail - essentially producing an ``averaged'' sound that feels less
+dynamic than human speech.20
+
+% .18 .19 .20
+
+Perhaps most importantly for this review, the "end-to-end" label is somewhat
+misleading. E2E models are trained on clean, normalized text and cannot
+directly process raw text as it appears in the real world. They tend to
+struggle with numbers, dates, currencies, abbreviations, and other symbols that
+aren't spelled out as words.1 This means that every modern E2E TTS system still
+requires a text pre-processing function to handle Text Normalization (TN).
+
+This function takes raw input text and converts it into a fully spelled-out
+form that the E2E model can work with. The continued need for this function
+reveals an important limitation: while we have successfully unified acoustic
+modeling into a single network, the challenge of interpreting written language
+remains a separate problem that must be addressed beforehand. Rather than
+eliminating the text processing pipeline, the E2E approach has simply moved
+this complexity to a preprocessing step that sits outside the main model.
+
+% .1
+
+\subsection{Text normalization}
+
+Text Normalization (TN) is a fundamental preprocessing step in the TTS
+pipeline. It serves as a translator between written text as it appears in the
+real world--with all its numbers, abbreviations, and symbols--and the clean,
+word-based form that TTS systems need to produce natural speech. Without proper
+normalization, a TTS system will struggle with a large portion of everyday
+text, producing poor or incorrect pronunciations.
+
+There are two main approaches to TN systems: rule-based systems that rely on
+hand-crafted rules, and data-driven machine learning models. The choice depends
+on how much data is available, how complex the language is, and how much
+tolerance there is for serious errors that completely change the meaning.
+
+The main job of Text Normalization is to find and convert non-standard words
+(NSWs)--tokens that are written differently from how they are spoken--into
+their proper spoken form.22 This step must happen before the TTS system can
+convert letters to sounds or process character sequences.3 NSWs are found in
+every language but take different forms. Common examples in English include
+numbers (``10kg'' → ``ten kilograms''), dates (``Jul 5th'' → ``july fifth''),
+monetary amounts (``\$24.12'' → ``twenty four dollars twelve cents''),
+abbreviations (``St.'' → ``Saint'' or ``Street''), and various symbols.26
+
+Most TN systems work through three main stages. First is tokenization, where
+the input text gets split into individual words or meaningful pieces, typically
+using spaces and punctuation as boundaries.23 Second is classification, where
+each piece is examined to determine whether it's a regular word or an NSW. If
+it's an NSW, the system assigns it to a specific category like CARDINAL, DATE,
+TIME, or MONEY.23 This classification step is important because how something
+gets spoken depends entirely on its category. The final step is verbalization,
+where the classified NSW gets expanded into its full spoken form.23
+
+One significant challenge in this process is handling context. Most NSWs cannot
+be normalized using a simple lookup table--the correct spoken form often
+depends on the surrounding words and sentence structure. A clear example in
+English is the abbreviation ``St.'', which should be ``Saint'' in ``St. John''
+but ``Street'' in ``12 St. John St.''.1 Similarly, the string ``1/4'' could be
+spoken as ``one fourth'', ``January fourth'', or ``April first'', and only the
+context can tell us which is correct.22 This means an effective TN system must
+analyze not just the target token, but also the words around it to make the
+right choice.
+
+\subsubsection{Methodologies for text normalization}
+
+Two primary methodologies have been developed to address the TN problem:
+rule-based systems and data-driven models.
+
+Traditionally, TN is handled by rule-based engines. These systems rely on a set
+of handcrafted rules, often implemented using cascades of regular expressions
+or.4 In a TN system, an input string is mapped to an output string through a
+graph-based grammar, allowing for complex and context-sensitive
+transformations. The primary strength of rule-based systems is their precision
+and controllability. Their behavior is deterministic, and for well-defined
+semiotic classes, they can achieve very high accuracy.32 Because they encode
+linguistic knowledge directly  into rules, they do not require large corpora of
+parallel normalized text for training, making them particularly well-suited
+for low-resource languages.4 However, their main drawback is the immense human
+effort required for their creation and maintenance. Developing a comprehensive
+set of rules for a single language can involve thousands of individual
+grammars, demands deep linguistic expertise, and is a labor-intensive
+process.33 .21
+
+An alternative approach treats TN as a machine learning problem, typically
+framing it as a sequence-to-sequence task analogous to machine translation.30
+In this setting, a model learns the mapping from an unnormalized text sequence
+to its verbalized form directly from a large corpus of examples. Various
+architectures have been explored, including Recurrent Neural Networks (RNNs)
+23, full sequence-to-sequence models with attention 30, and, more recently,
+Large Language Models (LLMs) used in a few-shot prompting scenario.22 The
+principal advantage of these models is their ability to learn complex, subtle,
+and non-linear patterns from data without needing explicitly programmed rules.
+This can allow them to generalize better to unseen inputs and potentially
+capture nuances that are difficult to encode in a formal grammar.35 However,
+their primary weakness is their dependence on large-scale, high-quality
+parallel training data (i.e., pairs of unnormalized and normalized text), which
+is extremely scarce and difficult to create.24 This data bottleneck is a major
+obstacle to applying purely data-driven TN to low-resource languages.
+
+% Beyond the practical considerations of development effort and data availability, the choice between normalization methodologies is profoundly influenced by their differing failure modes. While a rule-based system may fail by not recognizing an NSW and leaving it unnormalized, a neural system can fail in a much more insidious way: by producing a fluent and plausible, yet semantically incorrect, verbalization. This class of mistakes is known as "unrecoverable errors".34
+% An unrecoverable error is a normalization output that alters the meaning of the original text in a way that a listener cannot detect from the audio alone.22 For example, a neural model might incorrectly learn a spurious correlation and verbalize "$5" as "five pounds" or, more dramatically, "3 cm" as "three kilometers".33 In a TTS application providing driving directions, verbalizing "197 Pine Ave." as "nineteen hundred seven Pine Avenue" could send a user to the wrong location, a failure that is not merely an issue of naturalness but of core functionality and safety.34 Such errors are considered catastrophic for production-level TTS systems because they actively misinform the user.
+% The high risk of these value-destroying errors is a significant barrier to the widespread adoption of purely neural TN systems, despite their high overall accuracy on test sets.30 This has spurred research into hybrid approaches that seek to combine the strengths of both paradigms. A common strategy is to use finite-state covering grammars to constrain the output space of a neural model. These grammars act as a filter, either during decoding or as part of the training process, to prevent the neural network from generating wildly inappropriate or semantically invalid verbalizations.30 This hybrid architecture leverages the pattern-matching flexibility of the neural model while relying on the formal guarantees of the rule-based component to ensure correctness, representing a pragmatic compromise between generalization and safety. For low-resource languages where data is scarce and the risk of unpredictable neural model behavior is high, this suggests that a system grounded in explicit rules is not just a practical choice, but a necessary safeguard against unacceptable failures.
+
+% Compounding Challenges: Morphology and Data Scarcity
+% The development of robust TTS systems is already a significant undertaking, but the difficulty is magnified exponentially when confronting the dual challenges of data scarcity and high linguistic complexity. For the vast majority of the world's languages, which are both low-resource and morphologically rich, standard E2E TTS techniques developed for English are often inadequate. The interaction between a lack of data and a complex grammatical system creates a uniquely challenging environment where text normalization is transformed from a pre-processing convenience into a critical linguistic analysis task that determines the ultimate success or failure of the entire synthesis pipeline.
+
+% The Low-Resource Conundrum in TTS
+% In the context of speech technology, a language is considered "low-resource" not necessarily because of a small number of speakers, but due to the scarcity of the specific digital resources required to train modern machine learning models.37 For TTS, the primary bottleneck is the availability of large, high-quality, single-speaker speech corpora paired with accurate transcriptions.39 While high-resource languages like English have access to many such datasets, often containing hundreds or thousands of hours of audio, most other languages have corpora that are orders of magnitude smaller, if they exist at all.16
+% Researchers have developed several strategies to mitigate the effects of data scarcity. One of the most effective is transfer learning, where a model is first pre-trained on a high-resource language (or a collection of multiple languages) and then fine-tuned on the limited data available for the target low-resource language.16 This allows the model to learn general acoustic and linguistic patterns from the large dataset, which can then be adapted to the specific characteristics of the target language. Using multilingual pre-training has been shown to be particularly beneficial, as the model can leverage shared phonetic and structural information across languages.41 Other techniques include
+% data augmentation, where existing data is modified (e.g., by changing the pitch or speed of the audio) or new synthetic data is generated to expand the training set 37, and
+% self-supervised learning (SSL), which involves pre-training models on large amounts of unlabeled speech data to learn powerful acoustic representations that can reduce the amount of labeled data needed for downstream tasks like TTS.43
+
+% The Morphological Barrier
+
+% Compounding the problem of data scarcity is the challenge of morphological complexity. Languages like English are analytic, meaning they primarily use word order and function words (like prepositions) to convey grammatical relationships. In contrast, a vast number of the world's languages are synthetic, using inflection--the modification of a word's form--to encode grammatical information such as case, gender, number, tense, and mood.44 In these morphologically rich languages, which include the Slavic and Baltic families, a single root word (or lemma) can give rise to dozens or even thousands of different surface forms.44
+% This morphological richness poses two fundamental problems for data-driven TTS. First, it leads to extreme data sparsity and a high out-of-vocabulary (OOV) rate. The sheer number of possible inflected forms makes it statistically impossible for any reasonably sized training corpus to contain examples of them all.35 The TTS model will therefore frequently encounter word forms during inference that it has never seen during training, increasing the likelihood of mispronunciation. Second, it creates a deep
+% context dependency. The correct morphological form of a word is determined entirely by its syntactic function within a sentence. An E2E model that learns from simple character sequences may struggle to capture these long-range grammatical dependencies, especially with limited training data, leading to grammatically incorrect and unnatural-sounding speech.45
+
+% A Case Study in Complexity: Verbalization of Numbers in Inflected Languages
+% The challenge of text normalization in morphologically rich languages is perfectly encapsulated by the problem of verbalizing numbers. In English, number words are generally invariable; "five" is always "five," regardless of the noun it modifies. In many inflected languages, however, number words behave like adjectives or nouns and must be inflected to agree grammatically with the noun they quantify.32
+% For example, in a highly inflected language like Icelandic or Russian, a cardinal number like "2" must be declined for case and gender to match the noun it modifies.46 The written digit "2" contains none of the grammatical information required to select the correct inflected form (e.g., nominative, genitive, masculine, feminine). This information can only be derived by performing a syntactic analysis of the surrounding sentence to determine the grammatical properties of the noun phrase.46 This transforms number normalization from a simple string replacement task into a sophisticated linguistic analysis problem. The TN system cannot simply look up "2" in a dictionary; it must first parse the context, identify the required grammatical features, and then generate the correctly inflected number word.
+% This "information gap" between the sparse written form and the rich spoken form invalidates many simplistic TN approaches. A system that only expands digits into their base, uninflected form will produce grammatically incorrect and jarringly unnatural speech. To address this, researchers have explored more advanced techniques, such as using n-gram language models to predict the most statistically likely morphological form given the surrounding words.46 This approach effectively uses the statistical patterns of the language to disambiguate the required inflection, demonstrating that a successful TN system for these languages must incorporate some form of morphological and syntactic awareness. The task is not merely to expand NSWs, but to expand them into the one, contextually correct grammatical form, a challenge that lies far beyond the capabilities of standard TN tools designed for morphologically simple languages like English.
+
+% A Focused Analysis of the Lithuanian Language
+% To ground the preceding theoretical discussion in a concrete context, this section provides a focused analysis of the Lithuanian language. As a member of the Baltic language family, Lithuanian presents a formidable combination of the challenges previously outlined: it is a low-resource language with a highly complex morphological and accentual system. Reviewing its specific linguistic properties, the state of its speech technology, and the existing work on its normalization reveals a critical disconnect between the capabilities of modern E2E models and the fundamental requirements of the language, thereby clarifying the precise research gap that this thesis aims to address.
+
+% Linguistic Profile of Lithuanian
+% Lithuanian is renowned among linguists for being one of the most conservative living Indo-European languages, retaining many archaic features from its proto-language ancestor.47 This conservatism is most evident in its morphology. It is a highly inflected language, featuring a complex system of noun declensions with seven grammatical cases (nominative, genitive, dative, accusative, instrumental, locative, and vocative) and intricate verb conjugations.45 This rich inflectional system means that, like the Slavic languages, a vast number of word forms can be generated from a single root, posing a significant data sparsity challenge for any statistical model.
+% Perhaps the most daunting feature of Lithuanian for speech synthesis is its exceptionally complex accentuation system. The language has a mobile stress system, meaning the position of the primary stress can fall on different syllables of a word depending on its inflectional form and accentuation paradigm. Furthermore, stressed long syllables can carry one of two distinct pitch accents: a rising (acute) or falling (circumflex) tone.48 There are four primary accentuation paradigms that govern these patterns. This system is so intricate and rule-governed that it is considered practically impossible for an E2E TTS model to learn it implicitly from a speech corpus of a feasible size.48 Correct accentuation is not a minor phonetic detail; it is fundamental to the correct pronunciation and naturalness of spoken Lithuanian. On a more positive note, Lithuanian possesses a highly phonemic orthography, meaning there is a regular and predictable correspondence between its written letters (graphemes) and sounds (phonemes).1 This simplifies the grapheme-to-phoneme conversion aspect of TTS, but it does not mitigate the more profound challenges posed by its morphology and prosody.
+
+% State-of-the-Art in Lithuanian Speech Synthesis
+% The history of Lithuanian TTS mirrors the broader evolution of the field, progressing from early formant synthesizers (e.g., Apollo 2) and concatenative systems (e.g., Aistis, SINT.AS, LIEPA) to statistical parametric methods using toolkits like Merlin.48 More recently, researchers have begun to apply modern E2E architectures, such as Tacotron 2 and VITS, to the language.48
+% A critical and recurring finding in this recent work is the indispensable role of explicit prosodic information. Experiments have shown that the quality of synthesized Lithuanian speech from an E2E model is significantly improved when the input text is augmented with explicit accent marks that indicate stress position and pitch accent type.48 Providing the model with just the raw character sequence is insufficient for it to learn the complex accentuation system. This finding powerfully underscores the limitations of the standard E2E approach for this language and confirms that a sophisticated, linguistically-aware frontend is a prerequisite for high-quality synthesis.
+% In terms of data, several Lithuanian speech corpora are available for research, most notably the LIEPA corpus.53 Datasets used in various studies range in size from a few hours to a substantial 92-hour corpus collected for one master's thesis.51 While the existence of these resources is a significant advantage, the overall context remains that of a low-resource language compared to the massive datasets available for English or Mandarin Chinese.
+
+\subsubsection{Text normalization in Lithuanian}
+
+Research into Lithuanian text normalization has focused on rule-based methods
+that can explicitly encode linguistic knowledge. In their work, Kasparaitis
+has developed a comprehensive TN system for Lithuanian that uses regular
+expressions to identify and verbalize NSWs.23 A key contribution of this work
+is the development of a detailed taxonomy of semiotic classes specifically
+adapted to the nuances of the Lithuanian language. This taxonomy provides a
+structured framework for the normalization task, outlining the specific
+categories of NSWs that a system must handle. The table below presents a
+selection of these semiotic classes, illustrating the breadth of the
+normalization challenge in Lithuanian.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|l|l|c|}
+        \hline
+        \textbf{Code} & \textbf{Explanation}       & \textbf{Examples}      &
+        \textbf{Source}
+        \\
+        \hline
+        EXPN          & Expansion (abbreviations)  & liet. → lietuviškai    &
+        23
+        \\
+        \hline
+        LSEQ          & Letter sequence (acronyms) & VU → vė-u              &
+        23
+        \\
+        \hline
+        ASWD          & Read as word               & KAM                    &
+        23
+        \\
+        \hline
+        NUM           & Cardinal number            & 10 km.                 &
+        23
+        \\
+        \hline
+        NORD          & Ordinal number             & XIX a., 1941-ųjų       &
+        23
+        \\
+        \hline
+        NTEL          & Telephone                  & 8-611-99999            &
+        23
+        \\
+        \hline
+        NTIME         & Time                       & 10:45                  &
+        23
+        \\
+        \hline
+        NDATE         & Date                       & 2018 m. spalio 15 d.   &
+        23
+        \\
+        \hline
+        NYEAR         & Year                       & 1941 m.                &
+        23
+        \\
+        \hline
+        URL           & URL, email                 & pkasparaitis@yahoo.com &
+        23
+        \\
+        \hline
+    \end{tabular}
+    \caption{Semiotic classes for Lithuanian text normalization}
+    \label{tab:semiotic_classes}
+\end{table}
+
+This taxonomy highlights the necessity of a system that can handle everything
+from common abbreviations (EXPN) to various numerical expressions (NUM, NORD,
+NTEL, etc.). Crucially, the verbalization of many of these classes,
+particularly NUM and NORD, will require the generation of correctly inflected
+forms based on the surrounding syntactic context, a challenge that lies at the
+heart of this thesis. The existing body of work on Lithuanian TTS and TN points
+toward an unavoidable conclusion: a high-quality E2E synthesis system for the
+language cannot function as a simple, monolithic black box. It is critically
+dependent on a sophisticated frontend that performs at least two major
+linguistic processing tasks: first, a TN module to correctly verbalize NSWs
+into their proper morphological forms, and second, an accentuation module to
+insert the stress and tone markers that guide the E2E model's prosody. The
+frontend is not an optional extra; it is an indispensable component that
+encodes the deep, rule-governed linguistic knowledge that the neural backend is
+incapable of learning on its own.
+
+\subsection{Morphologically rich languages}
+
+%% Characteristics of Morphologically Rich Languages
+
+%% Linguistic challenges in TTS
+
+%% Summary of existing research on TTS for morphologically rich languages
+
+%% Gaps in the literature
+
+%% How this thesis addresses these gaps
+
+% Synthesis, Research Gap, and Conclusion
+
+% The preceding review has traversed the evolution of Text-to-Speech synthesis, delved into the critical role of text normalization, and examined the compounding difficulties introduced by morphological complexity and data scarcity, all through the specific lens of the Lithuanian language. A synthesis of these threads reveals a clear and compelling gap in the current body of research, highlighting the inadequacy of existing approaches and defining a clear path forward for meaningful scientific contribution.
+
+% The analysis has established a series of interconnected conclusions. First, the modern E2E TTS paradigm, while offering unparalleled acoustic quality and naturalness, is fundamentally a data-driven approach. Its reliance on vast training corpora makes it inherently challenging to apply in low-resource settings, and its "black box" nature can lead to brittle behavior and unpredictable failures when faced with complex linguistic phenomena that are sparsely represented in the training data (Section 1). Second, Text Normalization remains an indispensable frontend for any TTS system. The choice of TN methodology involves a critical trade-off: rule-based systems offer precision and data-efficiency at the cost of high development effort, while purely neural systems offer flexibility but require scarce training data and introduce the risk of unrecoverable semantic errors, a risk that is often unacceptable in real-world applications (Section 2).
+% Third, for morphologically rich languages, the TN task is transformed. It is no longer a surface-level string replacement problem but a deeper linguistic challenge that requires morphological and syntactic analysis to produce grammatically correct verbalizations, particularly for inflected NSWs like numbers and ordinals (Section 3). Finally, the specific case of Lithuanian crystallizes these challenges. Its highly complex and rule-governed accentuation system is beyond the learning capacity of E2E models, necessitating an explicit accentuation frontend. This, combined with its rich inflectional morphology, means that a complete, high-quality Lithuanian TTS system requires a sophisticated, multi-component, linguistically-aware frontend to handle both normalization and prosody (Section 4).
+
+% This synthesis reveals a significant gap in the literature. While research exists on the constituent parts, there is a lack of work on their integration and holistic evaluation. We have seen the development of rule-based systems for Lithuanian text normalization 23 and the existence of software for text accentuation.48 We have also seen initial experiments applying E2E TTS models like Tacotron 2 to Lithuanian speech corpora.48 However, these research streams have largely run in parallel.
+% The identified research gap is therefore the following: there is a lack of research that designs, implements, and evaluates an integrated, end-to-end TTS pipeline for Lithuanian that explicitly addresses the challenge of morphological complexity within its text normalization frontend and measures the downstream impact of this morphologically-aware normalization on the final synthesized speech quality.
+% Current approaches are inadequate in isolation. A standard E2E model fed with unnormalized or improperly normalized text will fail on both NSWs and prosody. A standard TN system that expands numbers to their base, uninflected forms (e.g., converting "2" to the nominative form "du" in all contexts) is grammatically insufficient and will produce unnatural speech. A purely neural TN system is infeasible due to data scarcity and unacceptably risky due to the potential for unrecoverable errors. The literature strongly indicates the necessity of a sophisticated, linguistically-informed normalization strategy, but has not yet systematically explored its design or quantified its impact within a modern E2E TTS framework for Lithuanian.
+
+% The identified gap opens a clear and impactful avenue for future research, directly motivating the central questions for a master's thesis in this domain. The work would move beyond demonstrating that E2E models can be trained on Lithuanian data and instead ask how they can be made to work correctly and robustly by engineering a frontend that respects the language's linguistic structure. The primary research questions emerging from this review are:
+% How can a text normalization system for Lithuanian be designed to be morphologically aware, capable of verbalizing non-standard words into their contextually appropriate inflected forms? This could involve a hybrid approach combining rule-based grammars for NSW classification and morphological generation with a statistical language model for disambiguating the correct inflection.
+% What is the quantifiable impact of such a morphologically-aware normalization frontend on the final output quality of a state-of-the-art E2E TTS model trained on a low-resource Lithuanian dataset? This impact would be measured using both objective metrics like Word Error Rate (WER) on specially designed test sets and subjective metrics like the Mean Opinion Score (MOS) for naturalness and correctness.
+% By addressing these questions, the proposed research would make a valuable contribution. It would not only advance the state of speech technology for the Lithuanian language but would also provide a crucial case study and a potential methodological blueprint for tackling similar challenges in other morphologically complex, low-resource languages. It represents a necessary step in bridging the divide between the raw statistical power of modern neural networks and the intricate, rule-governed reality of human language.
+
+\section{Methodology}
+
+\subsection{Datasets}
+
+\subsubsection{Common Voice dataset}
+
+\subsubsection{Liepa 2 dataset}
+
+\subsection{Text normalization methods}
+
+\subsection{Model architecture and training}
+
+\subsubsection{Model architecture}
+
+\subsubsection{Experimental setup}
+
+\subsubsection{Training details}
+
+\subsection{Evaluation protocol}
+
+\section{Results}
+
+\subsection{Quantitative results}
+
+\subsection{Qualitative results and analysis}
+
+\section{Discussion}
+
+\subsection{Interpretation of results}
+
+\subsection{Error analysis}
+
+\subsection{Comparison with existing works}
+
+\subsection{Limitations of the study}
+
+\section{Conclusions and future work}
+
+\subsection{Summary of findings}
+
+\subsection{Conclusions}
+
+\subsection{Future work}
+
+\section{\phantom{Appendix} References -- FIXME not using proper citation style
+  yet}
+% In the document \textit{bibliography.bib}, you need to add all the cited sources and after using the function \textit{\{\textbackslash cite\{name of the cited object\}\}} the corresponding source will be added to the list of literature sources.
+
+% \textit{bibliography.bib} provides examples of some of the most commonly cited types of sources:
+% \begin{itemize}
+%     \item web pages (\textit{@online}) \cite{PvzInternetinisPuslapis},
+%     \item datasets (\textit{@dataset}) \cite{dataset}
+%     \item articles (\textit{@article}) \cite{PvzStraipsnLt, PvzStraipsnEn}, 
+%     \item articles from conferences (\textit{@inproceedings}) \cite{PvzKonfLt, PvzKonfEn}, 
+%     \item books (\textit{@book}) \cite{PvzKnygLt, PvzKnygEn}, 
+%     \item theses (\textit{@thesis or mastersthesis/phdthesis} \cite{PvzMagistrLt, PvzPhdEn})
+%     \item electronic publications (\textit{@misc}) \cite{PvzElPubLt, PvzElPubEn}
+% \end{itemize}
+
+% Examples are also provided for ChatGPT citation, both in general \cite{chatgpt_bendrai} and for a specific conversation \cite{chatgpt_pokalbis}.
+
+% .1 Speech synthesis - Wikipedia, accessed on October 5, 2025, https://en.wikipedia.org/wiki/Speech_synthesis
+% .2 From Hawking to Siri: The Evolution of Speech Synthesis | Deepgram, accessed on October 5, 2025, https://deepgram.com/learn/evolution-of-speech-synthesis-tts
+% .3 From Text to Speech: A Deep Dive into TTS Technologies | by Zilliz | Medium, accessed on October 5, 2025, https://medium.com/@zilliz_learn/from-text-to-speech-a-deep-dive-into-tts-technologies-18ea409f20e8
+% .4 How do rule-based and statistical TTS systems differ? - Milvus, accessed on October 5, 2025, https://milvus.io/ai-quick-reference/how-do-rulebased-and-statistical-tts-systems-differ
+% .5 Review of text-to-speech conversion for English, accessed on October 5, 2025, https://sail.usc.edu/~lgoldste/Ling582/Week%2013/Klatt1987.pdf
+% .7 A Comparative Study of Different Text-to- Speech Synthesis Techniques | Semantic Scholar, accessed on October 5, 2025, https://www.semanticscholar.org/paper/A-Comparative-Study-of-Different-Text-to-Speech-Mullah/8a42de509739903c0a3935e1be908e7c802e1d42
+% .8 How does end-to-end neural TTS work? - Milvus, accessed on October 5, 2025, https://milvus.io/ai-quick-reference/how-does-endtoend-neural-tts-work
+% .9 What is end-to-end neural TTS, and how does it differ from traditional methods? - Milvus, accessed on October 5, 2025, https://milvus.io/ai-quick-reference/what-is-endtoend-neural-tts-and-how-does-it-differ-from-traditional-methods
+% .6 .10 (PDF) Tacotron: A Fully End-to-End Text-To-Speech Synthesis Model - ResearchGate, accessed on October 5, 2025, https://www.researchgate.net/publication/315696313_Tacotron_A_Fully_End-to-End_Text-To-Speech_Synthesis_Model
+% .11 Towards End-to-End Speech Synthesis - Tacotron - ISCA Archive, accessed on October 5, 2025, https://www.isca-archive.org/interspeech_2017/wang17n_interspeech.pdf
+% .12 Naturalness Enhancement with Linguistic Information in End-to-End TTS Using Unsupervised Parallel Encoding - ISCA Archive, accessed on October 5, 2025, https://www.isca-archive.org/interspeech_2020/peirolilja20_interspeech.pdf
+% .13 Audio samples from "Natural TTS Synthesis by Conditioning WaveNet on Mel Spectrogram Predictions" - Google, accessed on October 5, 2025, https://google.github.io/tacotron/publications/tacotron2/
+% .14 arXiv:1712.05884v2 [cs.CL] 16 Feb 2018, accessed on October 5, 2025, https://arxiv.org/pdf/1712.05884
+% .15 SpeechWeave: Diverse Multilingual Synthetic Text & Audio Data Generation Pipeline for Training Text to Speech Models - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2509.14270v2
+% .16 A multilingual training strategy for low resource Text to Speech - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2409.01217v1
+% .17 ZMM-TTS: Zero-shot Multilingual and Multispeaker Speech Synthesis Conditioned on Self-supervised Discrete Speech Representations - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2312.14398v1
+% .18 Very Attentive Tacotron: Robust and Unbounded Length Generalization in Autoregressive Transformer-Based Text-to-Speech - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2410.22179v1
+% .19 Audio samples from "Location-Relative Attention Mechanisms For Robust Long-Form Speech Synthesis" - Google, accessed on October 5, 2025, https://google.github.io/tacotron/publications/location_relative_attention/
+% .20 Es-Tacotron2: Multi-Task Tacotron 2 with Pre-Trained Estimated Network for Reducing the Over-Smoothness Problem - MDPI, accessed on October 5, 2025, https://www.mdpi.com/2078-2489/10/4/131
+% .21 Text Normalization for Speech Systems for All Languages - ISCA Archive, accessed on October 5, 2025, https://www.isca-archive.org/s4sg_2022/deviyani22_s4sg.pdf
+% .22 A Chat About Boring Problems: Studying GPT-based text normalization - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2309.13426v2
+% .23 P.Kasparaitis. Normalization of Lithuanian Text Using Regular Expressions. Pages 1-21. DOI:2312.17660. - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2312.17660v2
+% .24 Text Normalization and Inverse Text Normalization with NVIDIA NeMo | NVIDIA Technical Blog, accessed on October 5, 2025, https://developer.nvidia.com/blog/text-normalization-and-inverse-text-normalization-with-nvidia-nemo/
+% .25 Text Normalization for Text-to-Speech - Uppsala - Diva Portal, accessed on October 5, 2025, http://uu.diva-portal.org/smash/record.jsf?pid=diva2:1764605
+% .26 Normalize text for speech - Retell AI, accessed on October 5, 2025, https://docs.retellai.com/build/normalize-text
+% .27 Text_Normalization_Tutorial.ipynb - Google Colab, accessed on October 5, 2025, https://colab.research.google.com/github/NVIDIA/NeMo/blob/r1.0.0rc1/tutorials/tools/Text_Normalization_Tutorial.ipynb
+% .28 TTS1 English Text Normalization | LumenVox Knowledgebase, accessed on October 5, 2025, https://help.lumenvox.com/knowledgebase/index.php?/article/AA-01886/157/
+% .29 tomaarsen/TTSTextNormalization: Convert English text from written expressions into spoken forms - GitHub, accessed on October 5, 2025, https://github.com/tomaarsen/TTSTextNormalization
+% .30 RNN Approaches to Text Normalization: A Challenge - Semantic Scholar, accessed on October 5, 2025, https://www.semanticscholar.org/paper/RNN-Approaches-to-Text-Normalization%3A-A-Challenge-Sproat-Jaitly/eb5280aff90135c4c3a14f0bf6d6d298260a9887
+% .32 Minimally Supervised Number Normalization - ACL Anthology, accessed on October 5, 2025, https://aclanthology.org/Q16-1036.pdf
+% .33 Text normalization with only 3% as much training data - Amazon Science, accessed on October 5, 2025, https://www.amazon.science/blog/text-normalization-with-only-3-as-much-training-data
+% .34 Neural Models of Text Normalization for Speech Applications ..., accessed on October 5, 2025, https://direct.mit.edu/coli/article/45/2/293/1637/Neural-Models-of-Text-Normalization-for-Speech
+% .35 Systematic Review on Text Normalization Techniques and its Approach to Non-Standard Words - ResearchGate, accessed on October 5, 2025, https://www.researchgate.net/publication/374166354_Systematic_Review_on_Text_Normalization_Techniques_and_its_Approach_to_Non-Standard_Words
+% .37 Automatic Speech Recognition for Low-Resource and Morphologically Complex Languages - RIT Digital Institutional Repository, accessed on October 5, 2025, https://repository.rit.edu/theses/10758/
+% .38 Frontier Research on Low-Resource Speech Recognition Technology - MDPI, accessed on October 5, 2025, https://www.mdpi.com/1424-8220/23/22/9096
+% .39 What challenges are there in building TTS for non-English languages? - Milvus, accessed on October 5, 2025, https://milvus.io/ai-quick-reference/what-challenges-are-there-in-building-tts-for-nonenglish-languages
+% .40 LRSpeech: Extremely Low-Resource Speech Synthesis and Recognition, accessed on October 5, 2025, https://speechresearch.github.io/lrspeech/
+% .41 Daily Papers - Hugging Face, accessed on October 5, 2025, https://huggingface.co/papers?q=Baltic%20languages
+% .42 Neural Text-to-Speech Synthesis for V˜oro - ACL Anthology, accessed on October 5, 2025, https://aclanthology.org/2023.nodalida-1.73.pdf
+% .43 Low-Resource Self-Supervised Learning with SSL-Enhanced TTS - arXiv, accessed on October 5, 2025, https://arxiv.org/html/2309.17020v2
+% .44 A Morphology-Driven Approach to NLP for a Low-Resource, Highly Complex Language, accessed on October 5, 2025, https://www.worldscientific.com/doi/full/10.1142/S2196888825400056
+% .45 (PDF) Challenges in Speech Processing of Slavic Languages (Case ..., accessed on October 5, 2025, https://www.researchgate.net/publication/220716706_Challenges_in_Speech_Processing_of_Slavic_Languages_Case_Studies_in_Speech_Recognition_of_Czech_and_Slovak
+% .46 Bootstrapping a Text Normalization System for an Inflected ..., accessed on October 5, 2025, https://lvl.ru.is/wp-content/uploads/2019/07/nikulasdottir2019interspeech-text_normalization_for_inflected_languages.pdf
+% .47 Free Lithuanian Speech to Text Transcription - ElevenLabs, accessed on October 5, 2025, https://elevenlabs.io/speech-to-text/lithuanian
+% .48 Investigation of Input Alphabets of End-to-End Lithuanian Text-to-Speech Synthesizer, accessed on October 5, 2025, https://www.researchgate.net/publication/371996416_Investigation_of_Input_Alphabets_of_End-to-End_Lithuanian_Text-to-Speech_Synthesizer
+% .50 (PDF) Lithuanian Speech Synthesis by Computer using Additive Synthesis - ResearchGate, accessed on October 5, 2025, https://www.researchgate.net/publication/259783966_Lithuanian_Speech_Synthesis_by_Computer_using_Additive_Synthesis
+% .51 Lithuanian Speech Synthesis Using Neural Networks, accessed on October 5, 2025, https://epublications.vu.lt/object/elaba:146235696/MAIN
+% .53 Lithuanian Speech Recognition Using Purely Phonetic Deep Learning - MDPI, accessed on October 5, 2025, https://www.mdpi.com/2073-431X/8/4/76
+% .54 Whisper Base Lithuanian · Models - Dataloop, accessed on October 5, 2025, https://dataloop.ai/library/model/aismantas_whisper-base-lithuanian/
+% .55 Lithuanian Speech Recognition Corpus (Mobile) - DataoceanAI, accessed on October 5, 2025, https://dataoceanai.com/datasets/asr/lithuanian-speech-recognition-corpus-mobile/
+% .56 GustasG/vits: VITS Text-to-Speech Model for Lithuanian Language - GitHub, accessed on October 5, 2025, https://github.com/GustasG/vits
+
+\end{document}

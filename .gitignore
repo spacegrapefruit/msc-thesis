@@ -210,3 +210,14 @@ __marimo__/
 data/
 *.pth
 events.out.tfevents.*
+
+# LaTeX intermediate files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
