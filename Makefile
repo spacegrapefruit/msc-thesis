@@ -100,6 +100,12 @@ clean: ## Remove all generated files (processed data, training output, cache).
 	find . -type d -name "__pycache__" -delete
 	@echo "\nCleanup complete."
 
+# 7. Inference
+inference-multispeaker: ## Run inference on multispeaker test samples.
+	@echo "Running multispeaker inference on test samples..."
+	$(EXECUTOR) python python/inference_multispeaker.py --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DDC-CV-LT-Multispeaker-October-29-2025_10+00PM-f3ba8b4/ --speakers F4_VP157,M3_VP460
+	@echo "\nInference complete. Check 'inference_output/' for generated audio files."
+
 
 # --- Helper for Missing Data ---
 # This rule provides instructions if the raw data is not found.
