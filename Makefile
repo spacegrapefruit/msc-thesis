@@ -103,7 +103,11 @@ clean: ## Remove all generated files (processed data, training output, cache).
 # 7. Inference
 inference-multispeaker: ## Run inference on multispeaker test samples.
 	@echo "Running multispeaker inference on test samples..."
-	$(EXECUTOR) python python/inference_multispeaker.py --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DDC-CV-LT-Multispeaker-October-29-2025_10+00PM-f3ba8b4/ --speakers F4_VP157,M3_VP460
+	$(EXECUTOR) python python/inference_multispeaker.py \
+	  --use_gpu \
+	  --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DDC-CV-LT-Multispeaker-November-06-2025_10+04PM-6805a9d/ \
+	  --vocoder_path "/home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/model.pth" \
+	  --speakers F4_VP382,M3_VP460
 	@echo "\nInference complete. Check 'inference_output/' for generated audio files."
 
 

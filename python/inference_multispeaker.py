@@ -42,6 +42,8 @@ def run_inference(
     output_path,
     use_gpu=True,
     device=None,
+    vocoder_path=None,
+    vocoder_config_path=None,
 ):
     """Run TTS inference using the tts command."""
     cmd = [
@@ -61,6 +63,12 @@ def run_inference(
 
     if speaker_id is not None:
         cmd.extend(["--speaker_idx", speaker_id])
+
+    # Add vocoder support
+    if vocoder_path:
+        cmd.extend(["--vocoder_path", vocoder_path])
+        if vocoder_config_path:
+            cmd.extend(["--vocoder_config_path", vocoder_config_path])
 
     # Add GPU support
     if use_gpu:
@@ -89,7 +97,7 @@ def main():
     parser.add_argument(
         "--model_dir",
         type=str,
-        help="Path to the model directory (e.g., training_output/Tacotron2-DDC-CV-LT-Multispeaker-October-17-2025_04+00PM-0000000)",
+        help="Path to the model directory (e.g., training_output/Tacotron2-DDC-CV-LT-Multispeaker-November-06-2025_10+04PM-6805a9d)",
     )
     parser.add_argument(
         "--output_dir",
@@ -100,8 +108,8 @@ def main():
     parser.add_argument(
         "--speakers",
         type=str,
-        default="F4_VP157,M3_VP460",
-        help="Comma-separated list of speaker IDs to use (default: F4_VP157,M3_VP460)",
+        default="F4_VP382,M3_VP460",
+        help="Comma-separated list of speaker IDs to use (default: F4_VP382,M3_VP460)",
     )
     parser.add_argument(
         "--text",
@@ -123,6 +131,16 @@ def main():
         "--device",
         type=str,
         help="Specific device to use (e.g., 'cuda:0', 'cuda:1', 'cpu')",
+    )
+    parser.add_argument(
+        "--vocoder_path",
+        type=str,
+        help="Path to custom vocoder model file",
+    )
+    parser.add_argument(
+        "--vocoder_config_path",
+        type=str,
+        help="Path to custom vocoder config file",
     )
 
     args = parser.parse_args()
@@ -177,6 +195,17 @@ def main():
     else:
         print("Using CPU for inference")
 
+    # Configure vocoder
+    vocoder_path = args.vocoder_path
+    vocoder_config_path = args.vocoder_config_path
+
+    if vocoder_path:
+        print(f"Using custom vocoder: {vocoder_path}")
+        if vocoder_config_path:
+            print(f"Vocoder config: {vocoder_config_path}")
+    else:
+        print("No vocoder specified - using Griffin-Lim reconstruction (lower quality)")
+
     # Get test sentences
     if args.text:
         test_sentences = [args.text]
@@ -214,6 +243,8 @@ def main():
                 str(output_path),
                 use_gpu=use_gpu,
                 device=device,
+                vocoder_path=vocoder_path,
+                vocoder_config_path=vocoder_config_path,
             ):
                 successful += 1
 

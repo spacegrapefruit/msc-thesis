@@ -9,6 +9,25 @@ from pydub import AudioSegment
 from tqdm import tqdm
 
 
+parsing_rules = [
+    {"L": "lossy", "R": "raw"},
+    {"R": "read", "S": "spontaneous"},
+    {"A": "audiobook", "D": "dictaphone", "P": "phone", "R": "radio", "S": "studio", "T": "TV"},
+    {"F": "female", "M": "male"},
+    {"1": "0-12", "2": "13-17", "3": "18-25", "4": "26-60", "5": "60+"},
+    {},
+    {},
+    {},
+]
+
+def parse_filename(filename):
+    filename = filename[:-4]
+    parts = filename.split("_")
+    parts = [parts[0], parts[1][0], parts[1][1], parts[2][0], parts[2][1], *parts[3:]]
+    parts_standardized = [parsing_rules[i].get(part, part) for i, part in enumerate(parts)]
+    return parts_standardized
+
+
 def normalize_text(text):
     """
     Normalize text for TTS training.
@@ -120,24 +139,26 @@ def process_liepa2(
     full_df = pd.concat(dfs, ignore_index=True)
 
     # Extract speaker IDs
-    full_df["path"] = full_df["audio"].apply(lambda x: x["path"].replace(".mp3", ""))
-    full_df["speaker_id"] = full_df["path"].str.slice(5, 13)
+    full_df["path"] = full_df["audio"].apply(lambda x: x["path"])
+    full_df[
+        ["lossiness", "speech_type", "source_type", "speaker_gender", "speaker_age", "speaker_id", "recording_id", "sentence_id"]
+    ] = full_df.path.apply(parse_filename).tolist()
 
-    # remove audiobooks from dataset
-    full_df = full_df[~full_df["path"].str.startswith("L_RS")].reset_index(drop=True)
+    # Filter for read speech and specific age groups
+    full_df = full_df[
+        (full_df["speech_type"] == "read") &
+        (full_df["speaker_age"].isin(["18-25", "26-60", "60+"]))
+    ]
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
 
-    # Select top N speakers based on the number of samples
-    print(f"Selecting top {n_speakers} speakers by sample count...")
-    top_speakers = (
-        full_df["speaker_id"].value_counts().nlargest(n_speakers).index.tolist()
-    )
+    # FIXME: Select top N speakers based on the number of samples
+    speaker_ids = full_df[["speaker_gender", "speaker_id"]].value_counts().groupby("speaker_gender").head(10).reset_index()["speaker_id"]
 
     # Filter the DataFrame to include only the selected speakers
-    full_df = full_df[full_df["speaker_id"].isin(top_speakers)].reset_index(drop=True)
+    full_df = full_df[full_df["speaker_id"].isin(speaker_ids)].reset_index(drop=True)
 
-    print(f"Selected speakers: {top_speakers}")
+    print(f"Selected speakers: {speaker_ids.tolist()}")
     print(f"Total samples from selected speakers: {len(full_df)}")
 
     # TODO: Remove - for testing only
