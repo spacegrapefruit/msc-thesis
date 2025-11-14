@@ -12,7 +12,14 @@ from tqdm import tqdm
 parsing_rules = [
     {"L": "lossy", "R": "raw"},
     {"R": "read", "S": "spontaneous"},
-    {"A": "audiobook", "D": "dictaphone", "P": "phone", "R": "radio", "S": "studio", "T": "TV"},
+    {
+        "A": "audiobook",
+        "D": "dictaphone",
+        "P": "phone",
+        "R": "radio",
+        "S": "studio",
+        "T": "TV",
+    },
     {"F": "female", "M": "male"},
     {"1": "0-12", "2": "13-17", "3": "18-25", "4": "26-60", "5": "60+"},
     {},
@@ -20,11 +27,14 @@ parsing_rules = [
     {},
 ]
 
+
 def parse_filename(filename):
     filename = filename[:-4]
     parts = filename.split("_")
     parts = [parts[0], parts[1][0], parts[1][1], parts[2][0], parts[2][1], *parts[3:]]
-    parts_standardized = [parsing_rules[i].get(part, part) for i, part in enumerate(parts)]
+    parts_standardized = [
+        parsing_rules[i].get(part, part) for i, part in enumerate(parts)
+    ]
     return parts_standardized
 
 
@@ -79,7 +89,8 @@ def process_audio_file(row_data, output_wav_path):
 
         # Convert audio bytes to WAV using pydub
         audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
-        audio = audio.set_frame_rate(16000).set_channels(1)
+        # Resample to 22050 Hz
+        audio = audio.set_frame_rate(22050).set_channels(1)
         audio.export(wav_path, format="wav")
 
         # Get the transcript (sentence)
@@ -141,19 +152,34 @@ def process_liepa2(
     # Extract speaker IDs
     full_df["path"] = full_df["audio"].apply(lambda x: x["path"])
     full_df[
-        ["lossiness", "speech_type", "source_type", "speaker_gender", "speaker_age", "speaker_id", "recording_id", "sentence_id"]
+        [
+            "lossiness",
+            "speech_type",
+            "source_type",
+            "speaker_gender",
+            "speaker_age",
+            "speaker_id",
+            "recording_id",
+            "sentence_id",
+        ]
     ] = full_df.path.apply(parse_filename).tolist()
 
     # Filter for read speech and specific age groups
     full_df = full_df[
-        (full_df["speech_type"] == "read") &
-        (full_df["speaker_age"].isin(["18-25", "26-60", "60+"]))
+        (full_df["speech_type"] == "read")
+        & (full_df["speaker_age"].isin(["18-25", "26-60", "60+"]))
     ]
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
 
     # FIXME: Select top N speakers based on the number of samples
-    speaker_ids = full_df[["speaker_gender", "speaker_id"]].value_counts().groupby("speaker_gender").head(10).reset_index()["speaker_id"]
+    speaker_ids = (
+        full_df[["speaker_gender", "speaker_id"]]
+        .value_counts()
+        .groupby("speaker_gender")
+        .head(10)
+        .reset_index()["speaker_id"]
+    )
 
     # Filter the DataFrame to include only the selected speakers
     full_df = full_df[full_df["speaker_id"].isin(speaker_ids)].reset_index(drop=True)
