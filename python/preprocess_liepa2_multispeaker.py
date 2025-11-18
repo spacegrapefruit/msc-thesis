@@ -1,4 +1,5 @@
 import argparse
+import json
 import multiprocessing as mp
 import pandas as pd
 import re
@@ -110,7 +111,7 @@ def process_liepa2(
     output_path: Path,
     n_processes: int = None,
     max_files: int = None,
-    n_speakers: int = 1,
+    n_speakers: int = 20,
 ):
     """
     Prepares the Liepa-2 dataset for multi-speaker TTS training.
@@ -120,7 +121,7 @@ def process_liepa2(
         output_path (Path): Path to save the processed dataset.
         n_processes (int, optional): Number of parallel processes to use. If None, uses CPU count.
         max_files (int, optional): Maximum number of files to process for testing. If None, processes all.
-        n_speakers (int, optional): Number of top speakers to process. Defaults to 1.
+        n_speakers (int, optional): Number of top speakers to process. Defaults to 20.
     """
     print("Starting Liepa-2 preprocessing for multiple speakers...")
 
@@ -172,20 +173,33 @@ def process_liepa2(
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
 
-    # FIXME: Select top N speakers based on the number of samples
+    # Select top N speakers based on the number of samples, balanced by gender
+    speakers_per_gender = n_speakers // 2
     speaker_ids = (
         full_df[["speaker_gender", "speaker_id"]]
         .value_counts()
         .groupby("speaker_gender")
-        .head(10)
+        .head(speakers_per_gender)
         .reset_index()["speaker_id"]
     )
 
     # Filter the DataFrame to include only the selected speakers
     full_df = full_df[full_df["speaker_id"].isin(speaker_ids)].reset_index(drop=True)
 
-    print(f"Selected speakers: {speaker_ids.tolist()}")
+    print(f"Selected speakers: {sorted(speaker_ids.tolist())}")
     print(f"Total samples from selected speakers: {len(full_df)}")
+
+    # Show speaker distribution
+    speaker_distribution = (
+        full_df.groupby(["speaker_gender", "speaker_id"])
+        .size()
+        .reset_index(name="count")
+    )
+    print("\nSpeaker distribution:")
+    for _, row in speaker_distribution.iterrows():
+        print(
+            f"  {row['speaker_id']} ({row['speaker_gender']}): {row['count']} samples"
+        )
 
     # TODO: Remove - for testing only
     full_df["prefix"] = full_df["path"].str.slice(0, 13)
@@ -197,12 +211,12 @@ def process_liepa2(
         full_df = full_df.head(max_files)
         print(f"Limited to {len(full_df)} samples for processing")
 
-    # 3. Set up multiprocessing
+    # Set up multiprocessing
     if n_processes is None:
         n_processes = mp.cpu_count()
     print(f"Using {n_processes} processes for audio conversion")
 
-    # 4. Process audio files
+    # Process audio files
     print("Converting audio files...")
     process_func = partial(process_audio_file, output_wav_path=output_wav_path)
 
@@ -215,11 +229,11 @@ def process_liepa2(
             )
         )
 
-    # 5. Filter successful results and create metadata
+    # Filter successful results and create metadata
     metadata = [result for result in results if result is not None]
     print(f"Successfully processed {len(metadata)} files out of {len(full_df)}")
 
-    # 6. Save metadata file
+    # Save metadata file
     metadata_file_path = output_path / "metadata.csv"
     print(f"Writing metadata to: {metadata_file_path}")
     with open(metadata_file_path, "w", encoding="utf-8") as f:
@@ -227,10 +241,23 @@ def process_liepa2(
         for line in metadata:
             f.write(f"{line}\n")
 
+    # 7. Create speakers.json file for TTS training
+    speakers_info = {}
+    unique_speakers = full_df["speaker_id"].unique()
+    for i, speaker_id in enumerate(sorted(unique_speakers)):
+        speakers_info[speaker_id] = i
+
+    speakers_file_path = output_path / "speakers.json"
+    print(f"Writing speakers file to: {speakers_file_path}")
+    with open(speakers_file_path, "w", encoding="utf-8") as f:
+        json.dump(speakers_info, f, ensure_ascii=False, indent=2)
+
     print(f"\nPreprocessing complete!")
     print(f"   - Processed {len(metadata)} audio files.")
+    print(f"   - Number of unique speakers: {len(speakers_info)}")
     print(f"   - WAV files saved in: {output_wav_path}")
     print(f"   - Metadata file saved as: {metadata_file_path}")
+    print(f"   - Speakers file saved as: {speakers_file_path}")
 
 
 if __name__ == "__main__":
@@ -246,14 +273,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_path",
         type=str,
-        default="tts_dataset_liepa2_multispeaker",
+        default="data/processed/tts_dataset_liepa2_multispeaker",
         help="Path to the directory to save the formatted dataset.",
     )
     parser.add_argument(
         "--n_speakers",
         type=int,
-        default=1,
-        help="Number of top speakers to process based on sample count. Default is 1.",
+        default=20,
+        help="Number of top speakers to process based on sample count. Default is 20.",
     )
     parser.add_argument(
         "--max_files",

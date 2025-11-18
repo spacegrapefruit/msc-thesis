@@ -108,8 +108,8 @@ def main():
     parser.add_argument(
         "--speakers",
         type=str,
-        default="F4_VP382,M3_VP460",
-        help="Comma-separated list of speaker IDs to use (default: F4_VP382,M3_VP460)",
+        default="VP382,VP460",
+        help="Comma-separated list of speaker IDs to use (default: VP382,VP460)",
     )
     parser.add_argument(
         "--text",
