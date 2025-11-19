@@ -1,0 +1,51 @@
+uv run tts --text "Text for TTS" --model_name "tts_models/en/ljspeech/tacotron2-DCA" --vocoder_name "vocoder_models/en/ljspeech/multiband-melgan" --out_path speech.wav --use_cuda
+
+
+
+tts_models/en/ljspeech/fast_pitch
+tts_models/en/ljspeech/tacotron2-DCA
+tts_models/en/ljspeech/tacotron2-DDC
+tts_models/en/ljspeech/vits
+tts_models/en/vctk/vits
+tts_models/lt/cv/vits
+
+
+
+vocoder_models/en/ljspeech/multiband-melgan
+vocoder_models/en/ljspeech/hifigan_v2
+vocoder_models/en/vctk/hifigan_v2
+vocoder_models/universal/libri-tts/fullband-melgan
+
+
+
+uv run python python/inference_multispeaker.py \
+    --text "moksliniai tyrimai yra svarbūs" \
+    --speakers "F4_VP157" \
+    --use_cuda \
+    --model_dir training_output/Tacotron2-DDC-CV-LT-Multispeaker-October-18-2025_10+22PM-0000000/ \
+    --vocoder_name "vocoder_models/en/ljspeech/hifigan_v2"
+
+
+uv run tts \
+    --text "vienas du trys" \
+    --model_path training_output/Tacotron2-DCA-November-19-2025_12+04AM-deaa238/best_model.pth \
+    --config_path training_output/Tacotron2-DCA-November-19-2025_12+04AM-deaa238/config.json \
+    --out_path inference_output/infer_test.wav \
+    --speakers_file_path training_output/Tacotron2-DCA-November-19-2025_12+04AM-deaa238/speakers.pth \
+    --speaker_idx AS022 \
+    --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
+    --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
+    --use_cuda
+
+
+
+uv run tts \
+    --text "vienas du trys" \
+    --model_path training_output/Tacotron2-DDC-CV-LT-Multispeaker-November-15-2025_07+39PM-52a486e/best_model.pth \
+    --config_path training_output/Tacotron2-DDC-CV-LT-Multispeaker-November-15-2025_07+39PM-52a486e/config.json \
+    --out_path inference_output/infer_test.wav \
+    --speakers_file_path training_output/Tacotron2-DDC-CV-LT-Multispeaker-November-15-2025_07+39PM-52a486e/speakers.pth \
+    --speaker_idx VP157 \
+    --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/model.pth \
+    --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/config.json \
+    --use_cuda
