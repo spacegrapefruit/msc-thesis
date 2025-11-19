@@ -1,0 +1,240 @@
+\documentclass[svgnames, 12pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[lithuanian,english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{subfig}
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage{hyperref}
+\usepackage{multimedia}
+
+% --- THEME & COLORS ---
+\definecolor{mifcolor}{RGB}{0, 71, 127}
+\definecolor{dimgr}{RGB}{105, 105, 105}
+\definecolor{sky}{RGB}{0, 191, 255}
+\setbeamercolor{alerted text}{fg=red,bg=sky}
+\newcommand{\boxalert}[1]{{%
+      \usebeamercolor{alerted
+        text}\colorbox{bg}{\alert{#1}}%
+    }}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme[named=mifcolor]{structure}
+  \setbeamertemplate{footline}
+  {%
+    \leavevmode%
+    \hbox{
+      \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm
+          plus1fill,rightskip=.3cm]{author in
+          head/foot}%
+        \usebeamerfont{author in head/foot}\insertshortauthor
+        \hfill
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{institute in
+          head/foot}%
+        \usebeamerfont{institute in
+          head/foot}\insertshortinstitute
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{date in
+          head/foot}%
+        \usebeamerfont{date in head/foot}\insertshortdate
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{title in
+          head/foot}%
+        \usebeamerfont{title in
+          head/foot}\insertshorttitle\hfill p.
+        \insertframenumber\enspace of
+        \inserttotalframenumber\enspace
+      \end{beamercolorbox} }%
+    \vskip0pt%
+  }
+}
+
+\title[Multi-Speaker TTS Strategies]{Data Selection Strategies for Multi-Speaker TTS in Lithuanian}
+\subtitle{Progress Report 2}
+\author[A. J. Smoliakov]{Aleksandr Jan Smoliakov\inst{1}\\
+  \vspace{0.5em}
+  \small{Supervisor: Gerda Ana Melnik-Leroy}\\
+  \small{Co-Advisor: Gražina Korvel}}
+\institute[VU MIF]{\inst{1} Vilnius University, Faculty of Mathematics and
+  Informatics}
+\date{2025--11--19}
+
+\begin{document}
+
+\begin{frame}
+  \includegraphics[scale=0.15]{MIF Garamond-logo.png}
+  \hfill
+  \includegraphics[scale=0.15]{Logo_spalvotas.eps}
+
+  \titlepage
+\end{frame}
+
+% \begin{frame}{Table of Contents}
+%   \tableofcontents
+% \end{frame}
+
+\section{Research Direction Change}
+
+\begin{frame}{Shift in research focus}
+  \begin{alertblock}{The research focus has changed.}
+    \begin{itemize}
+      \item \textbf{Previous:} Focus on text normalization strategies for TTS.
+      \item \textbf{Current:} Training robust multi-speaker TTS models.
+    \end{itemize}
+  \end{alertblock}
+
+  \vspace{1em}
+  \textbf{Motivation for change:}
+  \begin{itemize}
+    \item Discovery of the \textit{Liepa 2} dataset.
+    \item \textit{Liepa 2} provides significantly larger and higher-quality annotated data than \textit{Common Voice}.
+    \item The transcriptions are pre-normalized, thus normalization is no longer a concern.
+  \end{itemize}
+\end{frame}
+
+\section{Dataset \& Challenges}
+
+\begin{frame}{Liepa 2 Dataset}
+  \textbf{Dataset overview:}
+  \begin{itemize}
+    \item \textbf{1000 hours} of Lithuanian speech.
+    \item \textbf{2621} distinct speakers.
+    \item Varied recording conditions (Studio, Radio, TV, etc.).
+  \end{itemize}
+
+  \vspace{1em}
+  \textbf{The challenge:}
+  \begin{itemize}
+    \item The ``top'' speaker has only \textbf{2.5 hours} of speech.
+    \item High-quality single-speaker TTS usually requires at least \textbf{4 to 20 hours} of speech.
+    \item Implication: We cannot train a high-quality model on a single speaker alone.
+  \end{itemize}
+
+  \begin{center}
+    \textit{Solution: Train multi-speaker models to leverage shared linguistic features.}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Feasibility}
+  \textbf{Computational constraints:}
+  \begin{itemize}
+    \item Training on the full 1000h corpus is computationally expensive and time-consuming.
+    \item Limited GPU resources necessitate smaller training sets.
+    \item We need strategies to select effective subsets of data.
+  \end{itemize}
+
+  \vspace{1em}
+  \textbf{Research Questions:}
+  \begin{enumerate}
+    \item How should we select subsets of data for training multi-speaker TTS models?
+    \item How does the number of speakers in the training data affect the quality of synthesized speech?
+  \end{enumerate}
+\end{frame}
+
+\section{Methodology}
+
+\begin{frame}{Methodology}
+  \textbf{Models:}
+  \begin{itemize}
+    \item \textbf{Tacotron 2 Variants:}
+          \begin{itemize}
+            \item Using DCA (Dynamic Convolution Attention) and DDC (Double Decoder Consistency).
+            \item Adapted for pre-trained multi-speaker (VCTK Corpus) HiFi-GAN v2 vocoder.
+          \end{itemize}
+    \item \textbf{VITS:} End-to-end pipeline (Glow-TTS + HiFi-GAN).
+  \end{itemize}
+
+  \vspace{1em}
+  \textbf{Subset selection strategies:}
+  \begin{itemize}
+    \item \textbf{Top-N speakers:} Selecting only speakers with the most data.
+    \item \textbf{Random sampling:} Selecting utterances uniformly at random.
+    \item \textbf{Balanced sampling:} Optimizing for speaker diversity (preferring more speakers with fewer utterances each).
+  \end{itemize}
+\end{frame}
+
+% --- CURRENT PROGRESS ---
+\section{Current progress \& Next steps}
+
+\begin{frame}{Progress summary}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Completed:}
+      \begin{itemize}
+        \item[\textcolor{green}{\checkmark}] Data preprocessing pipeline
+        \item[\textcolor{green}{\checkmark}] Speaker embeddings computation
+        \item[\textcolor{green}{\checkmark}] Text accentuation
+        \item[\textcolor{green}{\checkmark}] Solved Tacotron 2 technical issues
+        \item[\textcolor{green}{\checkmark}] Tacotron 2 adaptation for HiFi-GAN
+        \item[\textcolor{green}{\checkmark}] Initial Tacotron 2 experiments
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Ongoing:}
+      \begin{itemize}
+        \item[\textcolor{orange}{\bullet}] VITS configuration
+        \item[\textcolor{orange}{\bullet}] Implementing subset selection strategies
+        \item[\textcolor{orange}{\bullet}] Training final multi-speaker TTS models
+        \item[\textcolor{orange}{\bullet}] Quality evaluation
+      \end{itemize}
+
+      \vspace{1em}
+      \textbf{Next Steps:}
+      \begin{enumerate}
+        \item Run experiments with defined subsets.
+        \item Analyze effect of speaker count on quality.
+        \item Write Thesis.
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Example of generated output}
+  \begin{center}
+    % Sample text
+    \begin{quote}
+      socialinės savidestrukcijos spiralės multiplikavimas technologinėmis priemonėmis yra dvidešimt pirmo amžiaus fenomenas
+    \end{quote}
+
+    \vspace{0.2em}
+
+    % Image embedding
+    \begin{figure}
+      \centering
+      \includegraphics[width=0.6\textwidth]{test_alignment.png}
+      \caption{Test sample's input-output alignment from Tacotron~2-DCA model}
+    \end{figure}
+
+    \vspace{0.2em}
+
+    % Audio embedding with playback controls
+    \textbf{Speaker IS031:} \href{run:soc_IS031.wav}{Click to play}
+
+    \vspace{0.2em}
+
+    \textbf{Speaker MS003:} \href{run:soc_MS003.wav}{Click to play}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Thank You!}
+  \begin{center}
+    \vspace{2em}
+
+    \Large Thank you for your attention!
+  \end{center}
+\end{frame}
+
+\end{document}
