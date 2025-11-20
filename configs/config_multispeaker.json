@@ -45,11 +45,11 @@
     },
     // VOCABULARY PARAMETERS
     "characters": {
-        "pad": "_",
-        "eos": "~",
-        "bos": "^",
-        "characters": "aąbcčdeęėfghiįyjklmnoprsštuųūvzž",
-        "punctuations": " .,-",
+        "pad": "<PAD>",
+        "eos": "<EOS>",
+        "bos": "<BOS>",
+        "characters": "AĄBCČDEĘĖFGHIĮYJKLMNOPRSŠTUŲŪVZŽaąbcčdeęėfghiįyjklmnoprsštuųūvzž´`~",
+        "punctuations": " .,-?!",
         "phonemes": ""
     },
     // TRAINING
@@ -128,9 +128,10 @@
     "lr_scheduler": "MultiStepLR",
     "lr_scheduler_params": {
         "milestones": [
-            5000,
-            15000,
-            30000
+            10000,
+            20000,
+            30000,
+            40000
         ],
         "gamma": 0.2
     },

@@ -10,6 +10,28 @@ from pydub import AudioSegment
 from tqdm import tqdm
 
 
+ACCENTED_WORDS = {}
+PUNCTUATION_REPLACEMENTS = str.maketrans(
+    {
+        "„": '"',
+        "“": '"',
+        "”": '"',
+        "‘": '"',
+        "’": '"',
+        "–": "-",
+        "—": "-",
+        ";": ",",
+    }
+)
+LETTER_REPLACEMENTS = str.maketrans(
+    {
+        "x": "ks",
+        "w": "v",
+        "q": "kv",
+    }
+)
+
+
 parsing_rules = [
     {"L": "lossy", "R": "raw"},
     {"R": "read", "S": "spontaneous"},
@@ -49,19 +71,24 @@ def normalize_text(text):
     Returns:
         str: Normalized text
     """
-    # Convert to lowercase
-    text = text.lower()
-
     # Remove punctuation except apostrophes (important for Lithuanian)
     # Keep basic punctuation that affects pronunciation
-    text = re.sub(r"[–-]", "-", text)  # Replace dashes with space
-    text = re.sub(r"[^\w\s.,\-]", "", text)
+    text = text.translate(PUNCTUATION_REPLACEMENTS)
+    text = re.sub(r"[^\w\s.,\-?!]", "", text)
 
     # Remove extra whitespace and strip
     text = re.sub(r"\s+", " ", text).strip()
 
-    # FIXME: temporary replacements for Lithuanian-specific characters
-    text = text.replace("x", "ks").replace("w", "v").replace("q", "kv")
+    # Add accents
+    parts = re.split(r"\b", text)
+    accented_parts = [ACCENTED_WORDS.get(part, part) for part in parts]
+    text = "".join(accented_parts)
+
+    # Convert to lowercase
+    text = text.lower()
+
+    # Apply letter replacements
+    text = text.translate(LETTER_REPLACEMENTS)
 
     return text
 
@@ -201,11 +228,6 @@ def process_liepa2(
             f"  {row['speaker_id']} ({row['speaker_gender']}): {row['count']} samples"
         )
 
-    # TODO: Remove - for testing only
-    full_df["prefix"] = full_df["path"].str.slice(0, 13)
-    print("Prefix counts:")
-    print(full_df["prefix"].value_counts())
-
     # Limit dataset size if specified (for testing)
     if max_files:
         full_df = full_df.head(max_files)
@@ -299,6 +321,12 @@ if __name__ == "__main__":
 
     liepa_path = Path(args.liepa_path)
     output_path = Path(args.output_path)
+
+    accented_df = pd.read_csv(
+        liepa_path / "final_accented_words.csv",
+        keep_default_na=False,
+    )
+    ACCENTED_WORDS = dict(accented_df.values)
 
     process_liepa2(
         liepa_path,
