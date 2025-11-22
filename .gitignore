@@ -209,6 +209,7 @@ __marimo__/
 # Model artifacts
 data/
 *.pth
+.temp/
 events.out.tfevents.*
 
 # LaTeX intermediate files
@@ -221,3 +222,4 @@ events.out.tfevents.*
 *.snm
 *.synctex.gz
 *.toc
+

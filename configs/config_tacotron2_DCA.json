@@ -55,36 +55,8 @@
     // TRAINING
     "batch_size": 64, // Batch size for training. Lower values than 32 might cause hard to learn attention. It is overwritten by 'gradual_training'.
     "eval_batch_size": 64,
-    "r": 2, // Number of decoder frames to predict per iteration. Set the initial values if gradual training is enabled.
+    "r": 1, // Number of decoder frames to predict per iteration. Set the initial values if gradual training is enabled.
     "gradual_training": null, //set gradual training steps [first_step, r, batch_size]. If it is null, gradual training is disabled. For Tacotron, you might need to reduce the 'batch_size' as you proceeed.
-    // "r": 7, // Number of decoder frames to predict per iteration. Set the initial values if gradual training is enabled.
-    // "gradual_training": [
-    //     [
-    //         0,
-    //         7,
-    //         64
-    //     ],
-    //     [
-    //         1,
-    //         5,
-    //         64
-    //     ],
-    //     [
-    //         20000,
-    //         3,
-    //         32
-    //     ],
-    //     [
-    //         50000,
-    //         2,
-    //         32
-    //     ],
-    //     [
-    //         100000,
-    //         1,
-    //         32
-    //     ]
-    // ], //set gradual training steps [first_step, r, batch_size]. If it is null, gradual training is disabled. For Tacotron, you might need to reduce the 'batch_size' as you proceeed.
     "mixed_precision": false, // level of optimization with NVIDIA's apex feature for automatic mixed FP16/FP32 precision (AMP), NOTE: currently only O1 is supported, and use "O1" to activate.
     "start_by_longest": false,
     "shuffle": false,
@@ -125,24 +97,15 @@
         ],
         "weight_decay": 1e-06
     },
-    "lr_scheduler": "MultiStepLR",
+    "lr_scheduler": "ExponentialLR",
     "lr_scheduler_params": {
-        "milestones": [
-            10000,
-            20000,
-            30000,
-            40000
-        ],
-        "gamma": 0.2
+        "gamma": 0.95
     },
-    "scheduler_after_epoch": false,
+    "scheduler_after_epoch": true,
     "wd": 0.000001, // Weight decay weight.
     "seq_len_norm": false, // Normalize eash sample loss with its length to alleviate imbalanced datasets. Use it if your dataset is small or has skewed distribution of sequence lengths.
     "use_grad_scaler": false,
     "allow_tf32": true,
-    "cudnn_enable": true,
-    "cudnn_deterministic": false,
-    // "cudnn_benchmark": true, // TODO
     // TACOTRON PRENET
     "memory_size": -1, // ONLY TACOTRON - size of the memory queue used fro storing last decoder predictions for auto-regression. If < 0, memory queue is disabled and decoder only uses the last prediction frame.
     "prenet_type": "original", // "original" or "bn".
@@ -152,7 +115,6 @@
     "attention_type": "dynamic_convolution", // 'original' , 'graves', 'dynamic_convolution'
     "attention_heads": 4, // number of attention heads (only for 'graves')
     "attention_norm": "softmax", // softmax or sigmoid.
-    "attention_win": false,
     "windowing": false, // Enables attention windowing. Used only in eval mode.
     "use_forward_attn": false, // if it uses forward attention. In general, it aligns faster.
     "forward_attn_mask": false, // Additional masking forcing monotonicity only in eval mode.
@@ -183,11 +145,6 @@
     "precompute_num_workers": 8,
     "batch_group_size": 4, //Number of batches to shuffle after bucketing.
     "use_noise_augment": false,
-    "add_blank": false,
-    "min_audio_len": 1,
-    "max_audio_len": Infinity,
-    "min_text_len": 1,
-    "max_text_len": Infinity,
     // PATHS
     "output_path": "training_output",
     // PHONEMES
@@ -195,28 +152,11 @@
     "compute_input_seq_cache": false, // TODO
     // MULTI-SPEAKER and GST
     "use_speaker_embedding": true, // use speaker embedding to enable multi-speaker learning.
-    "use_gst": false, // use global style tokens
     "speaker_embedding_dim": 512,
     "num_speakers": 20,
-    "use_speaker_weighted_sampler": false,
-    "speaker_weighted_sampler_alpha": 1.0,
-    "use_language_weighted_sampler": false,
-    "language_weighted_sampler_alpha": 1.0,
-    "use_length_weighted_sampler": false,
-    "length_weighted_sampler_alpha": 1.0,
-    "gst": {
-        "gst_style_input_wav": null,
-        "gst_style_input_weights": null,
-        "gst_embedding_dim": 512,
-        "gst_use_speaker_embedding": false,
-        "gst_num_heads": 4,
-        "gst_num_style_tokens": 10
-    },
+    "use_gst": false, // use global style tokens
+    "gst": null,
     "gst_style_input": null,
-    // COMPUTE FEATURES
-    "compute_f0": false,
-    "compute_energy": false,
-    "compute_linear_spec": false,
     // DATASETS
     "datasets": // List of datasets. They all merged and they get different speaker_ids.
     [
@@ -228,13 +168,5 @@
             "formatter": "ljspeech_multispeaker",
             "language": "lt"
         }
-    ],
-    // "num_chars": 0,
-    "encoder_in_features": 512,
-    "decoder_in_features": 512,
-    "decoder_output_dim": 80,
-    "out_channels": 80,
-    "use_d_vector_file": false,
-    // "d_vector_file": null,
-    "d_vector_dim": null
+    ]
 }

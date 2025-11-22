@@ -45,11 +45,11 @@
     },
     // VOCABULARY PARAMETERS
     "characters": {
-        "pad": "_",
-        "eos": "~",
-        "bos": "^",
-        "characters": "aąbcčdeęėfghiįyjklmnoprsštuųūvzž",
-        "punctuations": " .,-",
+        "pad": "<PAD>",
+        "eos": "<EOS>",
+        "bos": "<BOS>",
+        "characters": "aąbcčdeęėfghiįyjklmnoprsštuųūvzž´`~",
+        "punctuations": " .,-?!",
         "phonemes": ""
     },
     // TRAINING
@@ -100,9 +100,10 @@
     "lr_scheduler": "MultiStepLR",
     "lr_scheduler_params": {
         "milestones": [
-            5000,
-            15000,
-            30000
+            10000,
+            20000,
+            30000,
+            40000
         ],
         "gamma": 0.2
     },
@@ -111,19 +112,15 @@
     "seq_len_norm": false, // Normalize eash sample loss with its length to alleviate imbalanced datasets. Use it if your dataset is small or has skewed distribution of sequence lengths.
     "use_grad_scaler": false,
     "allow_tf32": true,
-    "cudnn_enable": true,
-    "cudnn_deterministic": false,
-    // "cudnn_benchmark": true, // TODO
     // TACOTRON PRENET
     "memory_size": -1, // ONLY TACOTRON - size of the memory queue used fro storing last decoder predictions for auto-regression. If < 0, memory queue is disabled and decoder only uses the last prediction frame.
     "prenet_type": "original", // "original" or "bn".
     "prenet_dropout": true, // enable/disable dropout at prenet.
-    "prenet_dropout_at_inference": true,
+    "prenet_dropout_at_inference": false,
     // TACOTRON ATTENTION
     "attention_type": "original", // 'original' , 'graves', 'dynamic_convolution'
     "attention_heads": 4, // number of attention heads (only for 'graves')
     "attention_norm": "softmax", // softmax or sigmoid.
-    "attention_win": false,
     "windowing": false, // Enables attention windowing. Used only in eval mode.
     "use_forward_attn": false, // if it uses forward attention. In general, it aligns faster.
     "forward_attn_mask": false, // Additional masking forcing monotonicity only in eval mode.
@@ -154,11 +151,6 @@
     "precompute_num_workers": 8,
     "batch_group_size": 4, //Number of batches to shuffle after bucketing.
     "use_noise_augment": false,
-    "add_blank": false,
-    "min_audio_len": 1,
-    "max_audio_len": Infinity,
-    "min_text_len": 1,
-    "max_text_len": Infinity,
     // PATHS
     "output_path": "training_output",
     // PHONEMES
@@ -166,28 +158,11 @@
     "compute_input_seq_cache": false, // TODO
     // MULTI-SPEAKER and GST
     "use_speaker_embedding": true, // use speaker embedding to enable multi-speaker learning.
-    "use_gst": false, // use global style tokens
     "speaker_embedding_dim": 512,
     "num_speakers": 20,
-    "use_speaker_weighted_sampler": false,
-    "speaker_weighted_sampler_alpha": 1.0,
-    "use_language_weighted_sampler": false,
-    "language_weighted_sampler_alpha": 1.0,
-    "use_length_weighted_sampler": false,
-    "length_weighted_sampler_alpha": 1.0,
-    "gst": {
-        "gst_style_input_wav": null,
-        "gst_style_input_weights": null,
-        "gst_embedding_dim": 512,
-        "gst_use_speaker_embedding": false,
-        "gst_num_heads": 4,
-        "gst_num_style_tokens": 10
-    },
+    "use_gst": false, // use global style tokens
+    "gst": null,
     "gst_style_input": null,
-    // COMPUTE FEATURES
-    "compute_f0": false,
-    "compute_energy": false,
-    "compute_linear_spec": false,
     // DATASETS
     "datasets": // List of datasets. They all merged and they get different speaker_ids.
     [
@@ -199,13 +174,5 @@
             "formatter": "ljspeech_multispeaker",
             "language": "lt"
         }
-    ],
-    // "num_chars": 0,
-    "encoder_in_features": 512,
-    "decoder_in_features": 512,
-    "decoder_output_dim": 80,
-    "out_channels": 80,
-    "use_d_vector_file": false,
-    // "d_vector_file": null,
-    "d_vector_dim": null
+    ]
 }
