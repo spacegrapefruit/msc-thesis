@@ -12,10 +12,10 @@ tts_models/lt/cv/vits
 
 
 vocoder_models/en/vctk/hifigan_v2
-# vocoder_models/universal/libri-tts/fullband-melgan
-# vocoder_models/universal/libri-tts/wavegrad
-# vocoder_models/en/ek1/wavegrad
-# vocoder_models/en/librispeech100/wavlm-hifigan
+vocoder_models/universal/libri-tts/fullband-melgan
+vocoder_models/universal/libri-tts/wavegrad
+vocoder_models/en/ek1/wavegrad
+vocoder_models/en/librispeech100/wavlm-hifigan
 
 
 
