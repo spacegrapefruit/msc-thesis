@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from text_utils import load_accented_words, normalize_text
 
 
 def get_latest_model_checkpoint(training_dir):
@@ -90,7 +91,10 @@ def run_inference(
         return False
 
 
-def main():
+if __name__ == "__main__":
+    liepa_path = Path("data/raw/liepa2")
+    load_accented_words(liepa_path / "final_accented_words.csv")
+
     parser = argparse.ArgumentParser(
         description="Run inference on multispeaker TTS models"
     )
@@ -225,6 +229,8 @@ def main():
     for sentence_idx, sentence in enumerate(test_sentences):
         print(f"\nSentence {sentence_idx + 1}: {sentence}")
 
+        normalized_sentence = normalize_text(sentence)
+
         for speaker_id in speaker_ids:
             # Create output filename
             safe_sentence = "".join(
@@ -238,7 +244,7 @@ def main():
                 model_path,
                 config_path,
                 speakers_path,
-                sentence,
+                normalized_sentence,
                 speaker_id,
                 str(output_path),
                 use_gpu=use_gpu,
@@ -256,7 +262,3 @@ def main():
         print(f"\nTo play the generated audio files:")
         print(f"   ls {output_dir}/*.wav")
         print(f"   # Use your preferred audio player to listen to the files")
-
-
-if __name__ == "__main__":
-    main()
