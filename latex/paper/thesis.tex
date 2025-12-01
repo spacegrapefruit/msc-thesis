@@ -74,6 +74,9 @@
 \tableofcontents
 \onehalfspacing
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \sectionnonum{Introduction}
 
 The goal of creating machines that can speak like humans has captivated
@@ -136,52 +139,63 @@ scales.
 
 \subsection{Thesis structure}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Literature review
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Literature review}
 
-Before diving into the specifics of text normalization, it is important to
-establish the broader context of audio processing, text-to-speech synthesis,
-and its evolution over time.
+Before diving into the specifics of TTS systems and data selection strategies,
+it is important to establish the broader context of audio processing,
+text-to-speech synthesis, and its evolution over time.
 
 \subsection{Digital signal processing fundamentals}
 
-\subsubsection{Physical properties of sound}
-
-In the physical world, sound is a continuous pressure wave that propagates
-through a medium, such as air.
-
-Key properties of sound waves include frequency (pitch), amplitude (loudness),
-and phase.
-
-The human audible range is typically considered to be from 20~Hz to 20~kHz,
-with most speech information concentrated between 100~Hz and 8~kHz.
-
 \subsubsection{Digital representation of audio}
+
+In the physical world, speech, or sound in general, is a continuous pressure
+wave that propagates through a medium, such as air. Key properties of sound
+waves include frequency (pitch), amplitude (loudness), and phase.
 
 As the real-world sound wave is continuous, it must be converted into a digital
 format for processing by computers. This involves two main steps, namely
 sampling and quantization.
 
 Sampling is the process of measuring the amplitude of the sound wave at regular
-time intervals.
-
-The rate at which these samples are taken is called the sampling rate (or
-sample frequency), measured in Hertz (Hz). According to the Nyquist-Shannon
-sampling theorem, accurate reconstruction of a continuous signal requires a
-sampling rate that is at least twice the highest frequency present in the
-signal. In text-to-speech applications , common sampling rates for audio are
-22.05~kHz and 24~kHz, which can capture frequencies up to approx. 11~kHz and
-12~kHz, respectively.
+time intervals. The rate at which these samples are taken is called the
+sampling rate (or sample frequency), measured in Hertz. According to the
+Nyquist-Shannon~\cite{shannon1949communication} sampling theorem, accurate
+reconstruction of a continuous signal requires a sampling rate that is at least
+twice the highest frequency present in the signal. The human audible range is
+typically considered to be from 20~Hz to 20~kHz, with most speech information
+concentrated between 100~Hz and 8~kHz.~\cite{rabiner2010theory} Thus, in
+text-to-speech applications, common sampling rates for audio are 22.05~kHz and
+24~kHz, which can capture frequencies up to approx. 11~kHz and 12~kHz,
+respectively.
 
 Quantization (also known as bit depth) is the mapping of continuous amplitude
 values to discrete levels for digital representation. Typical bit depths for
-audio are 16-bit and 24-bit PCM (Pulse Code Modulation) formats, which provide
-65,536 and 16,777,216 discrete amplitude levels, respectively.
+audio are 16-bit and 24-bit formats.
 
-This process introduces a small amount of quantization noise, which can affect
-audio quality if the bit depth is too coarse.
+Pre-emphasis is a high-frequency filtering technique applied to audio signals
+before further processing. Natural speech signals tend to have more energy in
+the lower frequencies, with a gradual drop-off towards higher frequencies
+(typically around -6~dB per octave). Pre-emphasis compensates for this spectral
+tilt by boosting high frequencies using a first-order high-pass filter, which
+is defined as:
 
-% Pre-emphasis: High-frequency filtering to balance the frequency spectrum before
-% processing.
+\begin{equation}
+      y[n] = x[n] - \alpha x[n-1]
+\end{equation}
+
+where \( y[n] \) is the pre-emphasized signal, \( x[n] \) is the original
+signal, and \( \alpha \) is the pre-emphasis coefficient (typically between 0.9
+and 1.0).
+
+This transformation balances the frequency spectrum, improving the
+signal-to-noise ratio for higher frequencies and preventing the model from
+optimizing only for low-frequency components.
+
+% TODO: maybe pre-emphasis not needed anymore with modern neural TTS?
 
 \subsection{Time-Frequency Analysis}
 
@@ -193,33 +207,45 @@ representation. The signal is decomposed into a sum of sine and cosine waves at
 various frequencies, each with a specific amplitude and phase. This allows us
 to analyze the frequency content of the signal.
 
-Short-Time Fourier Transform (STFT) extends the FT by applying it to short,
-overlapping segments (frames) of the signal. This transformation provides a
-time-frequency representation, showing how the frequency content of the signal
-changes over time.
+Short-Time Fourier Transform~\cite{oppenheim1999discrete} (STFT) extends the FT
+by applying it to short, overlapping segments (frames) of the signal. This
+transformation provides a time-frequency representation, showing how the
+frequency content of the signal changes over time.
+
+In TTS applications, the STFT is computed by dividing the audio signal into
+short frames (e.g., 25~ms) with a certain overlap (e.g., 10~ms) between frames.
 
 % Windowing functions: Hamming or Hann windows to reduce spectral leakage.
 
 \subsubsection{Spectrogram}
 
 The spectrogram is a visual representation of the STFT, displaying frequency on
-the vertical axis, time on the horizontal axis, and amplitude
+the vertical axis, time on the horizontal axis, and amplitude represented by
+the color intensity.
 
-% Visual representation of the spectrum of frequencies of a signal as it varies
-% with time.
+\begin{figure}[ht]
+      \centering
+      % TODO \includegraphics[width=\textwidth]{spectrogram_example}
+      \caption{Comparison of a linear spectrogram vs. a Mel-spectrogram.}
+      \label{fig:mel_spec}
+\end{figure}
 
-% Linear vs. Logarithmic amplitude scales (Decibels).
+\subsubsection{Mel-spectrograms}
 
-\subsubsection{Mel scale and Mel-spectrograms}
+The human ear does not perceive frequencies linearly - it is more sensitive to
+lower frequencies than higher ones. To mimic this perceptual characteristic,
+the Mel scale~\cite{stevens1937scale} maps linear frequency \( f \) (in Hz) to
+a perceptual scale \( m \) (in Mels) using the following formula:
 
-% Psychoacoustics: How human hearing is non-linear (we perceive pitch differences
-% better at lower frequencies).
+\begin{equation}
+      m = 2595 \cdot \log_{10}\left(1 + \frac{f}{700}\right)
+\end{equation}
 
-% The Mel Filterbank: Mapping the linear frequency scale to the Mel scale to
-% mimic human hearing.
-
-% Why Mel-Spectrograms are the standard input feature for modern TTS systems
-% (compressed representation of audio).
+Mel-spectrograms are computed by applying a Mel filterbank of overlapping
+triangular filters (or kernels) to the magnitude spectrogram obtained from the
+STFT. This results in a compressed representation of the audio signal that
+aligns more closely with human auditory perception. Such Mel-spectrograms are
+commonly used as input features for modern TTS systems.
 
 \subsection{Text-to-speech synthesis}
 
@@ -239,39 +265,43 @@ both vowels and consonants. Such early efforts had limited success, being able
 to produce only individual phonemes or simple syllables.
 
 The advancement of electricity and electronics in the late 19th and early 20th
-centuries opened new possibilities for speech synthesis. Homer Dudley's Voder
-(Voice Operation Demonstrator), unveiled in 1937, represented the first
-successful electronic recreation of human speech. This invention allowed a
-trained human operator to synthesize intelligible speech by manipulating a
-complex arrangement of keyboards and pedals, each controlling different
-acoustic parameters of speech production. The Voder marked a shift from
-mechanical to electronic synthesis methods.
+centuries opened new possibilities for speech synthesis. Homer Dudley's
+Voder~\cite{klatt1987review} (Voice Operation Demonstrator), unveiled in 1937,
+represented the first successful electronic recreation of human speech. This
+invention allowed a trained human operator to synthesize intelligible speech by
+manipulating a complex arrangement of keyboards and pedals, each controlling
+different acoustic parameters of speech production. The Voder marked a shift
+from mechanical to electronic synthesis methods.
 
 In the decades that followed, two main approaches for speech synthesis emerged:
 concatenative synthesis and parametric synthesis.
 
 \subsubsection{Concatenative synthesis}
 
-The concatenative synthesis approach synthesizes speech by piecing together
-pre-recorded segments of human speech. This method involves several steps.
-First, it requires pre-recording a large database of speech segments spoken by
-a human voice actor. Each segment is labeled and indexed based on its phonetic
-and prosodic properties.
+The concatenative synthesis approach~\cite{hunt1996unit} synthesizes speech by
+piecing together pre-recorded segments of human speech. This method involves
+several steps. First, it requires pre-recording a large database of speech
+segments spoken by a human voice actor in pristine, highly controlled studio
+conditions to ensure consistent audio quality and minimize background noise.
+Each segment is labeled and indexed based on its phonetic and prosodic
+properties.
 
 During synthesis, the system breaks down the input text into short linguistic
 units (such as phonemes or syllables) using a text analysis module. Then, it
-queries the speech database to find the best-matching segments for each unit.
-The retrieved segments are blended and concatenated to form a continuous speech
-waveform. The system then uses signal processing techniques to smooth the
-transitions between segments and adjust pitch and duration to match the desired
-output characteristics.
+queries the speech database to find the best-matching segments for each unit
+using selection cost functions~\cite{black1995optimising}. The retrieved
+segments are blended and concatenated to form a continuous speech waveform. The
+system then uses signal processing techniques to smooth the transitions between
+segments and adjust pitch and duration to match the desired output
+characteristics.
 
 Concatenative synthesis can produce natural-sounding individual speech units,
 but the final audio often has noticeable glitches and breaks at the points
-where segments are joined together. The segments may not blend smoothly due to
-differences in pitch, duration, and timbre. The prosody also tends to sound
-``choppy'' and unnatural, since stringing disjointed segments together does not
-capture the natural rhythm and intonation patterns of connected speech.5
+where segments are joined together~\cite{black1995optimising}. The segments may
+not blend smoothly due to differences in pitch, duration, and timbre. The
+prosody also tends to sound ``choppy'' and unnatural, since stringing
+disjointed segments together does not capture the natural rhythm and intonation
+patterns of connected speech.
 
 Finally, concatenative synthesis requires language-specific expertise to design
 and maintain the underlying speech database and selection algorithms. This need
@@ -280,9 +310,10 @@ for low-resource languages or dialects.
 
 \subsubsection{Parametric synthesis}
 
-In contrast, statistical parametric speech synthesis (SPSS) uses statistical
-models, typically Hidden Markov Models (HMMs), to generate the parameters that
-control a speech waveform.
+In contrast, statistical parametric speech synthesis~\cite{zen2009statistical}
+(SPSS) uses statistical models, typically Hidden Markov Models
+(HMMs)~\cite{tokuda2013speech}, to generate the parameters that control a
+speech waveform.
 
 This method involves training a statistical model on a large corpus of recorded
 speech. The model learns the relationship between linguistic features (like
@@ -294,72 +325,139 @@ the trained model to generate a corresponding sequence of acoustic parameters.
 Compared to concatenative synthesis, the statistical approach allows for more
 flexibility and control over the speech synthesis process, enabling the
 generation of a wider variety of voices and speaking styles. However, HMM-based
-synthesis had a persistent problem: the statistical averaging built into the
-models tended to over-smooth the acoustic features, creating a characteristic
-``buzzy'' or ``muffled'' sound that lacked the sharpness and detail of natural
-human speech.2
+synthesis~\cite{tokuda2013speech} had a persistent problem: the statistical
+averaging built into the models tended to over-smooth the acoustic features,
+creating a characteristic ``buzzy'' or ``muffled'' sound that lacked the
+sharpness and detail of natural human speech.
 
 \subsection{Linguistic Representation (Text Processing)}
 
-2.3.1. Text Normalization:
+\subsubsection{Text normalization}
 
-Converting non-standard words (numbers, dates, abbreviations) into spoken
-format (e.g., "1990" -> "tūkstantis devyni šimtai devyniasdešimt").
+Text normalization~\cite{sproat2001normalization} is the process of converting
+raw text into a standardized format suitable for TTS synthesis. Typical steps
+include:
 
-Specific challenges in Lithuanian (inflection, accentuation).
+\begin{itemize}
+      \item Lowercasing: Converting all text to lowercase to reduce variability.
+      \item Punctuation removal: Stripping out unnecessary punctuation marks.
+      \item Expanding abbreviations: Converting abbreviations to their full forms (e.g.,
+            ``Dr." -> ``Doctor").
+      \item Number normalization: Converting numbers into their spoken equivalents (e.g.,
+            ``123" -> ``one hundred twenty-three").
+      \item Tokenization: Splitting text into words or subword units.
+\end{itemize}
 
-2.3.2. Graphemes vs. Phonemes:
+% TODO Specific challenges in Lithuanian (inflection, accentuation).
 
-Graphemes: Using raw characters as input.
+\subsubsection{Graphemes vs. Phonemes}
 
-Phonemes: Using phonetic transcription (IPA or X-SAMPA).
+A key decision in TTS systems is the choice of input representation for text.
 
-Grapheme-to-Phoneme (G2P): The process of converting written text to phonetic
-representation.
+There are two main approaches, namely grapheme-based and phoneme-based. The
+grapheme-based approach uses the raw characters of the written text as input to
+the TTS model. This method is straightforward and does not require any
+additional pre-processing steps. However, it can struggle with languages that
+have complex orthographies or inconsistent spelling-to-sound correspondences.
+
+In contrast, the phoneme-based approach uses a phonetic transcription of the
+text, typically in the International Phonetic Alphabet (IPA) format. The
+underlying assumption is that phonemes possess a more direct and consistent
+mapping to the acoustic features of speech, making it easier for the TTS model
+to learn the relationship between text and audio. However, this approach
+requires an additional grapheme-to-phoneme (G2P) conversion
+step~\cite{bisani2008joint}, which requires a complex pre-processing pipeline
+or a separate G2P model.
+
+There is yet another approach that combines both grapheme and phoneme inputs,
+known as accented grapheme-based synthesis. This method augments the raw text
+with accentuation markers (typically tilde, acute, grave accents) to indicate
+the stressed syllables in words. This additional information provides cues
+about the prosodic features of speech, which can help improve the pronunciation
+of speech.
+
+% TODO add about Kirčiuoklis accentuation tool
+
+% TODO In the absence of a high-quality G2P converter for Lithuanian, this thesis
+% focuses on grapheme-based TTS synthesis.
+
+% TODO Lithuanian, for example, has a rich inflectional morphology and complex
+% accentuation patterns that can make grapheme-to-phoneme mapping non-trivial.
 
 \subsection{Embeddings and Representation Learning}
 
-2.4.1. The Concept of Embeddings:
+\subsubsection{The Concept of Embeddings}
 
-Definition: Mapping discrete variables (words, characters, speaker IDs) to
-continuous vectors in a high-dimensional space.
+% Definition: Mapping discrete variables (words, characters, speaker IDs) to
+% continuous vectors in a high-dimensional space.
 
-2.4.2. Text Embeddings:
+\subsubsection{Text Embeddings}
 
-How the "Encoder" part of a TTS model converts a sequence of
-characters/phonemes into a sequence of hidden feature vectors.
+% How the "Encoder" part of a TTS model converts a sequence of
+% characters/phonemes into a sequence of hidden feature vectors.
 
-2.4.3. Speaker Embeddings (Crucial for Multi-Speaker TTS):
+\subsubsection{Speaker Embeddings}
 
-Lookup Tables (LUT): Simple learnable embeddings for each speaker ID. (Why this
-fails with new/unseen speakers).
+In order to enable multi-speaker synthesis, TTS models need to receive a
+representation of the speaker's identity.
 
-d-vectors and x-vectors: Fixed-length vectors derived from a separate speaker
-verification model.
+\textbf{Lookup Tables (LUT):} Early approaches used simple learnable embeddings where each speaker ID is
+mapped to a unique vector. The vectors are learned joinly with the TTS model
+during training. While efficient, this approach cannot generalize to speakers
+not seen during training.
 
-Global Style Tokens (GST): Unsupervised learning of style and prosody.
+\textbf{Reference Encoders and Speaker Embeddings:}
 
-How Coqui TTS handles speakers: Specifically, how speaker embeddings are
-concatenated or added to the encoder outputs to condition the synthesis on a
-specific voice identity.
+% Transfer learning approaches~\cite{jia2018transfer} have demonstrated effective
+% methods for adapting speaker verification models to multispeaker TTS synthesis,
+% enabling better speaker representation and voice quality.
+
+\textbf{d-vectors:} d-vectors~\cite{variani2014deep} are fixed-length speaker embeddings derived from a separate speaker verification model. A reference encoder network takes a reference audio recording of arbitrary length and compresses it into a fixed-length vector known as a d-vector, that summarizes the speaker's timbral and prosodic characteristics. These d-vectors are then provided as additional input to the TTS model, and are kept fixed during TTS training.
+
+\textbf{x-vectors:} An evolution of d-vectors, x-vectors~\cite{snyder2018x} use a more Time Delay Neural Network (TDNN) architecture to capture the temporal context more effectively. These embeddings have shown an improved ability in zero-shot TTS scenarios.
+
+One limitation of d-vectors and x-vectors is that if the reference audio is of
+poor quality or contains background noise, the resulting speaker embedding may
+not accurately represent the speaker's identity, leading to degraded synthesis
+quality.
+
+% Global Style Tokens (GST): Unsupervised learning of style and prosody.
+
+% \textbf{Global Style Tokens (GST):} GSTs~\cite{wang2018style} provide an unsupervised method for learning style and prosody representations in TTS. A reference encoder processes a reference audio sample to extract a style embedding, which is then used to attend over a set of learned style tokens.
+
+% How Coqui TTS handles speakers: Specifically, how speaker embeddings are
+% concatenated or added to the encoder outputs to condition the synthesis on a
+% specific voice identity.
 
 \subsection{Deep learning for TTS}
 
 The limitations of these complex, multi-stage pipelines opened the door for a
 new approach, the end-to-end (E2E) model. E2E systems learn the entire speech
 synthesis process--from input text directly to acoustic output--using a single
-neural network.8 This approach promised to eliminate the need for hand-crafted
+neural network. This approach promised to eliminate the need for hand-crafted
 pipelines that were difficult to design, required extensive expertise, and
-suffered from errors that accumulated across multiple components.10 By learning
+suffered from errors that accumulated across multiple components. By learning
 directly from text-audio pairs, E2E models showed they could produce speech
 with higher naturalness and expressiveness than previous methods, representing
-a significant leap in TTS technology.9
+a significant leap in TTS technology.
+
+However, although deep learning TTS models are more robust to variations in
+data quality compared to concatenative approaches, they are essentially
+``data-hungry'' beasts that require large amounts of training data to achieve
+optimal performance. This relationship between model performance and training
+data size follows well-established scaling laws for neural
+models~\cite{kaplan2020scaling}. This characteristic makes data selection and
+quality control critical factors in developing effective neural TTS systems.
+
+% \subsubsection{Feedforward neural networks}
+
+% \subsubsection{Encoder-Decoder architectures}
 
 \subsubsection{Sequence-to-sequence models}
 
-% 2.5.1. Sequence-to-Sequence (Seq2Seq) Models:
+% The sequence-to-sequence (seq2seq) architecture~
 
-% Tacotron 2:
+\cite{wang2017tacotron}
 
 % Encoder (Character embeddings, Convolutional layers).
 
@@ -369,23 +467,20 @@ a significant leap in TTS technology.9
 % audio.
 
 The main architecture for modern E2E TTS is the sequence-to-sequence (seq2seq)
-framework, known through e.g. Google's Tacotron model.10 This framework has
-three main parts: an encoder, an attention mechanism, and a decoder.8 The
+framework, known through e.g. Google's Tacotron model. This framework has three
+main parts: an encoder, an attention mechanism, and a decoder. The
 encoder--usually a recurrent neural network (RNN) or a more complex module like
 the CBHG (Convolution Bank + Highway network + Gated Recurrent Unit)--processes
-the input text and converts it into a high-level representation.11 The
-attention mechanism acts as a bridge, learning to align the text representation
-with the output audio frames. At each step, it decides which part of the input
-text the model should focus on to generate the next piece of audio.8 The
-decoder, also typically an RNN, takes the encoder output and uses the attention
-context to generate an acoustic representation of the speech, one frame at a
-time.8
+the input text and converts it into a high-level representation. The attention
+mechanism acts as a bridge, learning to align the text representation with the
+output audio frames. At each step, it decides which part of the input text the
+model should focus on to generate the next piece of audio. The decoder, also
+typically an RNN, takes the encoder output and uses the attention context to
+generate an acoustic representation of the speech, one frame at a time.
 
-\subsubsection{Non-autoregressive models}
+\subsubsection{Non-autoregressive (parallel) models}
 
-% 2.5.2. Non-Autoregressive (Parallel) Models:
-
-% FastPitch:
+FastPitch~\cite{lancucki2020fastpitch} is a non-autoregressive TTS model.
 
 % Feed-forward Transformer blocks (Self-attention).
 
@@ -397,40 +492,19 @@ time.8
 
 \subsubsection{Neural vocoders}
 
-% 2.6.1. The Inversion Problem:
+\textbf{The Inversion Problem:} Standard TTS models like Tacotron or FastPitch generate intermediate acoustic features (typically mel-spectrograms), but do not directly produce raw audio waveforms. However, mel-spectrograms are lossy representations that only capture the magnitude of the frequency bands, discarding phase information. This information is discarded during the STFT process. Thus, converting a spectrogram into audio is a non-trivial task, as the phase information must be estimated. This challenge is
+known as the inversion problem.
 
-% Why we cannot simply "invert" a Mel-spectrogram back to audio (loss of phase
-% information).
+The tool used to convert spectrograms back into waveforms is called a vocoder.
 
-% The Griffin-Lim algorithm (traditional method) vs. Neural Vocoders.
+Traditionally, the Griffin-Lim algorithm~\cite{griffin1984signal} has been used
+to iteratively estimate and reconstruct the phase information from the
+magnitude spectrogram. However, this method often produces audio with
+noticeable artifacts and lower quality compared to natural speech.
 
-% 2.6.2. Generative Adversarial Networks (GANs) in Audio:
+\textbf{GAN-based Vocoders:} Neural GAN (Generative Adversarial Network) based vocoders, such as HiFi-GAN~\cite{kong2020hifi}, have become the dominant approach for vocoding in modern TTS systems. These GAN-based vocoder models consist of two main components: a Generator, which reconstructs mel-spectrograms into raw waveforms, and a Discriminator, which distinguishes between real and synthesized audio. This adversarial training forces the Generator to produce high-fidelity audio that closely resembles natural speech.
 
-% HiFi-GAN:
-
-% Generator: Upsampling Mel-spectrograms to raw waveforms.
-
-% Discriminator: Distinguishing between real and synthesized audio to force high
-% fidelity.
-
-% Why HiFi-GAN v2 is the chosen vocoder for this thesis.
-
-% ---
-
-% An important design choice in models like Tacotron is that the decoder doesn't
-% directly create the final audio waveform. Instead, it predicts an intermediate
-% acoustic representation, typically a mel-spectrogram.6
-
-TTS models like Tacotron or FastPitch typically do not directly produce raw
-audio waveforms. Instead, they generate intermediate acoustic features (such as
-mel-spectrograms) rather than raw audio waveforms. Converting these features
-into an audio signal requires a separate component called a vocoder.
-
-Traditional vocoders, like Griffin-Lim, use signal processing techniques to
-reconstruct waveforms from spectrograms. However, these methods often produce
-audio with noticeable artifacts and lower quality compared to natural speech.
-
-Neural vocoders, such as WaveNet and WaveGlow, have revolutionized this step by
+% TODO Why HiFi-GAN v2 is the chosen vocoder for this thesis.
 
 \subsubsection{Notable End-to-End TTS models}
 
@@ -449,20 +523,73 @@ speakers.
 
 Techniques for multi-speaker TTS often involve conditioning the model on
 speaker identity. This can be done by providing a speaker embedding vector as
-an additional input to the model.
+an additional input to the model. Early successful implementations of this
+approach include Deep Voice 2~\cite{gibiansky2017deep}, which demonstrated
+effective multi-speaker synthesis by learning speaker-specific embeddings.
 
 The speaker embedding can be learned jointly with the TTS model during
 training, or it can be pre-trained using a separate speaker verification model.
 
 \subsubsection{Challenges}
 
+One key challenge in multi-speaker TTS is ensuring that the model can
+effectively capture the unique characteristics of each speaker's voice while
+still producing natural-sounding speech.
+
+The distribution of training data across speakers can also influence the
+model's performance and its ability to mimic all voices equally well. The
+training datasets are often strongly imbalanced, with some speakers having
+hours of annotated speech, while others may have only a few minutes. This
+imbalance can cause the model to overfit to the speakers with more data,
+resulting in lower synthesis quality for underrepresented speakers.
+
+Thus, data selection and sampling strategies are critical considerations when
+training multi-speaker TTS models.
+
 \subsection{Data selection in TTS}
+
+As TTS models require large amounts of annotated speech data for training,
+training on all available data can be computationally prohibitive and
+time-consuming. Therefore, data selection aims to identify optimal subsets of
+the available data that can yield high-quality synthesis while minimizing
+training time and resource requirements.
 
 \subsubsection{Data quantity}
 
-\subsubsection{Data quality}
+% The relationship between training data size and model performance in neural
+% networks follows predictable scaling laws. Research by Kaplan et
+% al.~\cite{kaplan2020scaling} demonstrates that model performance generally
+% improves as a power law function of the amount of training data, with
+% diminishing returns at larger scales. These scaling laws provide a theoretical
+% foundation for understanding why more training data typically leads to better
+% TTS models, and why careful data selection becomes crucial when computational
+% resources limit the amount of data that can be practically used for training.
 
-\subsubsection{Data selection strategies}
+% In the context of TTS systems, empirical studies have consistently shown that
+% model quality improves with larger datasets. However, the marginal gains from
+% additional data decrease as dataset size increases, making efficient data
+% selection strategies increasingly valuable for achieving optimal
+% performance-to-cost ratios.
+
+% \subsubsection{Data Pruning}
+% Data pruning focuses on removing samples that degrade model performance. In
+% TTS, this often involves filtering out segments with high background noise,
+% incorrect text transcriptions, or extreme silence. \cite{cooper2020zero}
+% demonstrated that removing utterances with low MOS scores or alignment errors
+% significantly improves synthesis stability.
+
+% \subsubsection{Data selection strategies}
+
+% \subsubsection{Active Learning and Coreset Selection}
+% Active learning strategies attempt to select data points that the model is
+% currently ``uncertain'' about, thereby maximizing the information gain of each
+% training step. Alternatively, geometric approaches like Coreset selection aim
+% to select a small subset of points that cover the geometric structure of the
+% entire dataset in the embedding space.
+
+% In the context of multi-speaker TTS, this involves selecting a diverse set of
+% speakers and utterances that maximize acoustic variety while minimizing
+% redundancy.
 
 \subsection{Evaluation methods for TTS}
 
@@ -472,10 +599,10 @@ TTS systems are often evaluated using subjective listening tests, where human
 listeners rate the naturalness and intelligibility of synthesized speech
 samples.
 
-A common subjective evaluation method is the Mean Opinion Score (MOS) test. In
-a MOS test, listeners are presented with a set of synthesized speech samples
-and are asked to rate each sample on a scale from 1 to 5. Here, the scale
-typically represents the following levels of quality:
+A common subjective evaluation method is the Mean Opinion Score~\cite{itup800}
+(MOS) test. In a MOS test, listeners are presented with a set of synthesized
+speech samples and are asked to rate each sample on a scale from 1 to 5. Here,
+the scale typically represents the following levels of quality:
 
 \begin{itemize}
       \item 1 - Bad: The speech is completely unnatural and unintelligible.
@@ -495,14 +622,29 @@ synthesized speech.
 Common objective metrics include:
 
 \begin{itemize}
-      \item Mel-Cepstral Distortion (MCD): Measures the spectral distance between
-            synthesized and natural speech.
+      \item Mel-Cepstral Distortion~\cite{kubichek1993mel} (MCD): Measures the spectral
+            distance between synthesized and natural speech.
       \item Fundamental Frequency Root Mean Square Error (F0 RMSE): Assesses the accuracy
             of pitch contours.
 \end{itemize}
 
 \subsection{Summary and research gap}
 
+% While modern multi-speaker TTS models are capable of high-fidelity synthesis, they typically rely on massive, curated datasets. There is limited research on data selection strategies: determining which subset of speakers or utterances yields the best model performance under a constrained data budget. Most current approaches blindly scale data size, leading to diminishing returns and high computational costs."
+
+% While modern E2E architectures like FastPitch and HiFi-GAN have achieved near-human quality, they rely heavily on massive, high-quality datasets. In multi-speaker scenarios, the challenge is two-fold: ensuring acoustic consistency across diverse speakers and managing the computational cost of training on large corpora.
+
+% Existing literature focuses heavily on model architecture (e.g., replacing RNNs with Transformers). However, there is less research on systematic data selection strategies - specifically, how to select the optimal subset of training data that maximizes multi-speaker performance while minimizing training time. This thesis addresses this gap by investigating [Your specific method]...
+
+% % ----
+
+% The evolution of TTS from mechanical devices to end-to-end neural networks has resulted in systems capable of near-human naturalness. However, current state-of-the-art multi-speaker models, such as FastPitch with HiFi-GAN, typically rely on massive, manually curated datasets.
+
+% There is a gap in the literature regarding efficient \textbf{training data selection} strategies for these models. While scaling laws suggest that "more data is better," naive scaling often includes redundant or noisy data that hampers convergence. This thesis addresses how to algorithmically select the most informative subset of speakers and utterances to maximize TTS quality under computational constraints.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Methodology
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methodology}
 
 \subsection{Research design}
@@ -693,6 +835,9 @@ dataset.
 
 Subjective evaluation was conducted using Mean Opinion Score (MOS) tests.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Results and analysis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results and analysis}
 
 \subsection{Tacotron~2 with DDC}
@@ -711,6 +856,9 @@ Subjective evaluation was conducted using Mean Opinion Score (MOS) tests.
 
 \subsubsection{Qualitative analysis}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Conclusion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 
 \subsection{Summary of findings}
@@ -721,20 +869,12 @@ Subjective evaluation was conducted using Mean Opinion Score (MOS) tests.
 
 \subsection{Future work}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% References
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{\phantom{Appendix} References}
 
-% In the document \textit{bibliography.bib}, you need to add all the cited sources and after using the function \textit{\{\textbackslash cite\{name of the cited object\}\}} the corresponding source will be added to the list of literature sources.
-
-% \textit{bibliography.bib} provides examples of some of the most commonly cited types of sources:
-% \begin{itemize}
-%     \item web pages (\textit{@online}) \cite{PvzInternetinisPuslapis},
-%     \item datasets (\textit{@dataset}) \cite{dataset}
-%     \item articles (\textit{@article}) \cite{PvzStraipsnLt, PvzStraipsnEn}, 
-%     \item articles from conferences (\textit{@inproceedings}) \cite{PvzKonfLt, PvzKonfEn}, 
-%     \item books (\textit{@book}) \cite{PvzKnygLt, PvzKnygEn}, 
-%     \item theses (\textit{@thesis or mastersthesis/phdthesis} \cite{PvzMagistrLt, PvzPhdEn})
-%     \item electronic publications (\textit{@misc}) \cite{PvzElPubLt, PvzElPubEn}
-% \end{itemize}
+\printbibliography[heading=none]
 
 % Examples are also provided for ChatGPT citation, both in general \cite{chatgpt_bendrai} and for a specific conversation \cite{chatgpt_pokalbis}.
 
