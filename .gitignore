@@ -225,3 +225,6 @@ events.out.tfevents.*
 
 # Google Cloud SQL Proxy binary
 cloud_sql_proxy
+
+# Generated waveforms
+inference_output/
