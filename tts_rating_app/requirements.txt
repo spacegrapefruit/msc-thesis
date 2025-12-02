@@ -3,3 +3,6 @@ Authlib==1.6.5
 requests==2.32.5
 gunicorn==23.0.0
 python-dotenv==1.2.1
+psycopg2-binary==2.9.11
+google-cloud-storage==3.6.0
+cloud-sql-python-connector==1.11.0

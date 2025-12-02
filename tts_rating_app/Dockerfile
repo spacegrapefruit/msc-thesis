@@ -13,6 +13,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         gcc \
         libc6-dev \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
@@ -25,12 +26,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy application code
 COPY . .
 
-# Create directories for audio files and database
-RUN mkdir -p /app/inference_output
-RUN mkdir -p /app/data
-
-# Copy audio files from the inference_output directory
-COPY inference_output/ /app/inference_output/
+# Create directory for temporary files
+RUN mkdir -p /app/tmp
 
 # Expose port
 EXPOSE 8080

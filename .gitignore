@@ -223,3 +223,5 @@ events.out.tfevents.*
 *.synctex.gz
 *.toc
 
+# Google Cloud SQL Proxy binary
+cloud_sql_proxy
