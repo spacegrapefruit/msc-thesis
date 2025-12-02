@@ -17,15 +17,15 @@ vocoder_models/universal/libri-tts/wavegrad
 vocoder_models/en/ek1/wavegrad
 vocoder_models/en/librispeech100/wavlm-hifigan
 
-
-
+uv run python python/inference_multispeaker.py \
+    --speakers "VP157" \
+    --model_dir training_output/Tacotron2-DDC-November-18-2025_09+23AM-52a486e/
 
 
 
 uv run python python/inference_multispeaker.py \
-    --text "ą\´žuolas yra di\`delis me\~dis!" \
     --speakers "AS009,AS022,VP157" \
-    --model_dir training_output/Tacotron2-DCA-November-22-2025_01+41PM-2b683eb/ \
+    --model_dir training_output/Tacotron2-DDC-November-23-2025_10+53PM-548be7f/ \
     --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
     --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json
 

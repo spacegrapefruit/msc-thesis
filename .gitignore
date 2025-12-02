@@ -222,6 +222,7 @@ events.out.tfevents.*
 *.snm
 *.synctex.gz
 *.toc
+latex/paper/out/
 
 # Google Cloud SQL Proxy binary
 cloud_sql_proxy
