@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}TTS Audio Rating{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card card-custom">
+            <div class="card-body text-center p-5">
+                <h1 class="card-title mb-4">
+                    <i class="fas fa-microphone text-primary"></i>
+                    TTS Audio Rating
+                </h1>
+
+
+
+                {% if session.user_email %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    Logged in as {{ session.user_name or session.user_email }}
+                </div>
+                <a href="{{ url_for('rating') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-play"></i> Start Rating Audio
+                </a>
+                {% else %}
+
+
+                <a href="{{ url_for('login') }}" class="btn btn-google btn-lg">
+                    <i class="fab fa-google me-2"></i>
+                    Sign in with Google
+                </a>
+
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

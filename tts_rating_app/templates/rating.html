@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Rate Audio - TTS Rating System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card card-custom">
+            <div class="card-body p-5">
+                <h2 class="card-title text-center mb-4">
+                    <i class="fas fa-headphones text-primary"></i>
+                    Rate This Audio Sample
+                </h2>
+
+                <div class="text-center mb-4">
+                    <p>Rate the audio quality from 1 (Bad) to 5 (Excellent)</p>
+
+                    {% if progress %}
+                    <div class="mt-3">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar"
+                                style="width: {{ (progress.rated / progress.total * 100)|round(1) }}%"
+                                aria-valuenow="{{ progress.rated }}" aria-valuemin="0"
+                                aria-valuemax="{{ progress.total }}">
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            Progress: {{ progress.rated }}/{{ progress.total }} completed
+                            ({{ progress.remaining }} remaining)
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Audio Player -->
+                <div class="text-center mb-4">
+                    <div class="card" style="background: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-file-audio text-secondary"></i>
+                                Audio Sample
+                            </h6>
+                            <audio controls class="audio-player" preload="metadata">
+                                <source src="{{ url_for('serve_audio', filename=audio_file) }}" type="audio/wav">
+                                Your browser does not support the audio element.
+                            </audio>
+                            <div class="mt-2">
+                                <small class="text-muted">{{ audio_file }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rating Form -->
+                <form id="ratingForm">
+                    <input type="hidden" name="audio_file" value="{{ audio_file }}">
+
+                    <div class="text-center mb-4">
+                        <div class="rating-container my-4">
+                            <div class="d-flex justify-content-center align-items-center">
+                                {% for i in range(1, 6) %}
+                                <div class="mx-2 text-center">
+                                    <span class="rating-stars" data-rating="{{ i }}">
+                                        <i class="fas fa-star"></i>
+                                    </span>
+                                    <div class="mt-1">
+                                        <small class="rating-label text-muted">
+                                            {% if i == 1 %}Bad
+                                            {% elif i == 2 %}Poor
+                                            {% elif i == 3 %}Fair
+                                            {% elif i == 4 %}Good
+                                            {% elif i == 5 %}Excellent
+                                            {% endif %}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">{{ i }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="rating" id="selectedRating" required>
+
+                        <div id="ratingError" class="alert alert-warning d-none">
+                            Please select a rating before submitting.
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3" id="submitBtn">
+                            <i class="fas fa-check"></i> Submit Rating
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()">
+                            <i class="fas fa-redo"></i> Get New Audio
+                        </button>
+                    </div>
+                </form>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ratingStars = document.querySelectorAll('.rating-stars');
+        const selectedRatingInput = document.getElementById('selectedRating');
+        const ratingForm = document.getElementById('ratingForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const ratingError = document.getElementById('ratingError');
+
+        // Handle star rating clicks
+        ratingStars.forEach(star => {
+            star.addEventListener('click', function () {
+                const rating = this.getAttribute('data-rating');
+                selectedRatingInput.value = rating;
+
+                // Update visual state
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+
+                // Hide error message
+                ratingError.classList.add('d-none');
+            });
+
+            // Hover effect
+            star.addEventListener('mouseenter', function () {
+                const rating = this.getAttribute('data-rating');
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+        });
+
+        // Reset hover effect
+        document.querySelector('.rating-container').addEventListener('mouseleave', function () {
+            const selectedRating = selectedRatingInput.value;
+            ratingStars.forEach((s, index) => {
+                if (selectedRating && index < selectedRating) {
+                    s.style.color = '#ffc107';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+
+        // Handle form submission
+        ratingForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (!selectedRatingInput.value) {
+                ratingError.classList.remove('d-none');
+                return;
+            }
+
+            // Disable submit button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+            // Submit the rating
+            const formData = new FormData(ratingForm);
+
+            fetch('/submit_rating', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.status === 409) {
+                        // User already voted for this audio
+                        return response.json().then(data => {
+                            alert(`You have already voted for this audio sample (your previous rating: ${data.existing_rating || 'unknown'}). Getting a new audio sample...`);
+                            window.location.reload();
+                        });
+                    }
+                    return response.json().then(data => {
+                        if (response.ok && data.success) {
+                            // Show success message and redirect to new audio
+                            window.location.reload();
+                        } else {
+                            throw new Error(data.error || 'Failed to submit rating');
+                        }
+                    });
+                })
+                .catch(error => {
+                    alert('Error submitting rating: ' + error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit Rating';
+                });
+        });
+    });
+</script>
+{% endblock %}

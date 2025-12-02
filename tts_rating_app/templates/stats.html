@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - TTS Rating System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card card-custom">
+            <div class="card-body p-5">
+                <h2 class="card-title text-center mb-4">
+                    <i class="fas fa-chart-bar text-primary"></i>
+                    Rating Statistics
+                </h2>
+
+                <!-- User Stats -->
+                <div class="row mb-5">
+                    <div class="col-md-12">
+                        <h4 class="text-center mb-3">Your Stats</h4>
+                        <div class="text-center">
+                            <div class="stats-card d-inline-block">
+                                <span class="stats-number">{{ user_rating_count }}</span>
+                                <span>Audio Clips Rated</span>
+                            </div>
+                        </div>
+
+                        {% if user_rating_count == 0 %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('rating') }}" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Start Rating
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Overall Stats -->
+                {% if total_ratings > 0 %}
+                <div class="border-top pt-4">
+                    <h4 class="text-center mb-4">Overall Statistics</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <span class="stats-number">{{ total_ratings }}</span>
+                                <span>Total Ratings</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <span class="stats-number">{{ total_users }}</span>
+                                <span>Contributors</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card">
+                                <span class="stats-number">{{ avg_rating }}</span>
+                                <span>Average Rating</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Navigation -->
+                <div class="text-center mt-5">
+                    <a href="{{ url_for('rating') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-headphones"></i> Rate Audio
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
