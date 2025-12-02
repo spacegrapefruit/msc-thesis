@@ -31,29 +31,25 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check required setup
-echo "Ensure you have:"
-echo "1. Google OAuth 2.0 credentials in .env file"
-echo "2. Authorized redirect URI: https://your-service-url/callback"
-echo ""
-echo "Continue? (y/N)"
-read -r response
-if [[ ! "$response" =~ ^[Yy]$ ]]; then
-    echo "Deployment cancelled."
-    exit 0
-fi
-
-# Load environment variables from .env
-if [ ! -f ".env" ]; then
-    echo "Error: .env file not found!"
-    echo "Copy .env.example to .env and configure credentials."
-    exit 1
-fi
+# # Check required setup
+# echo "Ensure you have:"
+# echo "1. Google OAuth 2.0 credentials in .env file"
+# echo "2. Authorized redirect URI: https://your-service-url/callback"
+# echo ""
+# echo "Continue? (y/N)"
+# read -r response
+# if [[ ! "$response" =~ ^[Yy]$ ]]; then
+#     echo "Deployment cancelled."
+#     exit 0
+# fi
 
 # Source the .env file
 set -a
 source .env
 set +a
+
+# Override DB_HOST for Cloud Run
+DB_HOST="35.190.221.109"
 
 # Check required variables
 if [ -z "$GOOGLE_CLIENT_ID" ] || [ -z "$GOOGLE_CLIENT_SECRET" ]; then
@@ -63,6 +59,11 @@ fi
 
 if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
     echo "Error: Database variables (DB_HOST, DB_USER, DB_PASSWORD) must be set in .env"
+    exit 1
+fi
+
+if [ -z "$DB_INSTANCE_NAME" ] || [ -z "$DB_REGION" ]; then
+    echo "Error: Cloud SQL variables (DB_INSTANCE_NAME, DB_REGION) must be set in .env"
     exit 1
 fi
 
@@ -81,12 +82,12 @@ fi
 echo "1. Setting up gcloud..."
 gcloud config set project "$PROJECT_ID"
 
-echo "2. Enabling APIs..."
-gcloud services enable cloudbuild.googleapis.com
-gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
-gcloud services enable sqladmin.googleapis.com
-gcloud services enable storage.googleapis.com
+# echo "2. Enabling APIs..."
+# gcloud services enable cloudbuild.googleapis.com
+# gcloud services enable run.googleapis.com
+# gcloud services enable containerregistry.googleapis.com
+# gcloud services enable sqladmin.googleapis.com
+# gcloud services enable storage.googleapis.com
 
 echo "3. Building Docker image..."
 docker build -t "$IMAGE_NAME" .
@@ -98,6 +99,10 @@ echo "5. Pushing image..."
 docker push "$IMAGE_NAME"
 
 echo "6. Deploying to Cloud Run..."
+
+# Cloud SQL connection name
+CLOUD_SQL_CONNECTION_NAME="$PROJECT_ID:$DB_REGION:$DB_INSTANCE_NAME"
+
 gcloud run deploy "$SERVICE_NAME" \
     --image "$IMAGE_NAME" \
     --platform managed \
@@ -106,8 +111,9 @@ gcloud run deploy "$SERVICE_NAME" \
     --memory 512Mi \
     --cpu 1 \
     --timeout 300 \
-    --set-env-vars "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET,SECRET_KEY=$SECRET_KEY,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,DB_HOST=$DB_HOST,DB_PORT=$DB_PORT,DB_NAME=$DB_NAME,DB_USER=$DB_USER,DB_PASSWORD=$DB_PASSWORD,DB_TABLE=$DB_TABLE,GCS_BUCKET=$GCS_BUCKET,GCS_AUDIO_PREFIX=$GCS_AUDIO_PREFIX" \
-    --max-instances 10
+    --add-cloudsql-instances="$CLOUD_SQL_CONNECTION_NAME" \
+    --set-env-vars "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET,SECRET_KEY=$SECRET_KEY,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,DB_HOST=/cloudsql/$CLOUD_SQL_CONNECTION_NAME,DB_PORT=5432,DB_NAME=$DB_NAME,DB_USER=$DB_USER,DB_PASSWORD=$DB_PASSWORD,DB_TABLE=$DB_TABLE,GCS_BUCKET=$GCS_BUCKET,GCS_AUDIO_PREFIX=$GCS_AUDIO_PREFIX,CLOUD_SQL_CONNECTION_NAME=$CLOUD_SQL_CONNECTION_NAME" \
+    --max-instances 1
 
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" --region="$REGION" --format="value(status.url)")

@@ -12,12 +12,6 @@ Flask web application for collecting MOS ratings on TTS audio clips.
 
 ### 1. Environment Configuration
 
-Copy the example environment file and update it with your credentials:
-
-```bash
-cp .env.example .env
-```
-
 Update `.env` with your actual values:
 
 - `DB_HOST=127.0.0.1` (when using Cloud SQL proxy)

@@ -21,18 +21,6 @@ source venv/bin/activate
 echo "Installing dependencies..."
 pip install -r requirements.txt
 
-# Check for .env file
-if [ ! -f ".env" ]; then
-    echo "Error: .env file not found!"
-    echo "Copy .env.example to .env and configure Google OAuth credentials."
-    echo ""
-    echo "Setup:"
-    echo "1. cp .env.example .env"
-    echo "2. Edit .env with OAuth credentials"
-    echo "3. Run this script again"
-    exit 1
-fi
-
 # Check for Cloud SQL proxy (optional for local development)
 if command -v cloud_sql_proxy &> /dev/null; then
     echo "Cloud SQL proxy found - you can connect to Cloud SQL locally"

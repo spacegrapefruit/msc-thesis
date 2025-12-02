@@ -18,6 +18,7 @@ import dotenv
 import secrets
 import psycopg2
 import psycopg2.extras
+from psycopg2 import pool
 from google.cloud import storage
 import io
 
@@ -53,28 +54,78 @@ GCS_BUCKET = os.environ.get("GCS_BUCKET")
 GCS_AUDIO_PREFIX = os.environ.get("GCS_AUDIO_PREFIX", "inference_output/")
 storage_client = storage.Client() if os.environ.get("GOOGLE_CLOUD_PROJECT") else None
 
+# Connection pool
+connection_pool = None
 
-def get_db_connection():
-    """Get PostgreSQL database connection."""
+
+def init_connection_pool():
+    """Initialize the database connection pool."""
+    global connection_pool
+
     if not all([DB_HOST, DB_USER, DB_PASSWORD]):
         print(
             "Database configuration incomplete - check DB_HOST, DB_USER, DB_PASSWORD environment variables"
         )
-        return None
+        return False
 
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            connect_timeout=10,
-        )
-        return conn
+        # Check if we're using Cloud SQL socket (Cloud Run environment)
+        if DB_HOST.startswith("/cloudsql/"):
+            # Cloud SQL socket connection
+            connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=5,
+                host=DB_HOST,  # This will be /cloudsql/project:region:instance
+                database=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                connect_timeout=10,
+            )
+            print("Database connection pool initialized with Cloud SQL socket")
+        else:
+            # Regular TCP connection (local development with proxy or direct)
+            connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=5,
+                host=DB_HOST,
+                port=int(DB_PORT),
+                database=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+                connect_timeout=10,
+            )
+            print("Database connection pool initialized with TCP connection")
+
+        return True
     except Exception as e:
-        print(f"Database connection error: {e}")
+        print(f"Database connection pool initialization error: {e}")
+        return False
+
+
+def get_db_connection():
+    """Get a connection from the pool."""
+    global connection_pool
+
+    if not connection_pool:
+        if not init_connection_pool():
+            return None
+
+    try:
+        return connection_pool.getconn()
+    except Exception as e:
+        print(f"Error getting connection from pool: {e}")
         return None
+
+
+def return_db_connection(conn):
+    """Return a connection to the pool."""
+    global connection_pool
+
+    if connection_pool and conn:
+        try:
+            connection_pool.putconn(conn)
+        except Exception as e:
+            print(f"Error returning connection to pool: {e}")
 
 
 def init_database():
@@ -111,7 +162,7 @@ def init_database():
         print(f"Database initialization error: {e}")
         conn.rollback()
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 def save_rating_to_database(user_email, audio_file, rating, session_info=None):
@@ -149,7 +200,7 @@ def save_rating_to_database(user_email, audio_file, rating, session_info=None):
         conn.rollback()
         return False
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 def check_existing_rating(user_email, audio_file):
@@ -176,7 +227,7 @@ def check_existing_rating(user_email, audio_file):
         print(f"Database check error: {e}")
         return None
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 def get_user_rated_files(user_email):
@@ -202,7 +253,7 @@ def get_user_rated_files(user_email):
         print(f"Database query error: {e}")
         return []
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 def get_user_rating_count(user_email):
@@ -228,7 +279,7 @@ def get_user_rating_count(user_email):
         print(f"Database query error: {e}")
         return 0
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 def get_audio_files():
@@ -482,7 +533,7 @@ def stats():
             print(f"Error getting database stats: {e}")
             total_ratings = total_users = avg_rating = 0
         finally:
-            conn.close()
+            return_db_connection(conn)
     else:
         total_ratings = total_users = avg_rating = 0
 
@@ -496,6 +547,7 @@ def stats():
 
 
 if __name__ == "__main__":
+    init_connection_pool()
     init_database()
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False)
