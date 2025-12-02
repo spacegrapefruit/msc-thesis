@@ -2,34 +2,12 @@ import argparse
 import json
 import multiprocessing as mp
 import pandas as pd
-import re
 import io
 from functools import partial
 from pathlib import Path
 from pydub import AudioSegment
 from tqdm import tqdm
-
-
-ACCENTED_WORDS = {}
-PUNCTUATION_REPLACEMENTS = str.maketrans(
-    {
-        "„": '"',
-        "“": '"',
-        "”": '"',
-        "‘": '"',
-        "’": '"',
-        "–": "-",
-        "—": "-",
-        ";": ",",
-    }
-)
-LETTER_REPLACEMENTS = str.maketrans(
-    {
-        "x": "ks",
-        "w": "v",
-        "q": "kv",
-    }
-)
+from text_utils import load_accented_words, normalize_text
 
 
 parsing_rules = [
@@ -59,38 +37,6 @@ def parse_filename(filename):
         parsing_rules[i].get(part, part) for i, part in enumerate(parts)
     ]
     return parts_standardized
-
-
-def normalize_text(text):
-    """
-    Normalize text for TTS training.
-
-    Args:
-        text (str): Raw text to normalize
-
-    Returns:
-        str: Normalized text
-    """
-    # Remove punctuation except apostrophes (important for Lithuanian)
-    # Keep basic punctuation that affects pronunciation
-    text = text.translate(PUNCTUATION_REPLACEMENTS)
-    text = re.sub(r"[^\w\s.,\-?!]", "", text)
-
-    # Remove extra whitespace and strip
-    text = re.sub(r"\s+", " ", text).strip()
-
-    # Add accents
-    parts = re.split(r"\b", text)
-    accented_parts = [ACCENTED_WORDS.get(part, part) for part in parts]
-    text = "".join(accented_parts)
-
-    # Convert to lowercase
-    text = text.lower()
-
-    # Apply letter replacements
-    text = text.translate(LETTER_REPLACEMENTS)
-
-    return text
 
 
 def process_audio_file(row_data, output_wav_path):
@@ -322,11 +268,7 @@ if __name__ == "__main__":
     liepa_path = Path(args.liepa_path)
     output_path = Path(args.output_path)
 
-    accented_df = pd.read_csv(
-        liepa_path / "final_accented_words.csv",
-        keep_default_na=False,
-    )
-    ACCENTED_WORDS = dict(accented_df.values)
+    load_accented_words(liepa_path / "final_accented_words.csv")
 
     process_liepa2(
         liepa_path,
