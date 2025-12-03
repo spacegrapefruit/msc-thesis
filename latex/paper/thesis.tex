@@ -14,6 +14,8 @@
 \usepackage{color,algorithm,algorithmic}
 \usepackage[nottoc]{tocbibind}
 \usepackage{tocloft}
+\usepackage{booktabs}
+\usepackage{multirow}
 
 \usepackage{titlesec}
 \newcommand{\sectionbreak}{\clearpage}
@@ -167,6 +169,13 @@ Quantization (also known as bit depth) is the mapping of continuous amplitude
 values to discrete levels for digital representation. Typical bit depths for
 audio are 16-bit and 24-bit formats.
 
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.8\textwidth]{figures/sampling_quantization.pdf}
+      \caption{Visual representation of Analog-to-Digital conversion. The continuous grey line represents the analog signal. The vertical lines represent the \textbf{sampling rate} (time intervals), and the horizontal grid lines represent \textbf{quantization levels} (bit depth).}
+      \label{fig:sampling}
+\end{figure}
+
 Pre-emphasis is a high-frequency filtering technique applied to audio signals
 before further processing. Natural speech signals tend to have more energy in
 the lower frequencies, with a gradual drop-off towards higher frequencies
@@ -202,31 +211,21 @@ transformation provides a time-frequency representation, showing how the
 frequency content of the signal changes over time.
 
 In TTS applications, the STFT is computed by dividing the audio signal into
-short frames (usually, 20-40~ms) with a certain overlap (usually, 50-75\%)
-between frames.
+short frames (usually, 20-50~ms) with a certain overlap (usually, 50-75\%)
+between frames, windowed by a Hamming or Hann function to minimize the spectral
+leakage.
 
-In order to reduce spectral leakage and improve frequency resolution, each
-frame is multiplied by a window function, such as a Hamming or Hann window.
-
-\subsubsection{Spectrogram}
+\subsubsection{Spectrogram and Mel-spectrogram}
 
 The spectrogram is a visual representation of the STFT, displaying frequency on
 the vertical axis, time on the horizontal axis, and amplitude represented by
 the color intensity.
 
-\begin{figure}[ht]
-      \centering
-      % TODO \includegraphics[width=\textwidth]{spectrogram_example}
-      \caption{Comparison of a linear spectrogram vs.\ a Mel-spectrogram.}
-      \label{fig:mel_spec}
-\end{figure}
-
-\subsubsection{Mel-spectrogram}
-
-The human ear does not perceive frequencies linearly --- it is more sensitive
-to lower frequencies than higher ones. To mimic this perceptual characteristic,
-the Mel scale~\cite{stevens1937scale} maps linear frequency \( f \) (in Hz) to
-a perceptual scale \( m \) (in Mels) using the following formula:
+However, the human ear does not perceive frequencies linearly --- it is more
+sensitive to lower frequencies than higher ones. To mimic this perceptual
+characteristic, the Mel scale~\cite{stevens1937scale} maps linear frequency \(
+f \) (in Hz) to a perceptual scale \( m \) (in Mels) using the following
+formula:
 
 \begin{equation}
       m = 2595 \cdot \log_{10}\left(1 + \frac{f}{700}\right)
@@ -237,6 +236,13 @@ triangular filters (or kernels) to the magnitude spectrogram obtained from the
 STFT. This results in a compressed representation of the audio signal that
 aligns more closely with human auditory perception. Such Mel-spectrograms are
 commonly used as input features for modern TTS systems.
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
+      \caption{Raw audio waveform (top), its spectrogram (middle), and Mel-spectrogram (bottom) representations.}
+      \label{fig:waveform_spectrograms}
+\end{figure}
 
 \subsection{Text-to-speech synthesis}
 
@@ -319,17 +325,9 @@ sharpness and detail of natural human speech.
 
 Text normalization~\cite{sproat2001normalization} is the process of converting
 raw text into a standardized format suitable for TTS synthesis. Typical steps
-include:
-
-\begin{itemize}
-      \item Lowercasing: Converting all text to lowercase to reduce variability.
-      \item Punctuation removal: Stripping out unnecessary punctuation marks.
-      \item Expanding abbreviations: Converting abbreviations to their full forms (e.g.,
-            ``Dr.'' -> ``Doctor'').
-      \item Number normalization: Converting numbers into their spoken equivalents (e.g.,
-            ``123'' -> ``one hundred twenty-three'').
-      \item Tokenization: Splitting text into words or subword units.
-\end{itemize}
+include expanding abbreviations (e.g., expanding ``Dr.'' to ``Doctor''),
+punctuation removal, number normalization (e.g., converting ``123'' to ``one
+hundred twenty-three''), and lowercasing.
 
 \subsubsection{Graphemes vs. Phonemes}
 
@@ -350,12 +348,12 @@ requires an additional grapheme-to-phoneme (G2P) conversion
 step~\cite{bisani2008joint}, which requires a complex pre-processing pipeline
 or a separate G2P model.
 
-There is yet another approach that combines both grapheme and phoneme inputs,
-known as accented grapheme-based synthesis. This method augments the raw text
-with accentuation markers (typically tilde, acute, grave accents) to indicate
-the stressed syllables in words. This additional information provides cues
-about the prosodic features of speech, which can help improve the pronunciation
-of speech.
+There is another approach that augments the grapheme-based representation with
+accentuation marks. This method adds accent marks (typically tilde, acute,
+grave accents) to the raw grapheme sequence to indicate the stressed syllables
+in words. This additional information provides cues about the prosodic features
+of speech, which can help improve the pronunciation and naturalness of the
+synthesized speech.
 
 \subsubsection{Specific challenges in Lithuanian}
 
@@ -368,8 +366,25 @@ Challenges in Lithuanian TTS synthesis include:
 
 \begin{itemize}
       \item \textbf{High OOV rate:} Due to extensive word inflection, the number of unique word forms is significantly higher than in English. This leads to data sparsity issues where many valid word forms may not appear in the training set.
-      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. For instance, the word \textit{antis} can mean ``a duck'' or ``a bosom'' depending on the intonation/stress pattern: \textit{ántis} vs. \textit{añtis}. A grapheme-based model without accentuation marks may struggle to predict the correct prosody, resulting in monotonic or mispronounced speech.
+      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. Examples are shown in Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model without accentuation marks may struggle to predict the correct prosody, resulting in monotonic or mispronounced speech.
 \end{itemize}
+
+\begin{table}[ht]
+      \centering
+      \begin{tabular}{|l|c|c|}
+            \toprule
+            \textbf{Word}          & \textbf{Accentuation}       & \textbf{Meaning}      \\
+            \midrule
+            \multirow{2}{*}{Antis} & \textit{ántis} (Acute)      & A duck (noun)         \\
+                                   & \textit{añtis} (Circumflex) & Bosom/Chest (noun)    \\
+            \midrule
+            \multirow{2}{*}{Kasa}  & \textit{kãsa} (Circumflex)  & He/she digs (verb)    \\
+                                   & \textit{kasà} (Short)       & Braid/Pancreas (noun) \\
+            \bottomrule
+      \end{tabular}
+      \caption{Examples of Lithuanian homographs where accentuation determines meaning. A grapheme-only model cannot distinguish these without context or explicit stress marks.}
+      \label{tab:lithuanian_ambiguity}
+\end{table}
 
 To overcome these challenges, tools like \textbf{Kirčiuoklis} (Vytautas Magnus
 University) are often employed in the text normalization pipeline. Kirčiuoklis
@@ -416,7 +431,14 @@ mapped to a unique vector. The vectors are learned joinly with the TTS model
 during training. While efficient, this approach cannot generalize to speakers
 not seen during training.
 
-\textbf{Reference Encoders and Speaker Embeddings:}
+\textbf{Reference encoders and speaker embeddings:}
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
+      \caption{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
+      \label{fig:speaker_encoder}
+\end{figure}
 
 Transfer learning approaches~\cite{jia2018transfer} have demonstrated adapting
 speaker verification models to multispeaker TTS synthesis, enabling better
@@ -439,17 +461,12 @@ quality.
 % concatenated or added to the encoder outputs to condition the synthesis on a
 % specific voice identity.
 
-% TODO In Coqui TTS, speaker embeddings (either learned or computed via a reference
-% encoder) are typically projected to the dimension of the encoder output and
-% concatenated with the linguistic features before being passed to the decoder or
-% variance adaptor.
-
 \subsection{Deep learning for TTS}
 
-The limitations of these complex, multi-stage pipelines motivated the creation
-of a new approach, the end-to-end (E2E) model. E2E systems learn the entire
-speech synthesis process --- from input text directly to acoustic output ---
-using a single neural network. This approach promised to eliminate the need for
+The limitations of complex, multi-stage pipelines motivated the creation of a
+new approach, the end-to-end (E2E) model. E2E systems learn the entire speech
+synthesis process --- from input text directly to acoustic output --- using a
+single neural network. This approach promised to eliminate the need for
 hand-crafted pipelines that were difficult to design, required extensive
 expertise, and suffered from errors that accumulated across multiple
 components. By learning directly from text-audio pairs, E2E models showed they
@@ -484,7 +501,7 @@ this latent representation as context to generate the final output. This
 architecture is commonly used in sequence-to-sequence tasks, such as machine
 translation (text-to-text) and text-to-speech synthesis (text-to-audio frames).
 
-\subsubsection{Sequence-to-sequence models}
+\subsubsection{Tacotron~2}
 
 A common approach for TTS modelling it the sequence-to-sequence (seq2seq)
 framework, which uses an encoder-decoder architecture with an attention
@@ -495,6 +512,13 @@ This architecture has three main components:
 \textbf{Encoder:} The encoder processes through the input text sequence (graphemes or phonemes) and converts it into a high-level representation. Typically, this is done using recurrent neural networks (RNNs) or more complex modules like the CBHG (Convolution Bank + Highway network + Gated Recurrent Unit).
 \textbf{Attention Mechanism:} The attention mechanism learns to align the high-level text representation with the output audio frames. At each decoding step, it determines which part (positions) of the input text the model should focus (or ``attend to'') in order to generate the next audio frame.
 \textbf{Decoder:} Finally, the decoder --- also typically an RNN --- takes the encoder output, uses the attention output as context, and generates an acoustic representation of speech (typically mel-spectrogram) frame by frame. Being autoregressive, the decoder is a ``bottleneck'' during inference, as it must generate each frame sequentially, only after the previous one has been produced.
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\textwidth]{figures/tacotron2_arch.pdf}
+      \caption{The Tacotron 2 architecture. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps. \cite{shen2018natural}}
+      \label{fig:tacotron_arch}
+\end{figure}
 
 Tacotron~\cite{wang2017tacotron} and Tacotron~2~\cite{shen2018natural} are two
 notable TTS models based on the sequence-to-sequence architecture. The variant
@@ -508,7 +532,14 @@ location-sensitive, computing an alignment between the encoder outputs (text)
 and the decoder steps (audio frames). The decoder is an autoregressive RNN,
 typically composed of LSTM layers.
 
-\subsubsection{Non-autoregressive (parallel) models}
+\subsubsection{FastPitch}
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\textwidth]{figures/fastpitch_arch.pdf}
+      \caption{The FastPitch architecture. It utilizes a feed-forward Transformer and an explicit duration predictor, allowing for parallel generation of the Mel-spectrogram. Pitch is predicted and injected into the latent representation. \cite{lancucki2020fastpitch}}
+      \label{fig:fastpitch_arch}
+\end{figure}
 
 Unlike Tacotron~2, FastPitch~\cite{lancucki2020fastpitch} replaces the
 recurrent layers with Transformer architecture blocks relying on
@@ -576,11 +607,11 @@ those used during the HiFi-GAN v2 training.
 \subsection{Multi-speaker TTS}
 
 Multi-speaker TTS models are designed to synthesize speech in the voices of
-multiple speakers. As the name suggests, these models are trained on data from
-many different speakers, allowing them to learn the characteristics of each
-voice and synthesize speech that sounds like a specific individual, while still
-being able to generalize the shared linguistic and acoustic patterns across
-speakers.
+multiple speakers. In order to achieve this, these models are trained on data
+from many different speakers, allowing them to learn the characteristics of
+each voice and synthesize speech that sounds like a specific individual, while
+still being able to generalize the shared linguistic and acoustic patterns
+across speakers.
 
 \subsubsection{Techniques}
 
@@ -636,16 +667,6 @@ optimal performance-to-cost ratios.
 \subsubsection{Data selection strategies}
 
 % TODO
-
-% In the context of multi-speaker TTS, this involves selecting a diverse set of
-% speakers and utterances that maximize acoustic variety while minimizing
-% redundancy.
-
-% Given the scaling laws of deep learning~\cite{kaplan2020scaling}, simply
-% increasing dataset size does not always yield proportional improvements,
-% especially if the data is noisy or redundant. Data selection strategies aim to
-% optimize the training set $S \subset D$ such that a model trained on $S$
-% achieves performance comparable to or better than one trained on $D$.
 
 \subsection{Evaluation methods for TTS}
 
@@ -705,6 +726,47 @@ also to generalize across a latent speaker space, typically managed via
 d-vector or x-vector embeddings.
 
 \subsection{Research Gap}
+
+% Despite the advancements in model architectures, a significant gap remains in
+% the literature regarding \textbf{data selection strategies for highly
+%       fragmented, imbalanced corpora} in low-resource settings.
+
+% Most current state-of-the-art multi-speaker TTS research relies on datasets
+% that are either:
+% \begin{enumerate}
+%       \item \textbf{Single-speaker high-resource:} Hundreds of hours of studio-quality speech from a single professional voice actor.
+%       \item \textbf{Multi-speaker balanced:} Curated datasets like VCTK, where roughly 100 speakers have a similar amount of clean data.
+% \end{enumerate}
+
+The Liepa~2 corpus, which serves as the foundation for this thesis, is a
+realistic scenario common for lesser-resourced languages: it contains a massive
+number of speakers (2621) but is highly imbalanced, with data per speaker
+ranging from a few seconds to over two hours.
+
+Current literature does not adequately address how to optimally sample from
+such a distribution under strict computational constraints. While scaling
+laws~\cite{kaplan2020scaling} suggest that increasing total dataset size
+improves performance, training on the full 1000-hour corpus is computationally
+prohibitive for many academic and industrial applications. Consequently,
+researchers must select a subset of data (e.g., 30 hours), but it is unclear
+which selection strategy gives the best synthesis quality:
+
+\begin{itemize}
+      \item Does maximizing the \textit{speaker depth} (selecting the ``Top-N'' speakers
+            with the most data) allow the model to learn stable alignments and prosody
+            better?
+      \item Or does maximizing the \textit{speaker breadth} (selecting a ``Balanced'' or
+            ``Random'' set of many speakers with less data per person) allow the model to
+            learn a more robust, generalized representation of the language's phonetics?
+\end{itemize}
+
+This thesis addresses this gap by evaluating different data selection
+strategies for training multi-speaker TTS models on the Lithuanian Liepa~2
+corpus. By keeping the total training data budget fixed (30 hours) and varying
+the selection logic (Top-N vs. Random vs. Balanced) across autoregressive
+(Tacotron~2) and non-autoregressive (FastPitch) architectures, this research
+aims to provide practical guidelines for training high-quality TTS systems in
+resource-constrained, high-speaker-count scenarios.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Methodology
@@ -843,36 +905,211 @@ a word, no accent was added to avoid introducing errors.
 As a result of these normalization steps, the vocabulary size is reduced from
 140~characters to 41~characters, simplifying the learning task for TTS models.
 
-\subsection{Data subset creation}
+\subsubsection{Speaker embeddings}
 
-To investigate the impact of data selection on TTS performance, several
-strategies for selecting subsets of the Liepa~2 dataset were employed:
+For multispeaker TTS training, speaker embeddings are computed using a
+pre-trained speaker encoder model. The speaker embedding computation process
+involves:
 
 \begin{itemize}
-      \item Random sampling: Randomly selecting a subset of the training data.
-      \item Speaker diversity maximization: Selecting samples to maximize the number of
-            unique speakers in the subset.
-            % \item Phonetic coverage optimization: Choosing samples to cover the widest range of
-            %       phonetic contexts.
-            % \item Quality-based selection: Selecting samples based on audio quality metrics,
-            %       prioritizing clearer recordings.
+      \item \textbf{Speaker encoder model}: Pre-trained model from Coqui TTS based on
+            the approach described in~\cite{jia2018transfer}.
+      \item \textbf{Embedding extraction}: Each speaker's audio samples are processed
+            through the speaker encoder to generate 512-dimensional speaker embeddings
+            (d-vectors).
+      \item \textbf{Pooling strategy}: Global average pooling across all utterances
+            from each speaker to create a single representative embedding per speaker.
+      \item \textbf{Normalization}: Speaker embeddings are L2-normalized to ensure
+            consistent magnitude across speakers.
 \end{itemize}
 
-\subsection{Model training}
+These speaker embeddings are then used during TTS training to condition the
+model on speaker identity, enabling the synthesis of speech in different
+voices.
 
-\subsubsection{Tacotron~2 with DDC}
+\subsection{Data selection strategies}
 
-The Tacotron~2 model was configured with the following hyperparameters:
+To investigate the impact of data selection on TTS performance, several
+strategies for selecting subsets of the Liepa~2 dataset were employed. All
+strategies maintain a fixed total training budget of 30~hours to ensure fair
+comparison across experiments.
+
+\subsubsection{Speaker filtering criteria}
+
+Before applying selection strategies, the dataset undergoes initial filtering:
+\begin{itemize}
+      \item \textbf{Language filtering}: Only Lithuanian language samples are retained.
+      \item \textbf{Speech type filtering}: Only ``read speech'' samples are used, excluding
+            spontaneous speech to ensure consistent quality and pronunciation.
+      \item \textbf{Age group filtering}: Speakers from age groups 18--25, 26--60, and 60+
+            are included, excluding children (0--17) to focus on adult speech patterns.
+      \item \textbf{Gender balancing}: Equal representation of male and female speakers
+            when possible.
+\end{itemize}
+
+\subsubsection{Selection strategies}
+
+\textbf{Top-N Speaker Strategy (Speaker Depth):}
+This strategy prioritizes speaker depth by selecting the N speakers with the
+most available data. For multispeaker training with 20 speakers, the top 10
+male and top 10 female speakers (by sample count) are selected. This approach
+maximizes the amount of data per speaker, potentially allowing models to learn
+more stable speaker-specific characteristics and alignment patterns.
+
+\textbf{Balanced Speaker Strategy (Speaker Breadth):}
+This strategy prioritizes speaker diversity by distributing the training budget
+across a larger number of speakers, with each speaker contributing roughly equal
+amounts of data. The selection process aims to include as many speakers as
+possible while maintaining the 30-hour budget constraint and gender balance.
+
+\textbf{Random Sampling Strategy:}
+As a baseline, this strategy randomly samples utterances from the filtered
+dataset without regard to speaker distribution. This provides a control
+condition to assess whether structured speaker selection provides benefits over
+random data selection.
+
+\subsection{Experimental design}
+
+\subsubsection{Model architectures}
+
+Three TTS model architectures are evaluated in this study:
+
+\textbf{Tacotron~2 with Double Decoder Consistency (DDC):}
+The primary autoregressive model used in this study. DDC is an enhanced version
+of Tacotron~2 that employs dual decoders with different reduction factors (r=1
+for the main decoder, r=7 for the coarse decoder) to improve attention
+alignment stability. This architecture is particularly suitable for multispeaker
+scenarios where attention alignment can be challenging.
+
+\textbf{Tacotron~2 with Dynamic Convolution Attention (DCA):}
+An alternative Tacotron~2 variant that replaces the standard location-sensitive
+attention with dynamic convolution attention mechanisms for potentially improved
+alignment performance.
+
+\textbf{FastPitch:}
+A non-autoregressive model that predicts duration and pitch explicitly, allowing
+for parallel generation of mel-spectrograms. FastPitch uses Transformer
+architecture instead of RNNs and should theoretically be less sensitive to
+attention alignment issues.
+
+\subsubsection{Training procedure}
+
+All models are trained using the Coqui TTS framework with consistent training
+procedures:
+
+\begin{itemize}
+      \item \textbf{Training duration}: 400 epochs maximum with early stopping based on
+            validation loss.
+      \item \textbf{Optimization}: RAdam optimizer with learning rate scheduling using
+            MultiStepLR (milestones at 10k, 20k, 30k, 40k steps with gamma=0.32).
+      \item \textbf{Loss function}: Combination of decoder loss (α=0.25), post-net loss
+            (α=0.25), SSIM losses (α=0.25), guided attention loss (α=5.0), and stop token
+            loss (weight=15.0).
+      \item \textbf{Batch size}: 64 for Tacotron~2 variants, 32 for FastPitch.
+      \item \textbf{Gradient clipping}: 0.05 to prevent gradient explosion.
+      \item \textbf{Validation}: 1\% of training data held out for validation.
+\end{itemize}
+
+\subsection{Model training configurations}
+
+\subsubsection{Tacotron~2 with DDC hyperparameters}
 
 \begin{table}[h!]
+      \centering
+      \caption{Tacotron~2 DDC training configuration}
+      \begin{tabular}{lr}
+            \toprule
+            \textbf{Parameter}       & \textbf{Value}     \\
+            \midrule
+            Batch size               & 64                 \\
+            Learning rate            & 0.001              \\
+            Optimizer                & RAdam              \\
+            LR scheduler             & MultiStepLR        \\
+            Max epochs               & 400                \\
+            Decoder reduction factor & 1                  \\
+            DDC reduction factor     & 7                  \\
+            Attention type           & Location-sensitive \\
+            Memory size              & -1 (disabled)      \\
+            Speaker embedding dim    & 512                \\
+            Number of speakers       & 20                 \\
+            Stopnet                  & Enabled            \\
+            Separate stopnet         & True               \\
+            \bottomrule
+      \end{tabular}
 \end{table}
 
-\subsubsection{FastPitch}
-
-The FastPitch model was configured with the following hyperparameters:
+\subsubsection{FastPitch hyperparameters}
 
 \begin{table}[h!]
+      \centering
+      \caption{FastPitch training configuration}
+      \begin{tabular}{lr}
+            \toprule
+            \textbf{Parameter}         & \textbf{Value} \\
+            \midrule
+            Batch size                 & 32             \\
+            Eval batch size            & 16             \\
+            Learning rate              & 0.001          \\
+            Optimizer                  & RAdam          \\
+            LR scheduler               & MultiStepLR    \\
+            Max epochs                 & 400            \\
+            Duration predictor layers  & 2              \\
+            Pitch predictor layers     & 2              \\
+            Transformer encoder layers & 6              \\
+            Transformer decoder layers & 6              \\
+            Attention heads            & 1              \\
+            Encoder hidden dim         & 384            \\
+            Decoder hidden dim         & 384            \\
+            \bottomrule
+      \end{tabular}
 \end{table}
+
+\subsubsection{Vocoder configuration}
+
+For mel-spectrogram to waveform conversion, a pre-trained HiFi-GAN v2 vocoder
+is used across all experiments. The vocoder was pre-trained on the VCTK
+corpus~\cite{veaux2019cstr} and is compatible with the 22.05~kHz sampling rate
+used in this study. Using the same vocoder across all experiments ensures that
+differences in audio quality can be attributed to the TTS model rather than the
+vocoder.
+
+\subsection{Evaluation methodology}
+
+\subsubsection{Objective evaluation metrics}
+
+Objective evaluation is performed using standard acoustic metrics:
+
+\begin{itemize}
+      \item \textbf{Mel Cepstral Distortion (MCD):} Measures the spectral distance
+            between synthesized and ground truth mel-spectrograms, with lower values
+            indicating better quality.
+      \item \textbf{Fundamental Frequency RMSE (F0 RMSE):} Evaluates pitch accuracy
+            by measuring the root mean square error between predicted and ground truth
+            F0 contours.
+      \item \textbf{Training convergence metrics:} Training and validation loss
+            curves, attention alignment visualization, and convergence time.
+\end{itemize}
+
+\subsubsection{Subjective evaluation}
+
+Subjective evaluation is conducted through a web-based listening test
+application developed specifically for this study. The evaluation protocol
+includes:
+
+\begin{itemize}
+      \item \textbf{Rating scale:} 5-point Mean Opinion Score (MOS) scale where
+            1=Very Poor, 2=Poor, 3=Fair, 4=Good, 5=Excellent.
+      \item \textbf{Test sentences:} A standardized set of 5 Lithuanian sentences
+            covering various phonetic contexts and prosodic patterns.
+      \item \textbf{Evaluation criteria:} Participants rate overall quality considering
+            naturalness, intelligibility, and absence of artifacts.
+      \item \textbf{Participant recruitment:} Native Lithuanian speakers recruited
+            through university networks and social media.
+      \item \textbf{Data collection:} Web-based application with PostgreSQL database
+            for storing ratings, deployed on Google Cloud Platform.
+      \item \textbf{Statistical analysis:} Mann-Whitney U tests for significance
+            testing between model comparisons, given the ordinal nature of MOS ratings.
+\end{itemize}
 
 \subsubsection{Computational hardware}
 
@@ -880,10 +1117,29 @@ The experiments were conducted on a personal high-performance computing setup
 with the following specifications:
 
 \begin{itemize}
-      \item CPU: AMD Epyc 7642 48-Core, 96~thread processor
-      \item RAM: 256 GB DDR4 3200 MHz
-      \item GPU: NVIDIA GeForce RTX 3090 with 24 GB VRAM
-      \item Storage: 2 TB NVMe SSD
+      \item CPU: AMD\@ Epyc 7642 48-Core, 96~thread processor
+      \item RAM: 256 GB\@ DDR4 3200 MHz
+      \item GPU: NVIDIA\@ GeForce RTX\@ 3090 with 24 GB\@ VRAM
+      \item Storage: 2 TB\@ NVMe SSD
+\end{itemize}
+
+\subsubsection{Implementation framework}
+
+All experiments are implemented using the Coqui TTS framework~\cite{coqui2021},
+an open-source toolkit for training TTS models. The experimental pipeline is
+automated using Make build system with the following components:
+
+\begin{itemize}
+      \item \textbf{Data preprocessing:} Automated scripts for audio conversion,
+            text normalization, and metadata generation.
+      \item \textbf{Speaker embedding computation:} Batch processing of speaker
+            embeddings using pre-trained encoder models.
+      \item \textbf{Training orchestration:} Automated model training with
+            hyperparameter configuration and checkpointing.
+      \item \textbf{Inference pipeline:} Batch synthesis of test sentences for
+            evaluation purposes.
+      \item \textbf{Evaluation tools:} Integration with subjective evaluation
+            web application and objective metric computation.
 \end{itemize}
 
 \subsection{Evaluation protocol}
