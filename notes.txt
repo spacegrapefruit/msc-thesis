@@ -20,12 +20,20 @@ vocoder_models/en/librispeech100/wavlm-hifigan
 
 
 
+rm inference_output/*
+
 uv run python python/inference_multispeaker.py \
     --speakers "AS009,AS022,VP157" \
-    --model_dir training_output/Tacotron2-DDC-November-23-2025_10+53PM-548be7f/ \
+    --model_dir training_output/Tacotron2-DCA-December-03-2025_11+35PM-9eeb05d/ \
     --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
-    --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json
+    --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
+    --use_gpu
 
+
+uv run python python/inference_multispeaker.py \
+    --speakers "VP157" \
+    --model_dir training_output/Tacotron2-DCA-November-20-2025_02+44PM-da89dae/ \
+    --use_gpu
 
 
 gcloud storage cp -r inference_output/ gs://mif-tts-audio-bucket/
