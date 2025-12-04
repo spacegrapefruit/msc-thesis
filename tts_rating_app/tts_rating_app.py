@@ -230,6 +230,25 @@ def check_existing_rating(user_email, audio_file):
         return_db_connection(conn)
 
 
+def parse_filename(filename):
+    """Parse filename: {model_name}-{model_version}-{phrase_id}-{speaker_id}.wav"""
+    if not filename.endswith(".wav"):
+        return None
+
+    base = filename[:-4]
+    parts = base.split("-")
+    if len(parts) < 4:
+        return None
+
+    return {
+        "model_name": parts[0],
+        "model_version": parts[1],
+        "phrase_id": parts[2],
+        "speaker_id": parts[3],
+        "full_name": filename,
+    }
+
+
 def get_user_rated_files(user_email):
     """Get list of audio files already rated by user from PostgreSQL."""
     conn = get_db_connection()
@@ -307,7 +326,7 @@ def get_audio_files():
 
 
 def get_random_audio():
-    """Get a random audio file that hasn't been rated by the current user."""
+    """Get a random audio file from an unrated phrase."""
     audio_files = get_audio_files()
     if not audio_files:
         return None
@@ -319,14 +338,36 @@ def get_random_audio():
     # Get files already rated by this user
     rated_files = get_user_rated_files(user_email)
 
-    # Filter out already rated files
-    unrated_files = [f for f in audio_files if f not in rated_files]
+    # Group files by phrase_id
+    phrase_groups = {}
+    for filename in audio_files:
+        parsed = parse_filename(filename)
+        if not parsed:
+            continue
 
-    if not unrated_files:
-        # If all files are rated, return None to indicate completion
+        phrase_id = parsed["phrase_id"]
+        if phrase_id not in phrase_groups:
+            phrase_groups[phrase_id] = []
+        phrase_groups[phrase_id].append(filename)
+
+    # Find phrase_ids that user hasn't rated any version of
+    rated_phrase_ids = set()
+    for filename in rated_files:
+        parsed = parse_filename(filename)
+        if parsed:
+            rated_phrase_ids.add(parsed["phrase_id"])
+
+    # Get unrated phrases
+    unrated_phrases = [
+        pid for pid in phrase_groups.keys() if pid not in rated_phrase_ids
+    ]
+
+    if not unrated_phrases:
         return None
 
-    return random.choice(unrated_files)
+    # Pick random phrase and random sample from that phrase
+    random_phrase = random.choice(unrated_phrases)
+    return random.choice(phrase_groups[random_phrase])
 
 
 @app.route("/")
@@ -388,21 +429,35 @@ def rating():
         return render_template("no_audio.html")
 
     user_email = session["user_email"]
-    rated_count = get_user_rating_count(user_email)
+    rated_files = get_user_rated_files(user_email)
 
-    total_files = len(audio_files)
+    # Count unique phrases
+    all_phrases = set()
+    rated_phrases = set()
 
-    if rated_count >= total_files:
-        # User has rated all files
+    for filename in audio_files:
+        parsed = parse_filename(filename)
+        if parsed:
+            all_phrases.add(parsed["phrase_id"])
+
+    for filename in rated_files:
+        parsed = parse_filename(filename)
+        if parsed:
+            rated_phrases.add(parsed["phrase_id"])
+
+    total_phrases = len(all_phrases)
+    rated_count = len(rated_phrases)
+
+    if rated_count >= total_phrases:
         return render_template(
-            "completion.html", rated_count=rated_count, total_files=total_files
+            "completion.html", rated_count=rated_count, total_files=total_phrases
         )
 
     audio_file = get_random_audio()
     if not audio_file:
         # This shouldn't happen given the check above, but just in case
         return render_template(
-            "completion.html", rated_count=rated_count, total_files=total_files
+            "completion.html", rated_count=rated_count, total_files=total_phrases
         )
 
     return render_template(
@@ -410,8 +465,8 @@ def rating():
         audio_file=audio_file,
         progress={
             "rated": rated_count,
-            "total": total_files,
-            "remaining": total_files - rated_count,
+            "total": total_phrases,
+            "remaining": total_phrases - rated_count,
         },
     )
 
@@ -431,12 +486,12 @@ def submit_rating():
 
         user_email = session["user_email"]
 
-        # Check if user has already voted for this audio file
+        # Check if user has already voted for this exact sample
         existing_rating = check_existing_rating(user_email, audio_file)
         if existing_rating:
             return jsonify(
                 {
-                    "error": "You have already voted for this audio sample",
+                    "error": "You have already voted for this phrase",
                     "existing_rating": existing_rating,
                 }
             ), 409
@@ -450,9 +505,7 @@ def submit_rating():
 
         success = save_rating_to_database(user_email, audio_file, rating, session_info)
         if not success:
-            return jsonify(
-                {"error": "Failed to save rating or rating already exists"}
-            ), 500
+            return jsonify({"error": "Failed to save rating"}), 500
 
         return jsonify({"success": True, "message": "Rating submitted successfully"})
 
