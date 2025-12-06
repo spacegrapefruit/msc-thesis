@@ -171,7 +171,7 @@ if __name__ == "__main__":
     else:
         model_name = "unknown"
         model_version = "v1"
-    
+
     print(f"Model name: {model_name}")
     print(f"Model version: {model_version}")
 
@@ -225,7 +225,9 @@ if __name__ == "__main__":
         phrase_id = f"p{sentence_idx:03d}"  # e.g., p001, p002, p003
 
         for speaker_id in speaker_ids:
-            output_filename = f"{model_name}-{model_version}-{phrase_id}-{speaker_id}.wav"
+            output_filename = (
+                f"{model_name}-{model_version}-{phrase_id}-{speaker_id}.wav"
+            )
             output_path = output_dir / output_filename
 
             if run_inference(

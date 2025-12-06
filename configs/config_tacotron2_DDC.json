@@ -63,12 +63,12 @@
     "drop_last": false,
     // LOSS SETTINGS
     "loss_masking": true, // enable / disable loss masking against the sequence padding.
-    "decoder_loss_alpha": 1, // original decoder loss weight. If > 0, it is enabled
-    "postnet_loss_alpha": 1, // original postnet loss weight. If > 0, it is enabled
-    "postnet_diff_spec_alpha": 0, // differential spectral loss weight. If > 0, it is enabled
-    "decoder_diff_spec_alpha": 0, // differential spectral loss weight. If > 0, it is enabled
-    "decoder_ssim_alpha": 0, // decoder ssim loss weight. If > 0, it is enabled
-    "postnet_ssim_alpha": 0, // postnet ssim loss weight. If > 0, it is enabled
+    "decoder_loss_alpha": 0.25, // original decoder loss weight. If > 0, it is enabled
+    "postnet_loss_alpha": 0.25, // original postnet loss weight. If > 0, it is enabled
+    "postnet_diff_spec_alpha": 0.0, // differential spectral loss weight. If > 0, it is enabled
+    "decoder_diff_spec_alpha": 0.0, // differential spectral loss weight. If > 0, it is enabled
+    "decoder_ssim_alpha": 0.25, // decoder ssim loss weight. If > 0, it is enabled
+    "postnet_ssim_alpha": 0.25, // postnet ssim loss weight. If > 0, it is enabled
     "ga_alpha": 5.0, // weight for guided attention loss. If > 0, guided attention is enabled.
     "stopnet_pos_weight": 15.0, // pos class weight for stopnet loss since there are way more negative samples than positive samples.
     // VALIDATION
@@ -77,11 +77,11 @@
     "eval_split_size": 0.01,
     "test_delay_epochs": 50, //Until attention is aligned, testing only wastes computation time.
     "test_sentences": [
-        "aš labai mėgstu skaityti knygas.",
-        "šiandien oras yra puikus idealiai tinkantis pasivaikščiojimams gamtoje.",
-        "technologijos sparčiai keičia mūsų kasdienį gyvenimą ir darbo būdus.",
-        "muzika turi galią sujungti žmones iš skirtingų kultūrų ir kalbų.",
-        "kelionės atveria protą naujoms idėjoms ir patirtims."
+        "a`š labai mė´gstu skaity´ti knyga`s.",
+        "šian~dien o´ras yra puiku`s idealiai tin~kantis pasiva´ikščiojimams gamtoje`.",
+        "technolo`gijos spar~čiai kei~čia mū´sų kasdie~nį gyve~nimą ir~ da´rbo būdu`s.",
+        "mu`zika turi ga~lią sujungti žmo´nes i`š skirti`ngų kultū~rų ir~ kalbų.",
+        "kelio~nės a`tveria pro~tą naujo´ms idė´joms ir~ patirti`ms."
     ],
     "training_seed": 54321,
     // OPTIMIZER
@@ -105,7 +105,7 @@
             30000,
             40000
         ],
-        "gamma": 0.2
+        "gamma": 0.32
     },
     "scheduler_after_epoch": false,
     "wd": 0.000001, // Weight decay weight.
