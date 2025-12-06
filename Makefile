@@ -68,9 +68,9 @@ endif
 
 # 2.5. Compute Speaker Embeddings
 # Liepa-2 multispeaker embeddings computation
-$(EMBEDDINGS_LIEPA2_CHECK_FILE): $(PROCESSED_LIEPA2_CHECK_FILE) python/compute_embeddings_multispeaker.py
+$(EMBEDDINGS_LIEPA2_CHECK_FILE): $(PROCESSED_LIEPA2_CHECK_FILE) python/compute_embeddings.py
 	@echo "Computing speaker embeddings for the multispeaker Liepa-2 dataset..."
-	$(EXECUTOR) python python/compute_embeddings_multispeaker.py \
+	$(EXECUTOR) python python/compute_embeddings.py \
 	  --dataset_path $(PROCESSED_LIEPA2_DIR) \
 	  --output_path $(EMBEDDINGS_LIEPA2_CHECK_FILE)
 	@echo "\nSpeaker embeddings computed. Output at: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"

@@ -1,0 +1,792 @@
+#!/usr/bin/env python3
+"""
+Script to generate all figures for the MSc thesis on TTS synthesis.
+This script creates publication-ready figures for LaTeX inclusion.
+"""
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+import seaborn as sns
+from pathlib import Path
+import librosa
+import librosa.display
+
+# Set the style for publication-ready figures
+plt.style.use("seaborn-v0_8-whitegrid")
+sns.set_palette("husl")
+
+# Create output directory
+FIGURES_DIR = Path("latex/paper/figures")
+FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def create_sampling_quantization_figure():
+    """
+    Create a visual representation of Analog-to-Digital conversion showing
+    sampling rate and quantization levels.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
+    # Generate continuous analog signal
+    t = np.linspace(0, 4, 1000)
+    analog_signal = (
+        2 * np.sin(2 * np.pi * 0.8 * t)
+        + 0.5 * np.sin(2 * np.pi * 2.5 * t)
+        + 0.3 * np.sin(2 * np.pi * 5 * t)
+    )
+
+    # Sampling parameters
+    sampling_rate = 8  # samples per second for visualization
+    sample_times = np.arange(0, 4, 1 / sampling_rate)
+    sampled_values = (
+        2 * np.sin(2 * np.pi * 0.8 * sample_times)
+        + 0.5 * np.sin(2 * np.pi * 2.5 * sample_times)
+        + 0.3 * np.sin(2 * np.pi * 5 * sample_times)
+    )
+
+    # Quantization levels (8 levels for clarity)
+    quantization_levels = np.linspace(-3, 3, 9)
+    quantized_values = np.round(sampled_values * 8 / 6) * 6 / 8
+
+    # Plot analog signal
+    ax.plot(t, analog_signal, "gray", linewidth=2, alpha=0.8, label="Analog Signal")
+
+    # Plot quantization levels
+    for level in quantization_levels:
+        ax.axhline(y=level, color="lightblue", linestyle="-", alpha=0.5, linewidth=0.5)
+
+    # Plot sampling times
+    for sample_time in sample_times:
+        ax.axvline(x=sample_time, color="red", linestyle="--", alpha=0.7, linewidth=1)
+
+    # Plot sampled and quantized points
+    ax.scatter(
+        sample_times,
+        quantized_values,
+        color="red",
+        s=50,
+        zorder=5,
+        label="Digital Samples",
+    )
+
+    # Connect quantized points to show digital signal
+    ax.step(
+        sample_times,
+        quantized_values,
+        where="post",
+        color="blue",
+        linewidth=2,
+        alpha=0.8,
+        label="Digital Signal",
+    )
+
+    ax.set_xlabel("Time (seconds)", fontsize=14)
+    ax.set_ylabel("Amplitude", fontsize=14)
+    ax.set_title("Analog-to-Digital Conversion Process", fontsize=16, fontweight="bold")
+    ax.legend(fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 4)
+    ax.set_ylim(-3.5, 3.5)
+
+    # Add annotations
+    ax.annotate(
+        "Quantization Levels\n(Bit Depth)",
+        xy=(0.2, 2.5),
+        xytext=(0.5, 2.8),
+        arrowprops=dict(arrowstyle="->", color="blue", alpha=0.7),
+        fontsize=12,
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.7),
+    )
+
+    ax.annotate(
+        "Sampling Rate\n(Time Intervals)",
+        xy=(1, -2.5),
+        xytext=(1.3, -3),
+        arrowprops=dict(arrowstyle="->", color="red", alpha=0.7),
+        fontsize=12,
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral", alpha=0.7),
+    )
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "sampling_quantization.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated sampling_quantization.pdf")
+
+
+def create_waveform_spectrograms_figure():
+    """
+    Create a figure showing waveform, spectrogram, and mel-spectrogram representations.
+    """
+    # Generate a synthetic audio signal for demonstration
+    sr = 22050
+    duration = 2.0
+    t = np.linspace(0, duration, int(sr * duration))
+
+    # Create a complex waveform with multiple frequencies
+    freq1, freq2, freq3 = 440, 880, 1320  # Musical notes A4, A5, E6
+    waveform = (
+        np.sin(2 * np.pi * freq1 * t) * np.exp(-t * 0.5)
+        + 0.5 * np.sin(2 * np.pi * freq2 * t) * np.exp(-((t - 0.5) ** 2) * 2)
+        + 0.3 * np.sin(2 * np.pi * freq3 * t) * (t > 1) * np.exp(-(t - 1) * 3)
+    )
+
+    # Add some noise for realism
+    waveform += 0.05 * np.random.normal(0, 1, len(waveform))
+
+    # Compute STFT
+    stft = librosa.stft(waveform, hop_length=512, n_fft=2048)
+    magnitude = np.abs(stft)
+
+    # Compute mel-spectrogram
+    mel_spec = librosa.feature.melspectrogram(y=waveform, sr=sr, n_mels=80)
+
+    # Create the figure with three subplots
+    fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+
+    # Plot waveform
+    time_axis = np.linspace(0, duration, len(waveform))
+    axes[0].plot(time_axis, waveform, color="darkblue", linewidth=0.8)
+    axes[0].set_title("Raw Audio Waveform", fontsize=14, fontweight="bold")
+    axes[0].set_ylabel("Amplitude", fontsize=12)
+    axes[0].grid(True, alpha=0.3)
+    axes[0].set_xlim(0, duration)
+
+    # Plot spectrogram
+    freqs = librosa.fft_frequencies(sr=sr, n_fft=2048)
+    times = librosa.frames_to_time(range(magnitude.shape[1]), sr=sr, hop_length=512)
+
+    im1 = axes[1].imshow(
+        librosa.amplitude_to_db(magnitude),
+        aspect="auto",
+        origin="lower",
+        extent=[0, duration, 0, sr / 2],
+        cmap="viridis",
+    )
+    axes[1].set_title("Linear Frequency Spectrogram", fontsize=14, fontweight="bold")
+    axes[1].set_ylabel("Frequency (Hz)", fontsize=12)
+    axes[1].set_ylim(0, 8000)  # Focus on relevant frequency range
+
+    # Plot mel-spectrogram
+    im2 = axes[2].imshow(
+        librosa.power_to_db(mel_spec),
+        aspect="auto",
+        origin="lower",
+        extent=[0, duration, 0, 80],
+        cmap="viridis",
+    )
+    axes[2].set_title("Mel-frequency Spectrogram", fontsize=14, fontweight="bold")
+    axes[2].set_ylabel("Mel Bins", fontsize=12)
+    axes[2].set_xlabel("Time (seconds)", fontsize=12)
+
+    # Add colorbars
+    cbar1 = plt.colorbar(im1, ax=axes[1], format="%d dB")
+    cbar1.set_label("Magnitude (dB)", fontsize=10)
+
+    cbar2 = plt.colorbar(im2, ax=axes[2], format="%d dB")
+    cbar2.set_label("Power (dB)", fontsize=10)
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "waveform_spectrograms.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated waveform_spectrograms.pdf")
+
+
+def create_speaker_encoder_diagram():
+    """
+    Create a diagram showing the general architecture of a Speaker Encoder.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+
+    # Define components and their positions
+    components = {
+        "input": {
+            "pos": (1, 4),
+            "size": (1.5, 0.8),
+            "label": "Reference Audio\n(Variable Length)",
+            "color": "lightblue",
+        },
+        "preprocessing": {
+            "pos": (3.5, 4),
+            "size": (1.5, 0.8),
+            "label": "Feature\nExtraction",
+            "color": "lightgreen",
+        },
+        "lstm1": {
+            "pos": (6, 5),
+            "size": (1.2, 0.8),
+            "label": "LSTM\nLayer 1",
+            "color": "orange",
+        },
+        "lstm2": {
+            "pos": (6, 3.8),
+            "size": (1.2, 0.8),
+            "label": "LSTM\nLayer 2",
+            "color": "orange",
+        },
+        "lstm3": {
+            "pos": (6, 2.6),
+            "size": (1.2, 0.8),
+            "label": "LSTM\nLayer N",
+            "color": "orange",
+        },
+        "pooling": {
+            "pos": (8.5, 4),
+            "size": (1.2, 0.8),
+            "label": "Global\nPooling",
+            "color": "lightyellow",
+        },
+        "embedding": {
+            "pos": (11, 4),
+            "size": (1.5, 0.8),
+            "label": "Speaker\nEmbedding\n(d-vector)",
+            "color": "lightcoral",
+        },
+    }
+
+    # Draw components
+    for comp_name, comp_info in components.items():
+        x, y = comp_info["pos"]
+        w, h = comp_info["size"]
+        rect = mpatches.FancyBboxPatch(
+            (x - w / 2, y - h / 2),
+            w,
+            h,
+            boxstyle="round,pad=0.1",
+            facecolor=comp_info["color"],
+            edgecolor="black",
+            linewidth=1.5,
+        )
+        ax.add_patch(rect)
+        ax.text(
+            x,
+            y,
+            comp_info["label"],
+            ha="center",
+            va="center",
+            fontsize=11,
+            fontweight="bold",
+        )
+
+    # Draw arrows
+    arrows = [
+        ((2.25, 4), (2.75, 4)),  # input -> preprocessing
+        ((4.75, 4), (5.4, 4.6)),  # preprocessing -> lstm1
+        ((4.75, 4), (5.4, 4.2)),  # preprocessing -> lstm2
+        ((4.75, 4), (5.4, 3.4)),  # preprocessing -> lstm3
+        ((7.2, 5), (7.9, 4.4)),  # lstm1 -> pooling
+        ((7.2, 3.8), (7.9, 4)),  # lstm2 -> pooling
+        ((7.2, 2.6), (7.9, 3.6)),  # lstm3 -> pooling
+        ((9.7, 4), (10.25, 4)),  # pooling -> embedding
+    ]
+
+    for start, end in arrows:
+        ax.annotate(
+            "",
+            xy=end,
+            xytext=start,
+            arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
+        )
+
+    # Add dots to indicate more LSTM layers
+    ax.text(6, 2, "⋮", ha="center", va="center", fontsize=20, fontweight="bold")
+
+    # Add dimension annotations
+    ax.text(
+        1,
+        2.8,
+        "Variable\nsequence length",
+        ha="center",
+        fontsize=10,
+        style="italic",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
+    ax.text(
+        11,
+        2.8,
+        "Fixed-length\nvector\n(e.g., 256-dim)",
+        ha="center",
+        fontsize=10,
+        style="italic",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
+
+    ax.set_xlim(0, 13)
+    ax.set_ylim(2, 6)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_title("Speaker Encoder Architecture", fontsize=16, fontweight="bold", pad=20)
+
+    plt.tight_layout()
+    plt.savefig(
+        FIGURES_DIR / "speaker_encoder_diagram.pdf", dpi=300, bbox_inches="tight"
+    )
+    plt.close()
+    print("✓ Generated speaker_encoder_diagram.pdf")
+
+
+def create_tacotron2_architecture():
+    """
+    Create a diagram showing the Tacotron 2 architecture.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
+
+    # Define main components
+    components = {
+        # Encoder side
+        "text_input": {
+            "pos": (2, 1),
+            "size": (2, 0.8),
+            "label": "Text Input\n(Characters/Phonemes)",
+            "color": "lightblue",
+        },
+        "char_embedding": {
+            "pos": (2, 2.5),
+            "size": (2, 0.8),
+            "label": "Character\nEmbedding",
+            "color": "lightgreen",
+        },
+        "conv_layers": {
+            "pos": (2, 4),
+            "size": (2, 0.8),
+            "label": "Convolutional\nLayers",
+            "color": "orange",
+        },
+        "encoder_lstm": {
+            "pos": (2, 5.5),
+            "size": (2, 0.8),
+            "label": "Bidirectional\nLSTM",
+            "color": "yellow",
+        },
+        # Attention
+        "attention": {
+            "pos": (6, 4),
+            "size": (2, 1.2),
+            "label": "Location-Sensitive\nAttention",
+            "color": "lightcoral",
+        },
+        # Decoder side
+        "prev_frame": {
+            "pos": (10, 1),
+            "size": (1.5, 0.8),
+            "label": "Previous\nMel Frame",
+            "color": "lightgray",
+        },
+        "prenet": {
+            "pos": (10, 2.5),
+            "size": (1.5, 0.8),
+            "label": "Pre-net\n(FC + Dropout)",
+            "color": "lightyellow",
+        },
+        "decoder_lstm": {
+            "pos": (10, 4),
+            "size": (1.5, 0.8),
+            "label": "Decoder\nLSTM",
+            "color": "lightgreen",
+        },
+        "linear_proj": {
+            "pos": (10, 5.5),
+            "size": (1.5, 0.8),
+            "label": "Linear\nProjection",
+            "color": "orange",
+        },
+        "mel_output": {
+            "pos": (10, 7),
+            "size": (1.5, 0.8),
+            "label": "Mel-spectrogram\nFrame",
+            "color": "lightblue",
+        },
+        # Post-net
+        "postnet": {
+            "pos": (13, 5.5),
+            "size": (1.5, 1.5),
+            "label": "Post-net\n(Conv + Residual)",
+            "color": "lightsteelblue",
+        },
+        "final_mel": {
+            "pos": (13, 7.5),
+            "size": (2, 0.8),
+            "label": "Final\nMel-spectrogram",
+            "color": "cornflowerblue",
+        },
+        # Stop token
+        "stop_token": {
+            "pos": (8, 7),
+            "size": (1.2, 0.6),
+            "label": "Stop Token\nPrediction",
+            "color": "lightpink",
+        },
+    }
+
+    # Draw components
+    for comp_name, comp_info in components.items():
+        x, y = comp_info["pos"]
+        w, h = comp_info["size"]
+        rect = mpatches.FancyBboxPatch(
+            (x - w / 2, y - h / 2),
+            w,
+            h,
+            boxstyle="round,pad=0.1",
+            facecolor=comp_info["color"],
+            edgecolor="black",
+            linewidth=1.2,
+        )
+        ax.add_patch(rect)
+        ax.text(
+            x,
+            y,
+            comp_info["label"],
+            ha="center",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
+        )
+
+    # Draw connections
+    arrows = [
+        # Encoder path
+        ((2, 1.8), (2, 2.1)),  # text -> embedding
+        ((2, 2.9), (2, 3.6)),  # embedding -> conv
+        ((2, 4.4), (2, 5.1)),  # conv -> lstm
+        ((3, 5.5), (5, 4.6)),  # encoder lstm -> attention
+        # Decoder path
+        ((10, 1.8), (10, 2.1)),  # prev frame -> prenet
+        ((10, 2.9), (10, 3.6)),  # prenet -> decoder lstm
+        ((10, 4.4), (10, 5.1)),  # decoder lstm -> linear proj
+        ((10, 5.9), (10, 6.6)),  # linear proj -> mel output
+        # Attention connections
+        ((6, 3.4), (9.25, 3.4)),  # attention -> decoder lstm
+        ((7, 4), (9.2, 5.8)),  # attention -> linear proj
+        # Recurrent connection
+        ((9.25, 7), (9.25, 1.8)),  # mel output -> prev frame (curved)
+        # Post-net
+        ((10.75, 7), (12.25, 6.25)),  # mel output -> postnet
+        ((13, 6.25), (13, 7.1)),  # postnet -> final mel
+        # Stop token
+        ((9.25, 5.5), (8.6, 6.7)),  # linear proj -> stop token
+    ]
+
+    for start, end in arrows:
+        if start[0] == 9.25 and start[1] == 7:  # Recurrent connection
+            # Create curved arrow for recurrent connection
+            ax.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops=dict(
+                    arrowstyle="->", lw=2, color="red", connectionstyle="arc3,rad=-0.3"
+                ),
+            )
+        else:
+            ax.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
+            )
+
+    # Add labels for different sections
+    ax.text(
+        2,
+        0.2,
+        "ENCODER",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.7),
+    )
+    ax.text(
+        6,
+        2.5,
+        "ATTENTION",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral", alpha=0.7),
+    )
+    ax.text(
+        10,
+        0.2,
+        "DECODER",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen", alpha=0.7),
+    )
+
+    # Add recurrent connection label
+    ax.text(
+        8.5,
+        3.5,
+        "Autoregressive\nConnection",
+        ha="center",
+        fontsize=10,
+        style="italic",
+        color="red",
+        fontweight="bold",
+    )
+
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 8.5)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_title(
+        "Tacotron 2 Architecture with DDC", fontsize=16, fontweight="bold", pad=20
+    )
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "tacotron2_arch.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated tacotron2_arch.pdf")
+
+
+def create_fastpitch_architecture():
+    """
+    Create a diagram showing the FastPitch architecture.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
+
+    # Define components
+    components = {
+        # Input
+        "text_input": {
+            "pos": (2, 1),
+            "size": (2, 0.8),
+            "label": "Text Input\n(Phonemes)",
+            "color": "lightblue",
+        },
+        "char_embedding": {
+            "pos": (2, 2.5),
+            "size": (2, 0.8),
+            "label": "Character\nEmbedding",
+            "color": "lightgreen",
+        },
+        # Encoder
+        "transformer_enc": {
+            "pos": (2, 4.5),
+            "size": (2, 1.5),
+            "label": "Transformer\nEncoder\n(Self-Attention)",
+            "color": "orange",
+        },
+        # Duration and Pitch prediction
+        "duration_pred": {
+            "pos": (5.5, 3),
+            "size": (1.5, 0.8),
+            "label": "Duration\nPredictor",
+            "color": "lightyellow",
+        },
+        "pitch_pred": {
+            "pos": (5.5, 5),
+            "size": (1.5, 0.8),
+            "label": "Pitch\nPredictor",
+            "color": "lightcoral",
+        },
+        # Length regulation and pitch injection
+        "length_reg": {
+            "pos": (8.5, 4.5),
+            "size": (1.5, 0.8),
+            "label": "Length\nRegulator",
+            "color": "lightsteelblue",
+        },
+        "pitch_inject": {
+            "pos": (8.5, 6),
+            "size": (1.5, 0.8),
+            "label": "Pitch\nEmbedding",
+            "color": "lightpink",
+        },
+        # Decoder
+        "transformer_dec": {
+            "pos": (11.5, 5.5),
+            "size": (2, 1.5),
+            "label": "Transformer\nDecoder\n(Self-Attention)",
+            "color": "lightcyan",
+        },
+        # Output
+        "mel_output": {
+            "pos": (14.5, 5.5),
+            "size": (2, 0.8),
+            "label": "Mel-spectrogram\nOutput",
+            "color": "cornflowerblue",
+        },
+        # Duration targets (training)
+        "duration_target": {
+            "pos": (5.5, 1.5),
+            "size": (1.5, 0.6),
+            "label": "Duration\nTargets\n(Training)",
+            "color": "lightgray",
+        },
+        "pitch_target": {
+            "pos": (8.5, 1.5),
+            "size": (1.5, 0.6),
+            "label": "Pitch\nTargets\n(Training)",
+            "color": "lightgray",
+        },
+    }
+
+    # Draw components
+    for comp_name, comp_info in components.items():
+        x, y = comp_info["pos"]
+        w, h = comp_info["size"]
+        rect = mpatches.FancyBboxPatch(
+            (x - w / 2, y - h / 2),
+            w,
+            h,
+            boxstyle="round,pad=0.1",
+            facecolor=comp_info["color"],
+            edgecolor="black",
+            linewidth=1.2,
+        )
+        ax.add_patch(rect)
+        ax.text(
+            x,
+            y,
+            comp_info["label"],
+            ha="center",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
+        )
+
+    # Draw connections
+    arrows = [
+        # Main forward path
+        ((2, 1.8), (2, 2.1)),  # text -> embedding
+        ((2, 2.9), (2, 3.8)),  # embedding -> transformer enc
+        ((3, 4.5), (4.75, 4.5)),  # transformer enc -> duration/pitch predictors
+        ((3, 4.5), (4.75, 3)),  # transformer enc -> duration pred
+        ((3, 4.5), (4.75, 5)),  # transformer enc -> pitch pred
+        # Duration path
+        ((6.25, 3), (7.75, 4.1)),  # duration pred -> length reg
+        # Pitch path
+        ((6.25, 5), (7.75, 5.6)),  # pitch pred -> pitch injection
+        # To decoder
+        ((9.25, 4.5), (10.5, 5.1)),  # length reg -> decoder
+        ((9.25, 6), (10.5, 5.9)),  # pitch injection -> decoder
+        # Output
+        ((12.5, 5.5), (13.5, 5.5)),  # decoder -> mel output
+        # Training connections (dotted)
+        ((5.5, 2.1), (5.5, 2.6)),  # duration targets -> duration pred
+        ((8.5, 2.1), (8.5, 4.1)),  # pitch targets -> length reg (via pitch)
+    ]
+
+    for i, (start, end) in enumerate(arrows):
+        if i >= len(arrows) - 2:  # Training connections
+            ax.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops=dict(arrowstyle="->", lw=2, color="gray", linestyle="--"),
+            )
+        else:
+            ax.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
+            )
+
+    # Add key features annotations
+    ax.text(
+        8.5,
+        7.5,
+        "Parallel Generation\n(Non-autoregressive)",
+        ha="center",
+        fontsize=12,
+        style="italic",
+        fontweight="bold",
+        color="green",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen", alpha=0.7),
+    )
+
+    ax.text(
+        11.5,
+        3,
+        "Explicit Duration\nand Pitch Control",
+        ha="center",
+        fontsize=12,
+        style="italic",
+        fontweight="bold",
+        color="purple",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="plum", alpha=0.7),
+    )
+
+    # Add section labels
+    ax.text(
+        2,
+        0.2,
+        "INPUT",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.7),
+    )
+    ax.text(
+        6.5,
+        0.2,
+        "PREDICTION",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", alpha=0.7),
+    )
+    ax.text(
+        11.5,
+        0.2,
+        "DECODER",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcyan", alpha=0.7),
+    )
+    ax.text(
+        14.5,
+        0.2,
+        "OUTPUT",
+        ha="center",
+        fontsize=14,
+        fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="cornflowerblue", alpha=0.7),
+    )
+
+    ax.set_xlim(0, 17)
+    ax.set_ylim(0, 8)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_title("FastPitch Architecture", fontsize=16, fontweight="bold", pad=20)
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "fastpitch_arch.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated fastpitch_arch.pdf")
+
+
+def main():
+    """Generate all thesis figures."""
+    print("Generating figures for MSc thesis...")
+    print(f"Output directory: {FIGURES_DIR.absolute()}")
+
+    try:
+        create_sampling_quantization_figure()
+        create_waveform_spectrograms_figure()
+        create_speaker_encoder_diagram()
+        create_tacotron2_architecture()
+        create_fastpitch_architecture()
+
+        print("\n✅ All figures generated successfully!")
+        print(f"Generated files:")
+        for pdf_file in FIGURES_DIR.glob("*.pdf"):
+            print(f"  - {pdf_file.name}")
+
+        print(
+            "\nTo include these figures in your LaTeX document, uncomment the \\includegraphics lines in thesis.tex"
+        )
+
+    except Exception as e:
+        print(f"❌ Error generating figures: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    main()
