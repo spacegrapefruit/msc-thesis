@@ -239,7 +239,7 @@ commonly used as input features for modern TTS systems.
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
+      % \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
       \caption{Raw audio waveform (top), its spectrogram (middle), and Mel-spectrogram (bottom) representations.}
       \label{fig:waveform_spectrograms}
 \end{figure}
@@ -435,7 +435,7 @@ not seen during training.
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
+      % \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
       \caption{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
       \label{fig:speaker_encoder}
 \end{figure}
@@ -515,7 +515,7 @@ This architecture has three main components:
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=\textwidth]{figures/tacotron2_arch.pdf}
+      % \includegraphics[width=\textwidth]{figures/tacotron2_arch.pdf}
       \caption{The Tacotron 2 architecture. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps. \cite{shen2018natural}}
       \label{fig:tacotron_arch}
 \end{figure}
@@ -536,7 +536,7 @@ typically composed of LSTM layers.
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=\textwidth]{figures/fastpitch_arch.pdf}
+      % \includegraphics[width=\textwidth]{figures/fastpitch_arch.pdf}
       \caption{The FastPitch architecture. It utilizes a feed-forward Transformer and an explicit duration predictor, allowing for parallel generation of the Mel-spectrogram. Pitch is predicted and injected into the latent representation. \cite{lancucki2020fastpitch}}
       \label{fig:fastpitch_arch}
 \end{figure}
@@ -596,7 +596,7 @@ waveforms, and a Discriminator, which distinguishes between real and
 synthesized audio. This adversarial training forces the Generator to produce
 high-fidelity audio that closely resembles natural speech.
 
-Coqui TTS comes with a pre-trained HiFi-GAN v2 vocoder trained on a large
+The framework used in this thesis, Coqui TTS~\cite{coqui2021}, comes with a pre-trained HiFi-GAN v2 vocoder trained on a large
 multi-speaker dataset (VCTK). Given its widespread adoption and status as a
 state-of-the-art neural vocoder, this thesis will use the HiFi-GAN v2 model for
 waveform generation. In order to ensure compatibility between the TTS models
@@ -786,7 +786,7 @@ The independent variables in this study are:
 The dependent variables in this study are:
 
 \begin{itemize}
-      \item TTS model performance: Measured using objective metrics (MCD, F0 RMSE) and
+      \item TTS model performance: Measured using objective metrics (TODO, decide) and
             subjective evaluations (MOS scores).
 \end{itemize}
 
@@ -833,6 +833,8 @@ performed by the Coqui TTS framework during training.
 The acoustic processing that transforms audio waveforms into mel-spectrograms
 is performed on-the-fly during model training by the Coqui TTS framework. The
 mel-spectrogram parameters used are as follows:
+
+TODO move to appendix
 
 \begin{itemize}
       \item fft\_size: 1024
@@ -912,15 +914,17 @@ pre-trained speaker encoder model. The speaker embedding computation process
 involves:
 
 \begin{itemize}
-      \item \textbf{Speaker encoder model}: Pre-trained model from Coqui TTS based on
-            the approach described in~\cite{jia2018transfer}.
+      \item \textbf{Speaker encoder model}: Pre-trained model from Coqui TTS based on TODO
+            % the approach described in~\cite{jia2018transfer}.
       \item \textbf{Embedding extraction}: Each speaker's audio samples are processed
             through the speaker encoder to generate 512-dimensional speaker embeddings
             (d-vectors).
-      \item \textbf{Pooling strategy}: Global average pooling across all utterances
-            from each speaker to create a single representative embedding per speaker.
-      \item \textbf{Normalization}: Speaker embeddings are L2-normalized to ensure
-            consistent magnitude across speakers.
+      \item \textbf{Pooling strategy}: TODO
+      % Global average pooling across all utterances
+      %       from each speaker to create a single representative embedding per speaker.
+      \item \textbf{Normalization}: TODO
+      % Speaker embeddings are L2-normalized to ensure
+      %       consistent magnitude across speakers.
 \end{itemize}
 
 These speaker embeddings are then used during TTS training to condition the
@@ -938,7 +942,6 @@ comparison across experiments.
 
 Before applying selection strategies, the dataset undergoes initial filtering:
 \begin{itemize}
-      \item \textbf{Language filtering}: Only Lithuanian language samples are retained.
       \item \textbf{Speech type filtering}: Only ``read speech'' samples are used, excluding
             spontaneous speech to ensure consistent quality and pronunciation.
       \item \textbf{Age group filtering}: Speakers from age groups 18--25, 26--60, and 60+
@@ -949,20 +952,20 @@ Before applying selection strategies, the dataset undergoes initial filtering:
 
 \subsubsection{Selection strategies}
 
-\textbf{Top-N Speaker Strategy (Speaker Depth):}
+\textbf{Top-N speaker (Speaker depth):}
 This strategy prioritizes speaker depth by selecting the N speakers with the
 most available data. For multispeaker training with 20 speakers, the top 10
 male and top 10 female speakers (by sample count) are selected. This approach
 maximizes the amount of data per speaker, potentially allowing models to learn
 more stable speaker-specific characteristics and alignment patterns.
 
-\textbf{Balanced Speaker Strategy (Speaker Breadth):}
+\textbf{Balanced speaker (Speaker breadth):}
 This strategy prioritizes speaker diversity by distributing the training budget
 across a larger number of speakers, with each speaker contributing roughly equal
 amounts of data. The selection process aims to include as many speakers as
 possible while maintaining the 30-hour budget constraint and gender balance.
 
-\textbf{Random Sampling Strategy:}
+\textbf{Random sampling:}
 As a baseline, this strategy randomly samples utterances from the filtered
 dataset without regard to speaker distribution. This provides a control
 condition to assess whether structured speaker selection provides benefits over
@@ -981,10 +984,10 @@ for the main decoder, r=7 for the coarse decoder) to improve attention
 alignment stability. This architecture is particularly suitable for multispeaker
 scenarios where attention alignment can be challenging.
 
-\textbf{Tacotron~2 with Dynamic Convolution Attention (DCA):}
-An alternative Tacotron~2 variant that replaces the standard location-sensitive
-attention with dynamic convolution attention mechanisms for potentially improved
-alignment performance.
+% \textbf{Tacotron~2 with Dynamic Convolution Attention (DCA):}
+% An alternative Tacotron~2 variant that replaces the standard location-sensitive
+% attention with dynamic convolution attention mechanisms for potentially improved
+% alignment performance.
 
 \textbf{FastPitch:}
 A non-autoregressive model that predicts duration and pitch explicitly, allowing
@@ -1080,12 +1083,12 @@ vocoder.
 Objective evaluation is performed using standard acoustic metrics:
 
 \begin{itemize}
-      \item \textbf{Mel Cepstral Distortion (MCD):} Measures the spectral distance
-            between synthesized and ground truth mel-spectrograms, with lower values
-            indicating better quality.
-      \item \textbf{Fundamental Frequency RMSE (F0 RMSE):} Evaluates pitch accuracy
-            by measuring the root mean square error between predicted and ground truth
-            F0 contours.
+      % \item \textbf{Mel Cepstral Distortion (MCD):} Measures the spectral distance
+      %       between synthesized and ground truth mel-spectrograms, with lower values
+      %       indicating better quality.
+      % \item \textbf{Fundamental Frequency RMSE (F0 RMSE):} Evaluates pitch accuracy
+      %       by measuring the root mean square error between predicted and ground truth
+      %       F0 contours.
       \item \textbf{Training convergence metrics:} Training and validation loss
             curves, attention alignment visualization, and convergence time.
 \end{itemize}
@@ -1099,16 +1102,16 @@ includes:
 \begin{itemize}
       \item \textbf{Rating scale:} 5-point Mean Opinion Score (MOS) scale where
             1=Very Poor, 2=Poor, 3=Fair, 4=Good, 5=Excellent.
-      \item \textbf{Test sentences:} A standardized set of 5 Lithuanian sentences
-            covering various phonetic contexts and prosodic patterns.
-      \item \textbf{Evaluation criteria:} Participants rate overall quality considering
-            naturalness, intelligibility, and absence of artifacts.
-      \item \textbf{Participant recruitment:} Native Lithuanian speakers recruited
-            through university networks and social media.
-      \item \textbf{Data collection:} Web-based application with PostgreSQL database
-            for storing ratings, deployed on Google Cloud Platform.
-      \item \textbf{Statistical analysis:} Mann-Whitney U tests for significance
-            testing between model comparisons, given the ordinal nature of MOS ratings.
+      % \item \textbf{Test sentences:} A standardized set of 50 Lithuanian sentences
+      %       covering various phonetic contexts and prosodic patterns.
+      % \item \textbf{Evaluation criteria:} Participants rate overall quality considering
+      %       naturalness, intelligibility, and absence of artifacts.
+      % \item \textbf{Participant recruitment:} Native Lithuanian speakers recruited
+      %       through university networks and social media.
+      % \item \textbf{Data collection:} Web-based application with PostgreSQL database
+      %       for storing ratings, deployed on Google Cloud Platform.
+      % \item \textbf{Statistical analysis:} Mann-Whitney U tests for significance
+      %       testing between model comparisons, given the ordinal nature of MOS ratings.
 \end{itemize}
 
 \subsubsection{Computational hardware}
@@ -1125,7 +1128,7 @@ with the following specifications:
 
 \subsubsection{Implementation framework}
 
-All experiments are implemented using the Coqui TTS framework~\cite{coqui2021},
+All experiments are implemented using the Coqui TTS framework,
 an open-source toolkit for training TTS models. The experimental pipeline is
 automated using Make build system with the following components:
 

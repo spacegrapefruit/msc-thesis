@@ -42,7 +42,6 @@ def run_inference(
     speaker_id,
     output_path,
     use_gpu=True,
-    device=None,
     vocoder_path=None,
     vocoder_config_path=None,
 ):
@@ -73,10 +72,7 @@ def run_inference(
 
     # Add GPU support
     if use_gpu:
-        if device:
-            cmd.extend(["--device", device])
-        else:
-            cmd.append("--use_cuda")
+        cmd.append("--use_cuda")
 
     print(f"Running: {' '.join(cmd)}")
 
@@ -92,8 +88,8 @@ def run_inference(
 
 
 if __name__ == "__main__":
-    liepa_path = Path("data/raw/liepa2")
-    load_accented_words(liepa_path / "final_accented_words.csv")
+    input_path = Path("data/raw/liepa2")
+    load_accented_words(input_path / "final_accented_words.csv")
 
     parser = argparse.ArgumentParser(
         description="Run inference on multispeaker TTS models"
@@ -101,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_dir",
         type=str,
-        help="Path to the model directory (e.g., training_output/Tacotron2-DDC-CV-LT-Multispeaker-November-06-2025_10+04PM-6805a9d)",
+        help="Path to the model directory (e.g., training_output/Tacotron2-DCA-November-06-2025_10+04PM-6805a9d)",
     )
     parser.add_argument(
         "--output_dir",
@@ -125,16 +121,6 @@ if __name__ == "__main__":
         action="store_true",
         default=True,
         help="Use GPU for inference (default: True)",
-    )
-    parser.add_argument(
-        "--no_gpu",
-        action="store_true",
-        help="Disable GPU usage (use CPU instead)",
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        help="Specific device to use (e.g., 'cuda:0', 'cuda:1', 'cpu')",
     )
     parser.add_argument(
         "--vocoder_path",
@@ -175,6 +161,20 @@ if __name__ == "__main__":
     print(f"Config: {config_path}")
     print(f"Speakers: {speakers_path if speakers_path else 'Not found'}")
 
+    # Extract model name and version from directory name
+    # Format: ModelName-Date-Time-Version
+    dir_name = model_dir.name
+    parts = dir_name.split("-")
+    if len(parts) >= 2:
+        model_name = parts[0]  # e.g., "Tacotron2"
+        model_version = parts[-1]  # e.g., git hash or version code
+    else:
+        model_name = "unknown"
+        model_version = "v1"
+    
+    print(f"Model name: {model_name}")
+    print(f"Model version: {model_version}")
+
     # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -184,17 +184,9 @@ if __name__ == "__main__":
     print(f"Using speakers: {speaker_ids}")
 
     # Configure GPU usage
-    use_gpu = args.use_gpu and not args.no_gpu
-    device = args.device
+    use_gpu = args.use_gpu
 
-    if args.no_gpu:
-        use_gpu = False
-        device = "cpu"
-        print("GPU disabled - using CPU for inference")
-    elif device:
-        use_gpu = True  # Force GPU usage if device is specified
-        print(f"Using device: {device}")
-    elif use_gpu:
+    if use_gpu:
         print("Using GPU for inference (CUDA)")
     else:
         print("Using CPU for inference")
@@ -226,18 +218,14 @@ if __name__ == "__main__":
 
     print(f"\nGenerating {total_files} audio files...")
 
-    for sentence_idx, sentence in enumerate(test_sentences):
-        print(f"\nSentence {sentence_idx + 1}: {sentence}")
+    for sentence_idx, sentence in enumerate(test_sentences, start=1):
+        print(f"\nSentence {sentence_idx}: {sentence}")
 
         normalized_sentence = normalize_text(sentence)
+        phrase_id = f"p{sentence_idx:03d}"  # e.g., p001, p002, p003
 
         for speaker_id in speaker_ids:
-            # Create output filename
-            safe_sentence = "".join(
-                c for c in sentence if c.isalnum() or c in (" ", "-", "_")
-            ).rstrip()
-            safe_sentence = safe_sentence.replace(" ", "_")[:50]  # Limit length
-            output_filename = f"sentence_{sentence_idx + 1:02d}_speaker_{speaker_id}_{safe_sentence}.wav"
+            output_filename = f"{model_name}-{model_version}-{phrase_id}-{speaker_id}.wav"
             output_path = output_dir / output_filename
 
             if run_inference(
@@ -248,7 +236,6 @@ if __name__ == "__main__":
                 speaker_id,
                 str(output_path),
                 use_gpu=use_gpu,
-                device=device,
                 vocoder_path=vocoder_path,
                 vocoder_config_path=vocoder_config_path,
             ):

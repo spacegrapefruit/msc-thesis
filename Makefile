@@ -16,10 +16,12 @@ RAW_LIEPA2_DIR := data/raw/liepa2
 RAW_LIEPA2_CHECK_FILE := $(RAW_LIEPA2_DIR)/train-00000-of-00130.parquet
 
 # Processed data output paths
-PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2
+PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2_multispeaker
 PROCESSED_LIEPA2_CHECK_FILE := $(PROCESSED_LIEPA2_DIR)/metadata.csv
-PROCESSED_LIEPA2_MULTISPEAKER_DIR := data/processed/tts_dataset_liepa2_multispeaker
-PROCESSED_LIEPA2_MULTISPEAKER_CHECK_FILE := $(PROCESSED_LIEPA2_MULTISPEAKER_DIR)/metadata.csv
+
+# Embedding output paths
+EMBEDDINGS_LIEPA2_DIR := data/processed/tts_dataset_liepa2_multispeaker
+EMBEDDINGS_LIEPA2_CHECK_FILE := $(EMBEDDINGS_LIEPA2_DIR)/speakers.pth
 
 # Training output path (defined inside config.json, but used for cleanup)
 TRAIN_OUTPUT_DIR := training_output
@@ -36,6 +38,7 @@ help: ## Show this help message.
 	@echo "Examples:"
 	@echo "  make data DATASET=liepa2             # Process only single-speaker Liepa-2"
 	@echo "  make data DATASET=liepa2-multispeaker # Process multispeaker Liepa-2"
+	@echo "  make compute-embeddings              # Compute speaker embeddings for multispeaker dataset"
 	@echo "  make train                           # Train with single-speaker Liepa-2"
 	@echo "  make train-multispeaker              # Train with multispeaker Liepa-2"
 	@echo ""
@@ -47,28 +50,34 @@ install: ## Install required Python packages using uv.
 	uv sync
 	@echo "\nDependencies installed."
 
-# 2. Process Data
-# Liepa-2 dataset processing (single-speaker)
-$(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2.py
-	@echo "Processing Liepa-2 data (single-speaker)..."
-	$(EXECUTOR) python python/preprocess_liepa2.py --liepa_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR)
-	@echo "\nLiepa-2 single-speaker data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
-
 # Liepa-2 dataset processing (multispeaker)
-$(PROCESSED_LIEPA2_MULTISPEAKER_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2_multispeaker.py
+$(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2.py
 	@echo "Processing Liepa-2 data (multispeaker with $(N_SPEAKERS) speakers)..."
-	$(EXECUTOR) python python/preprocess_liepa2_multispeaker.py --liepa_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_MULTISPEAKER_DIR) --n_speakers $(N_SPEAKERS)
-	@echo "\nLiepa-2 multispeaker data preprocessing complete. Output at: $(PROCESSED_LIEPA2_MULTISPEAKER_DIR)"
+	$(EXECUTOR) python python/preprocess_liepa2.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers $(N_SPEAKERS)
+	@echo "\nLiepa-2 multispeaker data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
 
 # Data processing targets
 data-liepa2: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the single-speaker Liepa-2 dataset.
-data-liepa2-multispeaker: $(PROCESSED_LIEPA2_MULTISPEAKER_CHECK_FILE) ## Preprocess the multispeaker Liepa-2 dataset.
+data-liepa2-multispeaker: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the multispeaker Liepa-2 dataset.
 
 ifeq ($(DATASET),liepa2-multispeaker)
 data: data-liepa2-multispeaker ## Preprocess the multispeaker Liepa-2 dataset for training.
 else
 data: data-liepa2 ## Preprocess the single-speaker Liepa-2 dataset for training.
 endif
+
+# 2.5. Compute Speaker Embeddings
+# Liepa-2 multispeaker embeddings computation
+$(EMBEDDINGS_LIEPA2_CHECK_FILE): $(PROCESSED_LIEPA2_CHECK_FILE) python/compute_embeddings_multispeaker.py
+	@echo "Computing speaker embeddings for the multispeaker Liepa-2 dataset..."
+	$(EXECUTOR) python python/compute_embeddings_multispeaker.py \
+	  --dataset_path $(PROCESSED_LIEPA2_DIR) \
+	  --output_path $(EMBEDDINGS_LIEPA2_CHECK_FILE)
+	@echo "\nSpeaker embeddings computed. Output at: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
+
+# Embedding computation targets
+compute-embeddings-liepa2-multispeaker: $(EMBEDDINGS_LIEPA2_CHECK_FILE) ## Compute speaker embeddings for the multispeaker Liepa-2 dataset.
+compute-embeddings: compute-embeddings-liepa2-multispeaker ## Compute speaker embeddings for the dataset.
 
 # 3. Train Model
 # This target depends on the processed data and the config file.
@@ -100,12 +109,17 @@ clean: ## Remove all generated files (processed data, training output, cache).
 	find . -type d -name "__pycache__" -delete
 	@echo "\nCleanup complete."
 
+clean-embeddings: ## Remove only computed embeddings.
+	@echo "Cleaning up speaker embeddings..."
+	rm -f $(EMBEDDINGS_LIEPA2_CHECK_FILE)
+	@echo "\nEmbeddings cleanup complete."
+
 # 7. Inference
 inference-multispeaker: ## Run inference on multispeaker test samples.
 	@echo "Running multispeaker inference on test samples..."
 	$(EXECUTOR) python python/inference_multispeaker.py \
 	  --use_gpu \
-	  --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DDC-CV-LT-Multispeaker-November-06-2025_10+04PM-6805a9d/ \
+	  --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DCA-November-06-2025_10+04PM-6805a9d/ \
 	  --vocoder_path "/home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/model.pth" \
 	  --speakers VP382,VP460
 	@echo "\nInference complete. Check 'inference_output/' for generated audio files."

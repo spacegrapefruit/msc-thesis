@@ -1430,6 +1430,7 @@ dependencies = [
     { name = "ruff" },
     { name = "seaborn" },
     { name = "sqlalchemy" },
+    { name = "tinytag" },
 ]
 
 [package.metadata]
@@ -1445,6 +1446,7 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.13.2" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "tinytag", specifier = ">=2.1.2" },
 ]
 
 [[package]]
@@ -2642,6 +2644,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz", hash = "sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e", size = 21274, upload-time = "2025-03-13T13:49:23.031Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638, upload-time = "2025-03-13T13:49:21.846Z" },
+]
+
+[[package]]
+name = "tinytag"
+version = "2.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/dc/a21d37263917e5e3aff95a70966c9be2bf550a792fc95008e2e444f0cd8c/tinytag-2.1.2.tar.gz", hash = "sha256:564e573e308d9fa78432493b4987fca1f84fb1f2ce29c586fc54629155e4fca0", size = 36639, upload-time = "2025-08-13T21:56:28.26Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/ca/37249dab162f3332223efade79272b40fd133b32b7abf51c6e86d55b3deb/tinytag-2.1.2-py3-none-any.whl", hash = "sha256:1a6b7b19c59ac4846b2446ec7a85cfaa17fbee6970592eaa5926702c261bad69", size = 31499, upload-time = "2025-08-13T21:56:26.722Z" },
 ]
 
 [[package]]

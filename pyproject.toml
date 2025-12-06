@@ -16,4 +16,5 @@ dependencies = [
     "ruff>=0.13.2",
     "seaborn>=0.13.2",
     "sqlalchemy>=2.0.44",
+    "tinytag>=2.1.2",
 ]

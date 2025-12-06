@@ -80,20 +80,18 @@ def process_audio_file(row_data, output_wav_path):
 
 
 def process_liepa2(
-    liepa_path: Path,
+    input_path: Path,
     output_path: Path,
     n_processes: int = None,
-    max_files: int = None,
     n_speakers: int = 20,
 ):
     """
     Prepares the Liepa-2 dataset for multi-speaker TTS training.
 
     Args:
-        liepa_path (Path): Path to the Liepa-2 directory containing parquet files.
+        input_path (Path): Path to the Liepa-2 directory containing parquet files.
         output_path (Path): Path to save the processed dataset.
         n_processes (int, optional): Number of parallel processes to use. If None, uses CPU count.
-        max_files (int, optional): Maximum number of files to process for testing. If None, processes all.
         n_speakers (int, optional): Number of top speakers to process. Defaults to 20.
     """
     print("Starting Liepa-2 preprocessing for multiple speakers...")
@@ -106,10 +104,10 @@ def process_liepa2(
     output_wav_path.mkdir(exist_ok=True)
 
     # 2. Load all parquet files
-    print(f"Loading parquet files from: {liepa_path}")
+    print(f"Loading parquet files from: {input_path}")
 
     # Get all train parquet files
-    train_files = sorted(liepa_path.glob("train-*.parquet"))
+    train_files = sorted(input_path.glob("train-*.parquet"))
     print(f"Found {len(train_files)} training parquet files")
 
     # Load and concatenate all training data
@@ -174,11 +172,6 @@ def process_liepa2(
             f"  {row['speaker_id']} ({row['speaker_gender']}): {row['count']} samples"
         )
 
-    # Limit dataset size if specified (for testing)
-    if max_files:
-        full_df = full_df.head(max_files)
-        print(f"Limited to {len(full_df)} samples for processing")
-
     # Set up multiprocessing
     if n_processes is None:
         n_processes = mp.cpu_count()
@@ -233,7 +226,7 @@ if __name__ == "__main__":
         description="Preprocess Liepa-2 data for multi-speaker TTS training."
     )
     parser.add_argument(
-        "--liepa_path",
+        "--input_path",
         type=str,
         required=True,
         help="Path to the root of the Liepa-2 directory containing parquet files.",
@@ -251,12 +244,6 @@ if __name__ == "__main__":
         help="Number of top speakers to process based on sample count. Default is 20.",
     )
     parser.add_argument(
-        "--max_files",
-        type=int,
-        default=None,
-        help="Optional: Maximum number of files to process (for testing).",
-    )
-    parser.add_argument(
         "--n_processes",
         type=int,
         default=None,
@@ -265,15 +252,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    liepa_path = Path(args.liepa_path)
+    input_path = Path(args.input_path)
     output_path = Path(args.output_path)
 
-    load_accented_words(liepa_path / "final_accented_words.csv")
+    load_accented_words(input_path / "final_accented_words.csv")
 
     process_liepa2(
-        liepa_path,
+        input_path,
         output_path,
         n_processes=args.n_processes,
-        max_files=args.max_files,
         n_speakers=args.n_speakers,
     )
