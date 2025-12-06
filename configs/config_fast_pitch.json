@@ -84,11 +84,11 @@
     "add_blank": false,
     "datasets": [
         {
-            "dataset_name": "liepa2_lt_multispeaker",
+            "dataset_name": "liepa2",
             "path": "data/processed/tts_dataset_liepa2/",
             "meta_file_train": "metadata.csv",
             "meta_file_val": null,
-            "formatter": "ljspeech_multispeaker",
+            "formatter": "ljspeech_liepa2",
             "language": "lt"
         }
     ],

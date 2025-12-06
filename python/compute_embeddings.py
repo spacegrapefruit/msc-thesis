@@ -1,6 +1,6 @@
 """
-Script to compute speaker embeddings for the multispeaker Liepa-2 dataset.
-This script uses the custom ljspeech_multispeaker formatter defined in train.py.
+Script to compute speaker embeddings for the Liepa-2 dataset.
+This script uses the custom ljspeech_liepa2 formatter defined in train.py.
 """
 
 import argparse
@@ -16,11 +16,13 @@ from TTS.tts.utils.managers import save_file
 from TTS.tts.utils.speakers import SpeakerManager
 from TTS.utils.generic_utils import ConsoleFormatter, setup_logger
 
+from python.dataset_formatters import ljspeech_liepa2
+
 
 @dataclass
 class ComputeEmbeddingsArgs:
     dataset_path: str = field(
-        default=None, metadata={"help": "Path to the multispeaker dataset directory."}
+        default=None, metadata={"help": "Path to the dataset directory."}
     )
     output_path: str = field(
         default=None, metadata={"help": "Path for output speakers.pth file."}
@@ -40,29 +42,6 @@ class ComputeEmbeddingsArgs:
     )
 
 
-def ljspeech_multispeaker(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
-    """Normalizes the LJSpeech meta data file to TTS format for multispeaker data
-    https://keithito.com/LJ-Speech-Dataset/"""
-    txt_file = os.path.join(root_path, meta_file)
-    items = []
-    with open(txt_file, "r", encoding="utf-8") as ttf:
-        for line in ttf:
-            cols = line.strip().split("|")
-            wav_file = os.path.join(root_path, "wavs", cols[0] + ".wav")
-            text = cols[2]
-            speaker_name = cols[3]
-            items.append(
-                {
-                    "text": text,
-                    "audio_file": wav_file,
-                    "speaker_name": speaker_name,
-                    "root_path": root_path,
-                    "audio_unique_name": f"liepa2#{wav_file}",
-                }
-            )
-    return items
-
-
 def compute_embeddings(args: ComputeEmbeddingsArgs):
     """Compute speaker embeddings for the multispeaker dataset."""
 
@@ -72,11 +51,11 @@ def compute_embeddings(args: ComputeEmbeddingsArgs):
     )
 
     # Register the custom formatter
-    formatters.register_formatter("ljspeech_multispeaker", ljspeech_multispeaker)
+    formatters.register_formatter("ljspeech_liepa2", ljspeech_liepa2)
 
     # Configure dataset
     c_dataset = BaseDatasetConfig()
-    c_dataset.formatter = "ljspeech_multispeaker"
+    c_dataset.formatter = "ljspeech_liepa2"
     c_dataset.dataset_name = "liepa2"
     c_dataset.path = args.dataset_path
     c_dataset.meta_file_train = "metadata.csv"

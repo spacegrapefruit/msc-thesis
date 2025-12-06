@@ -22,7 +22,7 @@ vocoder_models/en/librispeech100/wavlm-hifigan
 
 rm inference_output/*
 
-uv run python python/inference_multispeaker.py \
+uv run python python/run_inference.py \
     --speakers "AS022,VP157" \
     --model_dir training_output/Tacotron2-DCA-November-20-2025_09+07PM-da89dae/ \
     --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
@@ -30,18 +30,18 @@ uv run python python/inference_multispeaker.py \
     --use_gpu
 
 
-uv run python python/inference_multispeaker.py \
+uv run python python/run_inference.py \
     --speakers "VP157" \
     --model_dir training_output/Tacotron2-DCA-November-23-2025_09+47AM-e6df90a/ \
     --use_gpu
 
 
-uv run python python/inference_multispeaker.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-December-03-2025_11+35PM-9eeb05d/ --use_gpu
-uv run python python/inference_multispeaker.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-20-2025_09+07PM-da89dae/ --use_gpu
-uv run python python/inference_multispeaker.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-22-2025_01+41PM-2b683eb/ --use_gpu
-uv run python python/inference_multispeaker.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-23-2025_09+47AM-e6df90a/ --use_gpu
-uv run python python/inference_multispeaker.py --speakers "F4_VP157" --model_dir training_output/Tacotron2-DCA-October-18-2025_10+22PM-0000000/ --use_gpu
-uv run python python/inference_multispeaker.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DDC-November-23-2025_10+53PM-548be7f/ --use_gpu
+uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-December-03-2025_11+35PM-9eeb05d/ --use_gpu
+uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-20-2025_09+07PM-da89dae/ --use_gpu
+uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-22-2025_01+41PM-2b683eb/ --use_gpu
+uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DCA-November-23-2025_09+47AM-e6df90a/ --use_gpu
+uv run python python/run_inference.py --speakers "F4_VP157" --model_dir training_output/Tacotron2-DCA-October-18-2025_10+22PM-0000000/ --use_gpu
+uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir training_output/Tacotron2-DDC-November-23-2025_10+53PM-548be7f/ --use_gpu
 
 
 

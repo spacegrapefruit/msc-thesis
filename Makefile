@@ -1,14 +1,8 @@
-# ==============================================================================
-# Makefile for the End-to-End TTS Thesis Project
-# ==============================================================================
-
 # --- Project Configuration ---
-# Use `make DATASET=liepa2-multispeaker` or `make DATASET=liepa2` to choose dataset
 DATASET ?= liepa2
 N_SPEAKERS ?= 20
 EXECUTOR := uv run
 CONFIG_FILE := configs/config.json
-CONFIG_FILE_MULTISPEAKER := configs/config_multispeaker.json
 
 # --- Paths ---
 # Raw data input paths
@@ -32,52 +26,33 @@ TRAIN_OUTPUT_DIR := training_output
 # Default target: runs the full pipeline
 all: data train ## Run the full pipeline: install dependencies, process data, and train the model.
 
-help: ## Show this help message.
-	@echo "Usage: make [target] [VARIABLE=value]"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make data DATASET=liepa2             # Process only single-speaker Liepa-2"
-	@echo "  make data DATASET=liepa2-multispeaker # Process multispeaker Liepa-2"
-	@echo "  make compute-embeddings              # Compute speaker embeddings for multispeaker dataset"
-	@echo "  make train                           # Train with single-speaker Liepa-2"
-	@echo "  make train-multispeaker              # Train with multispeaker Liepa-2"
-	@echo ""
-	@echo "Targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
 # 1. Setup Environment
 install: ## Install required Python packages using uv.
 	uv sync
 	@echo "\nDependencies installed."
 
-# Liepa-2 dataset processing (multispeaker)
+# Liepa-2 dataset processing
 $(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2.py
-	@echo "Processing Liepa-2 data (multispeaker with $(N_SPEAKERS) speakers)..."
+	@echo "Processing Liepa-2 data ($(N_SPEAKERS) speakers)..."
 	$(EXECUTOR) python python/preprocess_liepa2.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers $(N_SPEAKERS)
-	@echo "\nLiepa-2 multispeaker data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
+	@echo "\nLiepa-2 data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
 
 # Data processing targets
-data-liepa2: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the single-speaker Liepa-2 dataset.
-data-liepa2-multispeaker: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the multispeaker Liepa-2 dataset.
-
-ifeq ($(DATASET),liepa2-multispeaker)
-data: data-liepa2-multispeaker ## Preprocess the multispeaker Liepa-2 dataset for training.
-else
-data: data-liepa2 ## Preprocess the single-speaker Liepa-2 dataset for training.
-endif
+data-liepa2: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the Liepa-2 dataset.
+data: data-liepa2 ## Preprocess the Liepa-2 dataset for training.
 
 # 2.5. Compute Speaker Embeddings
-# Liepa-2 multispeaker embeddings computation
+# Liepa-2 speaker embeddings computation
 $(EMBEDDINGS_LIEPA2_CHECK_FILE): $(PROCESSED_LIEPA2_CHECK_FILE) python/compute_embeddings.py
-	@echo "Computing speaker embeddings for the multispeaker Liepa-2 dataset..."
+	@echo "Computing speaker embeddings for the Liepa-2 dataset..."
 	$(EXECUTOR) python python/compute_embeddings.py \
 	  --dataset_path $(PROCESSED_LIEPA2_DIR) \
 	  --output_path $(EMBEDDINGS_LIEPA2_CHECK_FILE)
 	@echo "\nSpeaker embeddings computed. Output at: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
 
 # Embedding computation targets
-compute-embeddings-liepa2-multispeaker: $(EMBEDDINGS_LIEPA2_CHECK_FILE) ## Compute speaker embeddings for the multispeaker Liepa-2 dataset.
-compute-embeddings: compute-embeddings-liepa2-multispeaker ## Compute speaker embeddings for the dataset.
+compute-embeddings-liepa2: $(EMBEDDINGS_LIEPA2_CHECK_FILE) ## Compute speaker embeddings for the Liepa-2 dataset.
+compute-embeddings: compute-embeddings-liepa2 ## Compute speaker embeddings for the dataset.
 
 # 3. Train Model
 # This target depends on the processed data and the config file.
@@ -86,11 +61,11 @@ train: data $(CONFIG_FILE) ## Start or resume the TTS model training with single
 	$(EXECUTOR) python -m TTS.bin.train_tts --config_path $(CONFIG_FILE)
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 
-# 4. Train Multispeaker Model
+# 4. Train Model
 # This target depends on the processed data and the config file.
-train-multispeaker: data-liepa2-multispeaker $(CONFIG_FILE_MULTISPEAKER) ## Start or resume the TTS model training with multispeaker Liepa-2.
-	@echo "Launching TTS training with config '$(CONFIG_FILE_MULTISPEAKER)'..."
-	$(EXECUTOR) python python/train.py --config_path $(CONFIG_FILE_MULTISPEAKER)
+train: data-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
+	@echo "Launching TTS training with config '$(CONFIG_FILE)'..."
+	$(EXECUTOR) python python/train.py --config_path $(CONFIG_FILE)
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 
 # 5. Format Code
@@ -115,9 +90,9 @@ clean-embeddings: ## Remove only computed embeddings.
 	@echo "\nEmbeddings cleanup complete."
 
 # 7. Inference
-inference-multispeaker: ## Run inference on multispeaker test samples.
-	@echo "Running multispeaker inference on test samples..."
-	$(EXECUTOR) python python/inference_multispeaker.py \
+inference: ## Run inference on test samples.
+	@echo "Running inference on test samples..."
+	$(EXECUTOR) python python/run_inference.py \
 	  --use_gpu \
 	  --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DCA-November-06-2025_10+04PM-6805a9d/ \
 	  --vocoder_path "/home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/model.pth" \
