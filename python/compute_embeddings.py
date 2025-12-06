@@ -2,10 +2,8 @@ import argparse
 import logging
 import os
 import sys
-from collections import defaultdict
 from dataclasses import dataclass, field
 
-import numpy as np
 from TTS.config.shared_configs import BaseDatasetConfig
 from TTS.tts.datasets import load_tts_samples
 from TTS.tts.utils.managers import save_file
@@ -73,45 +71,29 @@ def compute_embeddings(args: ComputeEmbeddingsArgs):
 
     class_name_key = encoder_manager.encoder_config.class_name_key
 
-    # Group samples by speaker
-    speaker_clips = defaultdict(list)
-
-    print("Grouping samples by speaker...")
-    for fields in samples:
-        speaker_name = fields[class_name_key]
-        audio_file = fields["audio_file"]
-        speaker_clips[speaker_name].append(audio_file)
-
-    print(f"Found {len(speaker_clips)} unique speakers")
-
-    # Compute speaker embeddings by averaging all clips per speaker
+    # Compute speaker embeddings
     speaker_mapping = {}
 
     print("Computing speaker embeddings...")
-    for speaker_name, audio_files in tqdm(speaker_clips.items()):
-        # Compute embeddings for all clips of this speaker
-        clip_embeddings = []
-        for audio_file in audio_files:
-            embedd = encoder_manager.compute_embedding_from_clip(audio_file)
-            clip_embeddings.append(embedd)
+    for fields in tqdm(samples):
+        class_name = fields[class_name_key]
+        audio_file = fields["audio_file"]
+        embedding_key = fields["audio_unique_name"]
 
-        # Average embeddings across all clips for this speaker
-        averaged_embedding = np.mean(clip_embeddings, axis=0)
+        # Extract the embedding
+        embedd = encoder_manager.compute_embedding_from_clip(audio_file)
 
         # Create speaker mapping entry
-        speaker_mapping[speaker_name] = {
-            "name": speaker_name,
-            "embedding": averaged_embedding,
-        }
+        speaker_mapping[embedding_key] = {"name": class_name, "embedding": embedd}
 
-    assert len(speaker_mapping) == len(speaker_clips), (
-        "Speaker mapping size does not match number of unique speakers!"
+    assert len(speaker_mapping) == len(samples), (
+        "Speaker mapping size does not match number of samples! "
     )
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     save_file(speaker_mapping, args.output_path)
     print(f"Speaker embeddings saved at: {args.output_path}")
-    print(f"Computed embeddings for {len(speaker_mapping)} speakers")
+    print(f"Computed embeddings for {len(speaker_mapping)} audio clips")
 
 
 def main():

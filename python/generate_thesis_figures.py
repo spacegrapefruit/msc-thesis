@@ -50,7 +50,7 @@ def create_sampling_quantization_figure():
     quantized_values = np.round(sampled_values * 8 / 6) * 6 / 8
 
     # Plot analog signal
-    ax.plot(t, analog_signal, "gray", linewidth=2, alpha=0.8, label="Analog Signal")
+    ax.plot(t, analog_signal, "gray", linewidth=2, alpha=0.8, label="Analog signal")
 
     # Plot quantization levels
     for level in quantization_levels:
@@ -67,7 +67,7 @@ def create_sampling_quantization_figure():
         color="red",
         s=50,
         zorder=5,
-        label="Digital Samples",
+        label="Digital samples",
     )
 
     # Connect quantized points to show digital signal
@@ -78,12 +78,12 @@ def create_sampling_quantization_figure():
         color="blue",
         linewidth=2,
         alpha=0.8,
-        label="Digital Signal",
+        label="Digital signal",
     )
 
     ax.set_xlabel("Time (seconds)", fontsize=14)
     ax.set_ylabel("Amplitude", fontsize=14)
-    ax.set_title("Analog-to-Digital Conversion Process", fontsize=16, fontweight="bold")
+    ax.set_title("Analog-to-Digital conversion process", fontsize=16, fontweight="bold")
     ax.legend(fontsize=12)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 4)
@@ -91,7 +91,7 @@ def create_sampling_quantization_figure():
 
     # Add annotations
     ax.annotate(
-        "Quantization Levels\n(Bit Depth)",
+        "Quantization levels\n(Bit depth)",
         xy=(0.2, 2.5),
         xytext=(0.5, 2.8),
         arrowprops=dict(arrowstyle="->", color="blue", alpha=0.7),
@@ -101,7 +101,7 @@ def create_sampling_quantization_figure():
     )
 
     ax.annotate(
-        "Sampling Rate\n(Time Intervals)",
+        "Sampling rate\n(Time intervals)",
         xy=(1, -2.5),
         xytext=(1.3, -3),
         arrowprops=dict(arrowstyle="->", color="red", alpha=0.7),
@@ -120,21 +120,12 @@ def create_waveform_spectrograms_figure():
     """
     Create a figure showing waveform, spectrogram, and mel-spectrogram representations.
     """
-    # Generate a synthetic audio signal for demonstration
-    sr = 22050
-    duration = 2.0
-    t = np.linspace(0, duration, int(sr * duration))
-
-    # Create a complex waveform with multiple frequencies
-    freq1, freq2, freq3 = 440, 880, 1320  # Musical notes A4, A5, E6
-    waveform = (
-        np.sin(2 * np.pi * freq1 * t) * np.exp(-t * 0.5)
-        + 0.5 * np.sin(2 * np.pi * freq2 * t) * np.exp(-((t - 0.5) ** 2) * 2)
-        + 0.3 * np.sin(2 * np.pi * freq3 * t) * (t > 1) * np.exp(-(t - 1) * 3)
+    # Load an example audio file
+    waveform, sr = librosa.load(
+        "/home/aleks/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav",
+        sr=22050,
     )
-
-    # Add some noise for realism
-    waveform += 0.05 * np.random.normal(0, 1, len(waveform))
+    duration = len(waveform) / sr
 
     # Compute STFT
     stft = librosa.stft(waveform, hop_length=512, n_fft=2048)
@@ -149,7 +140,7 @@ def create_waveform_spectrograms_figure():
     # Plot waveform
     time_axis = np.linspace(0, duration, len(waveform))
     axes[0].plot(time_axis, waveform, color="darkblue", linewidth=0.8)
-    axes[0].set_title("Raw Audio Waveform", fontsize=14, fontweight="bold")
+    axes[0].set_title("Raw audio waveform", fontsize=14, fontweight="bold")
     axes[0].set_ylabel("Amplitude", fontsize=12)
     axes[0].grid(True, alpha=0.3)
     axes[0].set_xlim(0, duration)
@@ -165,7 +156,7 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, sr / 2],
         cmap="viridis",
     )
-    axes[1].set_title("Linear Frequency Spectrogram", fontsize=14, fontweight="bold")
+    axes[1].set_title("Linear frequency spectrogram", fontsize=14, fontweight="bold")
     axes[1].set_ylabel("Frequency (Hz)", fontsize=12)
     axes[1].set_ylim(0, 8000)  # Focus on relevant frequency range
 
@@ -177,8 +168,8 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, 80],
         cmap="viridis",
     )
-    axes[2].set_title("Mel-frequency Spectrogram", fontsize=14, fontweight="bold")
-    axes[2].set_ylabel("Mel Bins", fontsize=12)
+    axes[2].set_title("Mel-frequency spectrogram", fontsize=14, fontweight="bold")
+    axes[2].set_ylabel("Mel bins", fontsize=12)
     axes[2].set_xlabel("Time (seconds)", fontsize=12)
 
     # Add colorbars

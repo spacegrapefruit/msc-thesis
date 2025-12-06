@@ -16,6 +16,7 @@
 \usepackage{tocloft}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{caption}
 
 \usepackage{titlesec}
 \newcommand{\sectionbreak}{\clearpage}
@@ -40,11 +41,9 @@
 \secondworktitle{Work Title in Lithuanian}
 \workauthor{Aleksandr Jan Smoliakov}
 
-\supervisor{Gerda Ana Melnik-Leroy}
+\supervisor{Dr.~Gerda Ana Melnik-Leroy}
 \reviewer{pedagogical/scientific title Name Surname}
-%If present, otherwise delete
-\scientificadvisor{pedagogical/scientific title Name Surname}
-%If present, otherwise delete
+\scientificadvisor{Dr.~Gražina Korvel}
 
 \begin{document}
 \selectlanguage{english}
@@ -166,13 +165,14 @@ common sampling rates for audio are 22.05~kHz and 24~kHz, which can capture
 frequencies up to approx. 11~kHz and 12~kHz, respectively.
 
 Quantization (also known as bit depth) is the mapping of continuous amplitude
-values to discrete levels for digital representation. Typical bit depths for
-audio are 16-bit and 24-bit formats.
+values to discrete levels for digital representation, which determines the precision of
+the representation. Common bit depths for
+audio are 16-bit and 24-bit formats. A visual representation of both sampling and quantization is provided in Figure~\ref{fig:sampling}.
 
 \begin{figure}[ht]
       \centering
       \includegraphics[width=0.8\textwidth]{figures/sampling_quantization.pdf}
-      \caption{Visual representation of Analog-to-Digital conversion. The continuous grey line represents the analog signal. The vertical lines represent the \textbf{sampling rate} (time intervals), and the horizontal grid lines represent \textbf{quantization levels} (bit depth).}
+      \caption[Visual representation of Analog-to-Digital conversion]{Visual representation of Analog-to-Digital conversion. The continuous grey line represents the analog signal. The vertical lines represent the \textbf{sampling rate} (time intervals), and the horizontal grid lines represent \textbf{quantization levels} (bit depth).}
       \label{fig:sampling}
 \end{figure}
 
@@ -212,7 +212,7 @@ frequency content of the signal changes over time.
 
 In TTS applications, the STFT is computed by dividing the audio signal into
 short frames (usually, 20-50~ms) with a certain overlap (usually, 50-75\%)
-between frames, windowed by a Hamming or Hann function to minimize the spectral
+between frames, windowed by a Hamming or Hann function to reduce the spectral
 leakage.
 
 \subsubsection{Spectrogram and Mel-spectrogram}
@@ -235,12 +235,12 @@ Mel-spectrograms are computed by applying a Mel filterbank of overlapping
 triangular filters (or kernels) to the magnitude spectrogram obtained from the
 STFT. This results in a compressed representation of the audio signal that
 aligns more closely with human auditory perception. Such Mel-spectrograms are
-commonly used as input features for modern TTS systems.
+commonly used as input features for modern TTS systems. The differences between the raw waveform, the standard spectrogram, and the Mel-spectrogram are illustrated in Figure~\ref{fig:waveform_spectrograms}.
 
 \begin{figure}[ht]
       \centering
-      % \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
-      \caption{Raw audio waveform (top), its spectrogram (middle), and Mel-spectrogram (bottom) representations.}
+      \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
+      \caption[Raw waveform, Spectrogram, and Mel-spectrogram]{Raw audio waveform (top), its spectrogram (middle), and Mel-spectrogram (bottom) representations for the utterance ``Štai ir visas mano bendravimas su vaiku''.}
       \label{fig:waveform_spectrograms}
 \end{figure}
 
@@ -382,7 +382,7 @@ Challenges in Lithuanian TTS synthesis include:
                                    & \textit{kasà} (Short)       & Braid/Pancreas (noun) \\
             \bottomrule
       \end{tabular}
-      \caption{Examples of Lithuanian homographs where accentuation determines meaning. A grapheme-only model cannot distinguish these without context or explicit stress marks.}
+      \caption[Lithuanian homographs with accentuation ambiguity]{Examples of Lithuanian homographs where accentuation determines meaning. A grapheme-only model cannot distinguish these without context or explicit stress marks.}
       \label{tab:lithuanian_ambiguity}
 \end{table}
 
@@ -436,13 +436,13 @@ not seen during training.
 \begin{figure}[ht]
       \centering
       % \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
-      \caption{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
+      \caption[General architecture of a Speaker Encoder]{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
       \label{fig:speaker_encoder}
 \end{figure}
 
 Transfer learning approaches~\cite{jia2018transfer} have demonstrated adapting
 speaker verification models to multispeaker TTS synthesis, enabling better
-speaker adaptation and higher voice quality. A speaker encoder model
+speaker adaptation and higher voice quality. The general architecture of such a speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker encoder model
 pre-trained on a massive, noisy dataset with thousands of speakers (such as
 VoxCeleb) learns the general speaker space. Its pre-trained weights are then
 frozen and used to extract embeddings for the TTS training data, allowing the
@@ -511,19 +511,19 @@ This architecture has three main components:
 
 \textbf{Encoder:} The encoder processes through the input text sequence (graphemes or phonemes) and converts it into a high-level representation. Typically, this is done using recurrent neural networks (RNNs) or more complex modules like the CBHG (Convolution Bank + Highway network + Gated Recurrent Unit).
 \textbf{Attention Mechanism:} The attention mechanism learns to align the high-level text representation with the output audio frames. At each decoding step, it determines which part (positions) of the input text the model should focus (or ``attend to'') in order to generate the next audio frame.
-\textbf{Decoder:} Finally, the decoder --- also typically an RNN --- takes the encoder output, uses the attention output as context, and generates an acoustic representation of speech (typically mel-spectrogram) frame by frame. Being autoregressive, the decoder is a ``bottleneck'' during inference, as it must generate each frame sequentially, only after the previous one has been produced.
+\textbf{Decoder:} Finally, the decoder --- also typically an RNN --- takes the encoder output, uses the attention output as context, and generates an acoustic representation of speech (typically Mel-spectrogram) frame by frame. Being autoregressive, the decoder is a ``bottleneck'' during inference, as it must generate each frame sequentially, only after the previous one has been produced.
 
 \begin{figure}[ht]
       \centering
       % \includegraphics[width=\textwidth]{figures/tacotron2_arch.pdf}
-      \caption{The Tacotron 2 architecture. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps. \cite{shen2018natural}}
+      \caption[Tacotron~2 architecture]{The Tacotron~2 architecture. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps. \cite{shen2018natural}}
       \label{fig:tacotron_arch}
 \end{figure}
 
 Tacotron~\cite{wang2017tacotron} and Tacotron~2~\cite{shen2018natural} are two
 notable TTS models based on the sequence-to-sequence architecture. The variant
 that this thesis primarily focuses on is Tacotron~2 with Double Decoder
-Consistency (DDC).
+Consistency (DDC). The complete architecture of Tacotron~2 is depicted in Figure~\ref{fig:tacotron_arch}.
 
 In Tacotron~2, the encoder consists of a character embedding layer, followed by
 a stack of convolutional layers (which encode local context about neighbouring
@@ -537,7 +537,7 @@ typically composed of LSTM layers.
 \begin{figure}[ht]
       \centering
       % \includegraphics[width=\textwidth]{figures/fastpitch_arch.pdf}
-      \caption{The FastPitch architecture. It utilizes a feed-forward Transformer and an explicit duration predictor, allowing for parallel generation of the Mel-spectrogram. Pitch is predicted and injected into the latent representation. \cite{lancucki2020fastpitch}}
+      \caption[FastPitch architecture]{The FastPitch architecture. It utilizes a feed-forward Transformer and an explicit duration predictor, allowing for parallel generation of the Mel-spectrogram. Pitch is predicted and injected into the latent representation. \cite{lancucki2020fastpitch}}
       \label{fig:fastpitch_arch}
 \end{figure}
 
@@ -545,7 +545,7 @@ Unlike Tacotron~2, FastPitch~\cite{lancucki2020fastpitch} replaces the
 recurrent layers with Transformer architecture blocks relying on
 self-attention. Being a non-autoregressive model, FastPitch model can process
 the entire input sequence in parallel, significantly speeding up both training
-and inference.
+and inference. The high-level architecture of FastPitch is shown in Figure~\ref{fig:fastpitch_arch}.
 
 Unlike Tacotron~2, which learns alignment implicitly using attention, FastPitch
 requires an external aligner (or an internal alignment module) in order to
@@ -574,8 +574,8 @@ neural vocoder (HiFi-GAN) into a single end-to-end architecture.
 \subsubsection{Neural vocoders}
 
 Standard TTS models like Tacotron~2 or FastPitch generate intermediate acoustic
-features (typically mel-spectrograms), but do not directly produce raw audio
-waveforms. However, mel-spectrograms are lossy representations that only
+features (typically Mel-spectrograms), but do not directly produce raw audio
+waveforms. However, Mel-spectrograms are lossy representations that only
 capture the magnitude of the frequency bands, discarding phase information.
 This information is discarded during the STFT process. Thus, converting a
 spectrogram into audio is a non-trivial task, as the phase information must be
@@ -591,7 +591,7 @@ noticeable artifacts and lower quality compared to natural speech.
 Neural GAN (Generative Adversarial Network) based vocoders, such as
 HiFi-GAN~\cite{kong2020hifi}, have become the dominant approach for vocoding in
 modern TTS systems. These GAN-based vocoder models consist of two main
-components: a Generator, which reconstructs mel-spectrograms into raw
+components: a Generator, which reconstructs Mel-spectrograms into raw
 waveforms, and a Discriminator, which distinguishes between real and
 synthesized audio. This adversarial training forces the Generator to produce
 high-fidelity audio that closely resembles natural speech.
@@ -830,9 +830,9 @@ it will be compatible with pre-trained vocoders that expect 22,050~Hz input.
 Additional preprocessing steps, such as silence trimming and normalization, are
 performed by the Coqui TTS framework during training.
 
-The acoustic processing that transforms audio waveforms into mel-spectrograms
+The acoustic processing that transforms audio waveforms into Mel-spectrograms
 is performed on-the-fly during model training by the Coqui TTS framework. The
-mel-spectrogram parameters used are as follows:
+Mel-spectrogram parameters used are as follows:
 
 TODO move to appendix
 
@@ -920,11 +920,11 @@ involves:
             through the speaker encoder to generate 512-dimensional speaker embeddings
             (d-vectors).
       \item \textbf{Pooling strategy}: TODO
-      % Global average pooling across all utterances
-      %       from each speaker to create a single representative embedding per speaker.
+            % Global average pooling across all utterances
+            %       from each speaker to create a single representative embedding per speaker.
       \item \textbf{Normalization}: TODO
-      % Speaker embeddings are L2-normalized to ensure
-      %       consistent magnitude across speakers.
+            % Speaker embeddings are L2-normalized to ensure
+            %       consistent magnitude across speakers.
 \end{itemize}
 
 These speaker embeddings are then used during TTS training to condition the
@@ -991,7 +991,7 @@ scenarios where attention alignment can be challenging.
 
 \textbf{FastPitch:}
 A non-autoregressive model that predicts duration and pitch explicitly, allowing
-for parallel generation of mel-spectrograms. FastPitch uses Transformer
+for parallel generation of Mel-spectrograms. FastPitch uses Transformer
 architecture instead of RNNs and should theoretically be less sensitive to
 attention alignment issues.
 
@@ -1019,7 +1019,7 @@ procedures:
 
 \begin{table}[h!]
       \centering
-      \caption{Tacotron~2 DDC training configuration}
+      \caption[Tacotron~2 DDC training configuration]{Tacotron~2 DDC training configuration}
       \begin{tabular}{lr}
             \toprule
             \textbf{Parameter}       & \textbf{Value}     \\
@@ -1045,7 +1045,7 @@ procedures:
 
 \begin{table}[h!]
       \centering
-      \caption{FastPitch training configuration}
+      \caption[FastPitch training configuration]{FastPitch training configuration}
       \begin{tabular}{lr}
             \toprule
             \textbf{Parameter}         & \textbf{Value} \\
@@ -1069,7 +1069,7 @@ procedures:
 
 \subsubsection{Vocoder configuration}
 
-For mel-spectrogram to waveform conversion, a pre-trained HiFi-GAN v2 vocoder
+For Mel-spectrogram to waveform conversion, a pre-trained HiFi-GAN v2 vocoder
 is used across all experiments. The vocoder was pre-trained on the VCTK
 corpus~\cite{veaux2019cstr} and is compatible with the 22.05~kHz sampling rate
 used in this study. Using the same vocoder across all experiments ensures that
@@ -1084,7 +1084,7 @@ Objective evaluation is performed using standard acoustic metrics:
 
 \begin{itemize}
       % \item \textbf{Mel Cepstral Distortion (MCD):} Measures the spectral distance
-      %       between synthesized and ground truth mel-spectrograms, with lower values
+      %       between synthesized and ground truth Mel-spectrograms, with lower values
       %       indicating better quality.
       % \item \textbf{Fundamental Frequency RMSE (F0 RMSE):} Evaluates pitch accuracy
       %       by measuring the root mean square error between predicted and ground truth
@@ -1102,16 +1102,16 @@ includes:
 \begin{itemize}
       \item \textbf{Rating scale:} 5-point Mean Opinion Score (MOS) scale where
             1=Very Poor, 2=Poor, 3=Fair, 4=Good, 5=Excellent.
-      % \item \textbf{Test sentences:} A standardized set of 50 Lithuanian sentences
-      %       covering various phonetic contexts and prosodic patterns.
-      % \item \textbf{Evaluation criteria:} Participants rate overall quality considering
-      %       naturalness, intelligibility, and absence of artifacts.
-      % \item \textbf{Participant recruitment:} Native Lithuanian speakers recruited
-      %       through university networks and social media.
-      % \item \textbf{Data collection:} Web-based application with PostgreSQL database
-      %       for storing ratings, deployed on Google Cloud Platform.
-      % \item \textbf{Statistical analysis:} Mann-Whitney U tests for significance
-      %       testing between model comparisons, given the ordinal nature of MOS ratings.
+            % \item \textbf{Test sentences:} A standardized set of 50 Lithuanian sentences
+            %       covering various phonetic contexts and prosodic patterns.
+            % \item \textbf{Evaluation criteria:} Participants rate overall quality considering
+            %       naturalness, intelligibility, and absence of artifacts.
+            % \item \textbf{Participant recruitment:} Native Lithuanian speakers recruited
+            %       through university networks and social media.
+            % \item \textbf{Data collection:} Web-based application with PostgreSQL database
+            %       for storing ratings, deployed on Google Cloud Platform.
+            % \item \textbf{Statistical analysis:} Mann-Whitney U tests for significance
+            %       testing between model comparisons, given the ordinal nature of MOS ratings.
 \end{itemize}
 
 \subsubsection{Computational hardware}

@@ -87,7 +87,7 @@
     // OPTIMIZER
     "grad_clip": 0.05, // upper limit for gradients for clipping.
     "epochs": 400, // total number of epochs to train.
-    "lr": 0.001, // Initial learning rate. If Noam decay is active, maximum learning rate.
+    "lr": 0.0005, // Initial learning rate. If Noam decay is active, maximum learning rate.
     "precision": "fp32",
     "optimizer": "RAdam",
     "optimizer_params": {
@@ -163,6 +163,9 @@
     "use_gst": false, // use global style tokens
     "gst": null,
     "gst_style_input": null,
+    "use_d_vector_file": true,
+    "d_vector_file": "data/processed/tts_dataset_liepa2_30spk/speakers.pth",
+    "d_vector_dim": 512,
     // DATASETS
     "datasets": // List of datasets. They all merged and they get different speaker_ids.
     [

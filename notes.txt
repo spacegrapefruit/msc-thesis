@@ -31,8 +31,8 @@ uv run python python/run_inference.py \
 
 
 uv run python python/run_inference.py \
-    --speakers "VP157" \
-    --model_dir training_output/Tacotron2-DCA-November-23-2025_09+47AM-e6df90a/ \
+    --speakers "IS031" \
+    --model_dir training_output/Tacotron2-DCA-December-06-2025_05+40PM-c34d0f9/ \
     --use_gpu
 
 

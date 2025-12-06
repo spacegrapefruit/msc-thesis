@@ -55,15 +55,17 @@ compute-embeddings-liepa2: $(EMBEDDINGS_LIEPA2_CHECK_FILE) ## Compute speaker em
 compute-embeddings: compute-embeddings-liepa2 ## Compute speaker embeddings for the dataset.
 
 # 3. Train Model
-# This target depends on the processed data and the config file.
-train: data-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
+# This target depends on the processed data, embeddings, and the config file.
+train: compute-embeddings-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
 	@echo "Launching TTS training with $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers using config '$(CONFIG_FILE)'..."
 	@echo "Dataset path: $(PROCESSED_LIEPA2_DIR)"
+	@echo "Speaker embeddings: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
 	@echo "Number of speakers: $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))"
 	$(EXECUTOR) python python/train.py \
 	  --config_path $(CONFIG_FILE) \
 	  --coqpit.datasets.0.path=$(PROCESSED_LIEPA2_DIR)/ \
 	  --coqpit.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
+	  --coqpit.d_vector_file=$(EMBEDDINGS_LIEPA2_CHECK_FILE) \
 	  --coqpit.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 

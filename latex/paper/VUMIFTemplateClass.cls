@@ -129,7 +129,7 @@
   backend=biber,
   eprint=false,
   sortcites=true,
-  sorting=anyt,
+  sorting=none,
   giveninits=true,
   % setting the citation style
   style=numeric, % numerical numbering
@@ -219,5 +219,5 @@
 \captionsetup*[table]{name=, labelsep=space, labelfont=bf, font=it}
 \captionsetup*[figure]{name=, labelsep=space, labelfont=bf, font=it}
 
-\renewcommand\thefigure{\arabic{figure} figure.}
-\renewcommand\thetable{\arabic{table} table.}
+% \renewcommand\thefigure{\arabic{figure} figure.}
+% \renewcommand\thetable{\arabic{table} table.}
