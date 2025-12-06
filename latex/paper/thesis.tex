@@ -165,9 +165,10 @@ common sampling rates for audio are 22.05~kHz and 24~kHz, which can capture
 frequencies up to approx. 11~kHz and 12~kHz, respectively.
 
 Quantization (also known as bit depth) is the mapping of continuous amplitude
-values to discrete levels for digital representation, which determines the precision of
-the representation. Common bit depths for
-audio are 16-bit and 24-bit formats. A visual representation of both sampling and quantization is provided in Figure~\ref{fig:sampling}.
+values to discrete levels for digital representation, which determines the
+precision of the representation. Common bit depths for audio are 16-bit and
+24-bit formats. A visual representation of both sampling and quantization is
+provided in Figure~\ref{fig:sampling}.
 
 \begin{figure}[ht]
       \centering
@@ -235,7 +236,9 @@ Mel-spectrograms are computed by applying a Mel filterbank of overlapping
 triangular filters (or kernels) to the magnitude spectrogram obtained from the
 STFT. This results in a compressed representation of the audio signal that
 aligns more closely with human auditory perception. Such Mel-spectrograms are
-commonly used as input features for modern TTS systems. The differences between the raw waveform, the standard spectrogram, and the Mel-spectrogram are illustrated in Figure~\ref{fig:waveform_spectrograms}.
+commonly used as input features for modern TTS systems. The differences between
+the raw waveform, the standard spectrogram, and the Mel-spectrogram are
+illustrated in Figure~\ref{fig:waveform_spectrograms}.
 
 \begin{figure}[ht]
       \centering
@@ -442,11 +445,13 @@ not seen during training.
 
 Transfer learning approaches~\cite{jia2018transfer} have demonstrated adapting
 speaker verification models to multispeaker TTS synthesis, enabling better
-speaker adaptation and higher voice quality. The general architecture of such a speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker encoder model
-pre-trained on a massive, noisy dataset with thousands of speakers (such as
-VoxCeleb) learns the general speaker space. Its pre-trained weights are then
-frozen and used to extract embeddings for the TTS training data, allowing the
-TTS model to effectively account for multi-speaker characteristics.
+speaker adaptation and higher voice quality. The general architecture of such a
+speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker
+encoder model pre-trained on a massive, noisy dataset with thousands of
+speakers (such as VoxCeleb) learns the general speaker space. Its pre-trained
+weights are then frozen and used to extract embeddings for the TTS training
+data, allowing the TTS model to effectively account for multi-speaker
+characteristics.
 
 \textbf{d-vectors:} d-vectors~\cite{variani2014deep} are fixed-length speaker embeddings derived from a separate speaker verification model. A reference encoder network takes a reference audio recording of arbitrary length and compresses it into a fixed-length vector known as a d-vector, that summarizes the speaker's timbral and prosodic characteristics. These d-vectors are then provided as additional input to the TTS model, and are kept fixed during TTS training.
 
@@ -523,7 +528,8 @@ This architecture has three main components:
 Tacotron~\cite{wang2017tacotron} and Tacotron~2~\cite{shen2018natural} are two
 notable TTS models based on the sequence-to-sequence architecture. The variant
 that this thesis primarily focuses on is Tacotron~2 with Double Decoder
-Consistency (DDC). The complete architecture of Tacotron~2 is depicted in Figure~\ref{fig:tacotron_arch}.
+Consistency (DDC). The complete architecture of Tacotron~2 is depicted in
+Figure~\ref{fig:tacotron_arch}.
 
 In Tacotron~2, the encoder consists of a character embedding layer, followed by
 a stack of convolutional layers (which encode local context about neighbouring
@@ -545,7 +551,8 @@ Unlike Tacotron~2, FastPitch~\cite{lancucki2020fastpitch} replaces the
 recurrent layers with Transformer architecture blocks relying on
 self-attention. Being a non-autoregressive model, FastPitch model can process
 the entire input sequence in parallel, significantly speeding up both training
-and inference. The high-level architecture of FastPitch is shown in Figure~\ref{fig:fastpitch_arch}.
+and inference. The high-level architecture of FastPitch is shown in
+Figure~\ref{fig:fastpitch_arch}.
 
 Unlike Tacotron~2, which learns alignment implicitly using attention, FastPitch
 requires an external aligner (or an internal alignment module) in order to
@@ -596,13 +603,14 @@ waveforms, and a Discriminator, which distinguishes between real and
 synthesized audio. This adversarial training forces the Generator to produce
 high-fidelity audio that closely resembles natural speech.
 
-The framework used in this thesis, Coqui TTS~\cite{coqui2021}, comes with a pre-trained HiFi-GAN v2 vocoder trained on a large
-multi-speaker dataset (VCTK). Given its widespread adoption and status as a
-state-of-the-art neural vocoder, this thesis will use the HiFi-GAN v2 model for
-waveform generation. In order to ensure compatibility between the TTS models
-and the vocoder, the TTS models' acoustic parameters will be configured to the
-exact same settings (sampling rate, FFT parameters, Mel filterbank settings) as
-those used during the HiFi-GAN v2 training.
+The framework used in this thesis, Coqui TTS~\cite{coqui2021}, comes with a
+pre-trained HiFi-GAN v2 vocoder trained on a large multi-speaker dataset
+(VCTK). Given its widespread adoption and status as a state-of-the-art neural
+vocoder, this thesis will use the HiFi-GAN v2 model for waveform generation. In
+order to ensure compatibility between the TTS models and the vocoder, the TTS
+models' acoustic parameters will be configured to the exact same settings
+(sampling rate, FFT parameters, Mel filterbank settings) as those used during
+the HiFi-GAN v2 training.
 
 \subsection{Multi-speaker TTS}
 
@@ -1128,9 +1136,9 @@ with the following specifications:
 
 \subsubsection{Implementation framework}
 
-All experiments are implemented using the Coqui TTS framework,
-an open-source toolkit for training TTS models. The experimental pipeline is
-automated using Make build system with the following components:
+All experiments are implemented using the Coqui TTS framework, an open-source
+toolkit for training TTS models. The experimental pipeline is automated using
+Make build system with the following components:
 
 \begin{itemize}
       \item \textbf{Data preprocessing:} Automated scripts for audio conversion,
