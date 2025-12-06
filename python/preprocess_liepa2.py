@@ -6,6 +6,7 @@ import io
 from functools import partial
 from pathlib import Path
 from pydub import AudioSegment
+from tinytag import TinyTag
 from tqdm import tqdm
 from text_utils import load_accented_words, normalize_text
 
@@ -27,6 +28,11 @@ parsing_rules = [
     {},
     {},
 ]
+
+
+def get_duration(row):
+    tag = TinyTag.get(file_obj=io.BytesIO(row["audio"]["bytes"]))
+    return tag.duration
 
 
 def parse_filename(filename):
@@ -79,11 +85,27 @@ def process_audio_file(row_data, output_wav_path):
         return None
 
 
+def sample_duration_per_speaker(df, selected_speakers, seconds_per_speaker):
+    selected_df = df[df["speaker_id"].isin(selected_speakers)]
+    sampled_dfs = []
+    for speaker_id in selected_speakers:
+        speaker_df = selected_df[selected_df["speaker_id"] == speaker_id]
+        speaker_df = speaker_df.sample(
+            frac=1, random_state=42
+        )  # shuffle rows for randomness
+        cumulative_duration = (
+            speaker_df["duration"].cumsum() - speaker_df["duration"]
+        )  # include one more utterance
+        speaker_sampled_df = speaker_df[cumulative_duration <= seconds_per_speaker]
+        sampled_dfs.append(speaker_sampled_df)
+    return pd.concat(sampled_dfs, ignore_index=True)
+
+
 def process_liepa2(
     input_path: Path,
     output_path: Path,
     n_processes: int = None,
-    n_speakers: int = 20,
+    n_speakers_per_gender: int = 10,
 ):
     """
     Prepares the Liepa-2 dataset for multi-speaker TTS training.
@@ -92,7 +114,7 @@ def process_liepa2(
         input_path (Path): Path to the Liepa-2 directory containing parquet files.
         output_path (Path): Path to save the processed dataset.
         n_processes (int, optional): Number of parallel processes to use. If None, uses CPU count.
-        n_speakers (int, optional): Number of top speakers to process. Defaults to 20.
+        n_speakers_per_gender (int, optional): Number of top speakers per gender to process. Defaults to 10.
     """
     print("Starting Liepa-2 preprocessing for multiple speakers...")
 
@@ -114,14 +136,13 @@ def process_liepa2(
     dfs = []
     for file_path in tqdm(train_files, desc="Loading parquet files"):
         df = pd.read_parquet(file_path)
-        # Filter for Lithuanian language only
-        df = df[df["language"] == "lt"]
         dfs.append(df)
 
     # Combine all dataframes
     full_df = pd.concat(dfs, ignore_index=True)
 
     # Extract speaker IDs
+    full_df["duration"] = full_df.apply(get_duration, axis=1)
     full_df["path"] = full_df["audio"].apply(lambda x: x["path"])
     full_df[
         [
@@ -144,32 +165,44 @@ def process_liepa2(
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
 
-    # Select top N speakers based on the number of samples, balanced by gender
-    speakers_per_gender = n_speakers // 2
-    speaker_ids = (
-        full_df[["speaker_gender", "speaker_id"]]
-        .value_counts()
-        .groupby("speaker_gender")
-        .head(speakers_per_gender)
-        .reset_index()["speaker_id"]
+    speaker_counts_df = (
+        full_df
+        # calculate total count and duration per speaker
+        .groupby(["speaker_gender", "speaker_id"])
+        .agg(total_utterances=("sentence", "count"), total_duration=("duration", "sum"))
+        .reset_index()
+        .sort_values(by=["total_duration"], ascending=False)
     )
 
-    # Filter the DataFrame to include only the selected speakers
-    full_df = full_df[full_df["speaker_id"].isin(speaker_ids)].reset_index(drop=True)
+    selected_speakers_df = speaker_counts_df.groupby("speaker_gender").head(
+        n_speakers_per_gender
+    )
+    selected_speakers = sorted(selected_speakers_df["speaker_id"].to_list())
 
-    print(f"Selected speakers: {sorted(speaker_ids.tolist())}")
-    print(f"Total samples from selected speakers: {len(full_df)}")
+    duration_per_speaker = 22.5 * 3600 / (n_speakers_per_gender * 2)
+    # Filter the DataFrame to include only the selected speakers
+    sample_df = sample_duration_per_speaker(
+        full_df, selected_speakers, duration_per_speaker
+    )
+    # TODO remove saving intermediate csv
+    # sample_df.to_csv(
+    #     f"liepa_selected_{n_speakers_per_gender * 2}_speakers.csv", index=False
+    # )
+
+    print(f"Selected speakers: {selected_speakers}")
+    print(f"Total samples from selected speakers: {len(sample_df)}")
 
     # Show speaker distribution
     speaker_distribution = (
-        full_df.groupby(["speaker_gender", "speaker_id"])
-        .size()
-        .reset_index(name="count")
+        sample_df.groupby(["speaker_gender", "speaker_id"])
+        .agg(total_utterances=("sentence", "count"), total_duration=("duration", "sum"))
+        .reset_index()
+        .sort_values(by=["speaker_id"], ascending=False)
     )
     print("\nSpeaker distribution:")
     for _, row in speaker_distribution.iterrows():
         print(
-            f"  {row['speaker_id']} ({row['speaker_gender']}): {row['count']} samples"
+            f"  {row['speaker_id']} ({row['speaker_gender']}): {row['total_utterances']} samples, {row['total_duration']:.2f} sec"
         )
 
     # Set up multiprocessing
@@ -184,15 +217,15 @@ def process_liepa2(
     with mp.Pool(n_processes) as pool:
         results = list(
             tqdm(
-                pool.imap(process_func, full_df.iterrows()),
-                total=len(full_df),
+                pool.imap(process_func, sample_df.iterrows()),
+                total=len(sample_df),
                 desc="Processing audio",
             )
         )
 
     # Filter successful results and create metadata
     metadata = [result for result in results if result is not None]
-    print(f"Successfully processed {len(metadata)} files out of {len(full_df)}")
+    print(f"Successfully processed {len(metadata)} files out of {len(sample_df)}")
 
     # Save metadata file
     metadata_file_path = output_path / "metadata.csv"
@@ -204,7 +237,7 @@ def process_liepa2(
 
     # 7. Create speakers.json file for TTS training
     speakers_info = {}
-    unique_speakers = full_df["speaker_id"].unique()
+    unique_speakers = sample_df["speaker_id"].unique()
     for i, speaker_id in enumerate(sorted(unique_speakers)):
         speakers_info[speaker_id] = i
 
@@ -238,9 +271,9 @@ if __name__ == "__main__":
         help="Path to the directory to save the formatted dataset.",
     )
     parser.add_argument(
-        "--n_speakers",
+        "--n_speakers_per_gender",
         type=int,
-        default=20,
+        default=10,
         help="Number of top speakers to process based on sample count. Default is 20.",
     )
     parser.add_argument(
@@ -261,5 +294,5 @@ if __name__ == "__main__":
         input_path,
         output_path,
         n_processes=args.n_processes,
-        n_speakers=args.n_speakers,
+        n_speakers_per_gender=args.n_speakers_per_gender,
     )

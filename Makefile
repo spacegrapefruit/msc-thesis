@@ -1,6 +1,6 @@
 # --- Project Configuration ---
 DATASET ?= liepa2
-N_SPEAKERS ?= 20
+N_SPEAKERS_PER_GENDER ?= 15
 EXECUTOR := uv run
 CONFIG_FILE := configs/config.json
 
@@ -10,11 +10,11 @@ RAW_LIEPA2_DIR := data/raw/liepa2
 RAW_LIEPA2_CHECK_FILE := $(RAW_LIEPA2_DIR)/train-00000-of-00130.parquet
 
 # Processed data output paths
-PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2
+PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2_$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))spk
 PROCESSED_LIEPA2_CHECK_FILE := $(PROCESSED_LIEPA2_DIR)/metadata.csv
 
 # Embedding output paths
-EMBEDDINGS_LIEPA2_DIR := data/processed/tts_dataset_liepa2
+EMBEDDINGS_LIEPA2_DIR := $(PROCESSED_LIEPA2_DIR)
 EMBEDDINGS_LIEPA2_CHECK_FILE := $(EMBEDDINGS_LIEPA2_DIR)/speakers.pth
 
 # Training output path (defined inside config.json, but used for cleanup)
@@ -33,8 +33,8 @@ install: ## Install required Python packages using uv.
 
 # Liepa-2 dataset processing
 $(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2.py
-	@echo "Processing Liepa-2 data ($(N_SPEAKERS) speakers)..."
-	$(EXECUTOR) python python/preprocess_liepa2.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers $(N_SPEAKERS)
+	@echo "Processing Liepa-2 data ($(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers)..."
+	$(EXECUTOR) python python/preprocess_liepa2.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers_per_gender $(N_SPEAKERS_PER_GENDER)
 	@echo "\nLiepa-2 data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
 
 # Data processing targets
@@ -56,16 +56,15 @@ compute-embeddings: compute-embeddings-liepa2 ## Compute speaker embeddings for 
 
 # 3. Train Model
 # This target depends on the processed data and the config file.
-train: data $(CONFIG_FILE) ## Start or resume the TTS model training with single-speaker Liepa-2.
-	@echo "Launching TTS training with config '$(CONFIG_FILE)'..."
-	$(EXECUTOR) python -m TTS.bin.train_tts --config_path $(CONFIG_FILE)
-	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
-
-# 4. Train Model
-# This target depends on the processed data and the config file.
 train: data-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
-	@echo "Launching TTS training with config '$(CONFIG_FILE)'..."
-	$(EXECUTOR) python python/train.py --config_path $(CONFIG_FILE)
+	@echo "Launching TTS training with $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers using config '$(CONFIG_FILE)'..."
+	@echo "Dataset path: $(PROCESSED_LIEPA2_DIR)"
+	@echo "Number of speakers: $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))"
+	$(EXECUTOR) python python/train.py \
+	  --config_path $(CONFIG_FILE) \
+	  --coqpit.datasets.0.path=$(PROCESSED_LIEPA2_DIR)/ \
+	  --coqpit.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
+	  --coqpit.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 
 # 5. Format Code

@@ -1,22 +1,19 @@
-"""
-Script to compute speaker embeddings for the Liepa-2 dataset.
-This script uses the custom ljspeech_liepa2 formatter defined in train.py.
-"""
-
 import argparse
 import logging
 import os
 import sys
+from collections import defaultdict
 from dataclasses import dataclass, field
 
-from TTS.config import load_config
+import numpy as np
 from TTS.config.shared_configs import BaseDatasetConfig
-from TTS.tts.datasets import formatters, load_tts_samples
+from TTS.tts.datasets import load_tts_samples
 from TTS.tts.utils.managers import save_file
 from TTS.tts.utils.speakers import SpeakerManager
 from TTS.utils.generic_utils import ConsoleFormatter, setup_logger
+from tqdm import tqdm
 
-from python.dataset_formatters import ljspeech_liepa2
+import dataset_formatters
 
 
 @dataclass
@@ -37,9 +34,6 @@ class ComputeEmbeddingsArgs:
             "help": "Path to speaker encoder config. Defaults to released config."
         },
     )
-    disable_cuda: bool = field(
-        default=False, metadata={"help": "Flag to disable CUDA."}
-    )
 
 
 def compute_embeddings(args: ComputeEmbeddingsArgs):
@@ -49,9 +43,6 @@ def compute_embeddings(args: ComputeEmbeddingsArgs):
     setup_logger(
         "TTS", level=logging.INFO, stream=sys.stdout, formatter=ConsoleFormatter()
     )
-
-    # Register the custom formatter
-    formatters.register_formatter("ljspeech_liepa2", ljspeech_liepa2)
 
     # Configure dataset
     c_dataset = BaseDatasetConfig()
@@ -69,49 +60,58 @@ def compute_embeddings(args: ComputeEmbeddingsArgs):
         f"Found {len(samples)} samples from {len(set(s['speaker_name'] for s in samples))} speakers"
     )
 
-    # Setup speaker encoder
-    use_cuda = not args.disable_cuda
-    print(f"Using CUDA: {use_cuda}")
-
     encoder_manager = SpeakerManager(
         encoder_model_path=args.model_path,
         encoder_config_path=args.config_path,
-        use_cuda=use_cuda,
+        use_cuda=True,
     )
+
+    # Set the sample rate for audio processing
+    encoder_manager.encoder_config.audio.sample_rate = 22050
+    encoder_manager.encoder_config.audio.win_length = 550
+    encoder_manager.encoder_config.audio.hop_length = 220
 
     class_name_key = encoder_manager.encoder_config.class_name_key
 
-    # Compute speaker embeddings
+    # Group samples by speaker
+    speaker_clips = defaultdict(list)
+
+    print("Grouping samples by speaker...")
+    for fields in samples:
+        speaker_name = fields[class_name_key]
+        audio_file = fields["audio_file"]
+        speaker_clips[speaker_name].append(audio_file)
+
+    print(f"Found {len(speaker_clips)} unique speakers")
+
+    # Compute speaker embeddings by averaging all clips per speaker
     speaker_mapping = {}
 
     print("Computing speaker embeddings...")
-    for i, fields in enumerate(samples):
-        if i % 100 == 0:
-            print(f"Processing sample {i + 1}/{len(samples)}")
-
-        class_name = fields[class_name_key]
-        audio_file = fields["audio_file"]
-        embedding_key = fields["audio_unique_name"]
-
-        # Extract the embedding
-        try:
+    for speaker_name, audio_files in tqdm(speaker_clips.items()):
+        # Compute embeddings for all clips of this speaker
+        clip_embeddings = []
+        for audio_file in audio_files:
             embedd = encoder_manager.compute_embedding_from_clip(audio_file)
+            clip_embeddings.append(embedd)
 
-            # Create speaker mapping entry
-            speaker_mapping[embedding_key] = {"name": class_name, "embedding": embedd}
-        except Exception as e:
-            print(f"Warning: Failed to compute embedding for {audio_file}: {e}")
-            continue
+        # Average embeddings across all clips for this speaker
+        averaged_embedding = np.mean(clip_embeddings, axis=0)
 
-    # Save embeddings
-    if speaker_mapping:
-        os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
-        save_file(speaker_mapping, args.output_path)
-        print(f"Speaker embeddings saved at: {args.output_path}")
-        print(f"Computed embeddings for {len(speaker_mapping)} audio clips")
-    else:
-        print("Warning: No embeddings were computed!")
-        sys.exit(1)
+        # Create speaker mapping entry
+        speaker_mapping[speaker_name] = {
+            "name": speaker_name,
+            "embedding": averaged_embedding,
+        }
+
+    assert len(speaker_mapping) == len(speaker_clips), (
+        "Speaker mapping size does not match number of unique speakers!"
+    )
+
+    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
+    save_file(speaker_mapping, args.output_path)
+    print(f"Speaker embeddings saved at: {args.output_path}")
+    print(f"Computed embeddings for {len(speaker_mapping)} speakers")
 
 
 def main():
@@ -142,11 +142,6 @@ def main():
         default="https://github.com/coqui-ai/TTS/releases/download/speaker_encoder_model/config_se.json",
         help="Path to speaker encoder config. Defaults to released config.",
     )
-    parser.add_argument(
-        "--disable_cuda",
-        action="store_true",
-        help="Flag to disable CUDA.",
-    )
 
     args = parser.parse_args()
 
@@ -156,7 +151,6 @@ def main():
         output_path=args.output_path,
         model_path=args.model_path,
         config_path=args.config_path,
-        disable_cuda=args.disable_cuda,
     )
 
     compute_embeddings(compute_args)

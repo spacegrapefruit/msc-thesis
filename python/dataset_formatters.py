@@ -1,4 +1,5 @@
 import os
+from TTS.tts.datasets import formatters
 
 
 def ljspeech_liepa2(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
@@ -21,3 +22,12 @@ def ljspeech_liepa2(root_path, meta_file, **kwargs):  # pylint: disable=unused-a
                 }
             )
     return items
+
+
+def text_normalizer_liepa2(text):
+    """Custom text normalizer for Liepa2 dataset."""
+    return text
+
+
+# Register the custom formatter
+formatters.register_formatter("ljspeech_liepa2", ljspeech_liepa2)

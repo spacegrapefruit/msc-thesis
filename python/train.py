@@ -6,11 +6,11 @@ from dataclasses import dataclass, field
 from trainer import Trainer, TrainerArgs
 
 from TTS.config import load_config, register_config
-from TTS.tts.datasets import formatters, load_tts_samples
+from TTS.tts.datasets import load_tts_samples
 from TTS.tts.models import setup_model
 from TTS.utils.generic_utils import ConsoleFormatter, setup_logger
 
-from python.compute_embeddings import ljspeech_liepa2
+import dataset_formatters
 
 
 @dataclass
@@ -18,10 +18,6 @@ class TrainTTSArgs(TrainerArgs):
     config_path: str = field(
         default=None, metadata={"help": "Path to the config file."}
     )
-
-
-# Register the custom formatter
-formatters.register_formatter("ljspeech_liepa2", ljspeech_liepa2)
 
 
 def main(arg_list: list[str] | None = None):
