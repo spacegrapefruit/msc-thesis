@@ -16,11 +16,11 @@ RAW_LIEPA2_DIR := data/raw/liepa2
 RAW_LIEPA2_CHECK_FILE := $(RAW_LIEPA2_DIR)/train-00000-of-00130.parquet
 
 # Processed data output paths
-PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2_multispeaker
+PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2
 PROCESSED_LIEPA2_CHECK_FILE := $(PROCESSED_LIEPA2_DIR)/metadata.csv
 
 # Embedding output paths
-EMBEDDINGS_LIEPA2_DIR := data/processed/tts_dataset_liepa2_multispeaker
+EMBEDDINGS_LIEPA2_DIR := data/processed/tts_dataset_liepa2
 EMBEDDINGS_LIEPA2_CHECK_FILE := $(EMBEDDINGS_LIEPA2_DIR)/speakers.pth
 
 # Training output path (defined inside config.json, but used for cleanup)

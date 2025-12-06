@@ -234,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_path",
         type=str,
-        default="data/processed/tts_dataset_liepa2_multispeaker",
+        default="data/processed/tts_dataset_liepa2",
         help="Path to the directory to save the formatted dataset.",
     )
     parser.add_argument(
