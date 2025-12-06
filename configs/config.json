@@ -87,7 +87,7 @@
     // OPTIMIZER
     "grad_clip": 0.05, // upper limit for gradients for clipping.
     "epochs": 400, // total number of epochs to train.
-    "lr": 0.0005, // Initial learning rate. If Noam decay is active, maximum learning rate.
+    "lr": 0.0002, // Initial learning rate. If Noam decay is active, maximum learning rate.
     "precision": "fp32",
     "optimizer": "RAdam",
     "optimizer_params": {
@@ -97,15 +97,9 @@
         ],
         "weight_decay": 1e-06
     },
-    "lr_scheduler": "MultiStepLR",
+    "lr_scheduler": "NoamLR",
     "lr_scheduler_params": {
-        "milestones": [
-            10000,
-            20000,
-            30000,
-            40000
-        ],
-        "gamma": 0.32
+        "warmup_steps": 4000
     },
     "scheduler_after_epoch": false,
     "wd": 0.000001, // Weight decay weight.

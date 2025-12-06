@@ -238,7 +238,9 @@ STFT. This results in a compressed representation of the audio signal that
 aligns more closely with human auditory perception. Such Mel-spectrograms are
 commonly used as input features for modern TTS systems. The differences between
 the raw waveform, the standard spectrogram, and the Mel-spectrogram are
-illustrated in Figure~\ref{fig:waveform_spectrograms}.
+illustrated in Figure~\ref{fig:waveform_spectrograms}. Note how the
+Mel-spectrogram has a higher resolution in the lower frequencies, where the
+majority of the speech energy is concentrated.
 
 \begin{figure}[ht]
       \centering
@@ -282,9 +284,9 @@ During synthesis, the system breaks down the input text into short linguistic
 units (such as phonemes or syllables) using a text analysis module. Then, it
 queries the speech database to find the best-matching segments for each unit
 using selection cost functions~\cite{black1995optimising}. The retrieved
-segments are blended and concatenated to form a continuous speech waveform. The
-system then uses signal processing techniques to smooth the transitions between
-segments and adjust pitch and duration to match the desired output
+segments are blended and concatenated to form a continuous speech waveform.
+Finally, the system uses signal processing techniques to smooth the transitions
+between segments and adjust pitch and duration to match the desired output
 characteristics.
 
 Concatenative synthesis can produce natural-sounding individual speech units,
@@ -324,39 +326,62 @@ sharpness and detail of natural human speech.
 
 \subsection{Linguistic Representation (Text Processing)}
 
+In TTS systems, the input text must be pre-processed and converted into a
+suitable linguistic representation that the synthesis model can use. The main
+goal is to map the raw sentences into a sequence of symbols that can be more
+closely mapped to the acoustic features of speech.
+
+Although theoretically an end-to-end TTS model could learn to map raw text
+directly to audio, in practice, pre-processing the text makes the model
+convergence easier and improves the quality of the synthesized speech.
+
+This process typically involves several steps, such as text normalization,
+grapheme-to-phoneme conversion, and possibly prosody prediction.
+
 \subsubsection{Text normalization}
 
 Text normalization~\cite{sproat2001normalization} is the process of converting
-raw text into a standardized format suitable for TTS synthesis. Typical steps
+raw written text into a more standardized ``spoken'' form. Typical steps
 include expanding abbreviations (e.g., expanding ``Dr.'' to ``Doctor''),
 punctuation removal, number normalization (e.g., converting ``123'' to ``one
 hundred twenty-three''), and lowercasing.
 
+As an example, the input text ``Dr. Smith has 2 cats.'' could be normalized to
+``doctor smith has two cats''.
+
+Text normalization helps reduce the variability and complexity in the input
+text, decreases the number of unique symbols, and removes the ambiguities that
+could confuse the TTS model. The resulting normalized text is not only easier
+for the model to process, but can also be further converted into phonemes,
+which provide an even closer representation of the spoken language.
+
 \subsubsection{Graphemes vs. Phonemes}
 
-A key decision in TTS systems is the choice of input representation for text.
+Text-to-speech systems use a discrete input representation derived from text,
+generally divided into grapheme-based or phoneme-based sequences.
 
-There are two main approaches, namely grapheme-based and phoneme-based. The
-grapheme-based approach uses the raw characters of the written text as input to
-the TTS model. This method is straightforward and does not require any
-additional pre-processing steps. However, it can struggle with languages that
-have complex orthographies or inconsistent spelling-to-sound correspondences.
+Grapheme-based models ingest raw character sequences (orthography). This
+approach simplifies the inference pipeline by eliminating the dependency on
+external grapheme-to-phoneme (G2P) converters. However, it forces the model to
+implicitly learn pronunciation rules from data, which can be a significant
+challenge for languages with complex orthographies or inconsistent
+grapheme-to-phoneme mappings (e.g., ``read'' vs. ``read'').
 
 In contrast, the phoneme-based approach uses a phonetic transcription of the
-text, typically in the International Phonetic Alphabet (IPA) format. The
-underlying assumption is that phonemes possess a more direct and consistent
-mapping to the acoustic features of speech, making it easier for the TTS model
-to learn the relationship between text and audio. However, this approach
-requires an additional grapheme-to-phoneme (G2P) conversion
-step~\cite{bisani2008joint}, which requires a complex pre-processing pipeline
-or a separate G2P model.
+text, typically in the International Phonetic Alphabet (IPA) or ARPABET form.
+By resolving pronunciation ambiguities prior to training, phonemes provide a
+more direct mapping to acoustic features, simplifying the model's task of
+learning alignment. The downside is that this approach requires an external
+grapheme-to-phoneme (G2P) conversion step~\cite{bisani2008joint}. Additionally,
+errors in the G2P conversion can propagate to the TTS model, affecting the
+quality of the synthesized speech.
 
 There is another approach that augments the grapheme-based representation with
-accentuation marks. This method adds accent marks (typically tilde, acute,
-grave accents) to the raw grapheme sequence to indicate the stressed syllables
-in words. This additional information provides cues about the prosodic features
-of speech, which can help improve the pronunciation and naturalness of the
-synthesized speech.
+explicit lexical stress markers or diacritics (e.g., tilde, acute, grave
+accents). This intermediate method helps the model disambiguate pronunciation
+of homographs and easier learn prosodic patterns without requiring a full
+phonetic transcription, particularly in languages where stress placement alters
+meaning.
 
 \subsubsection{Specific challenges in Lithuanian}
 
@@ -392,9 +417,9 @@ Challenges in Lithuanian TTS synthesis include:
 To overcome these challenges, tools like \textbf{Kirčiuoklis} (Vytautas Magnus
 University) are often employed in the text normalization pipeline. Kirčiuoklis
 automatically assigns stress marks to raw text. One weakness of Kirčiuoklis is
-that it relies on a word-dictionary based approach, which does not take into
+that it relies on simple word-dictionary based lookup, which does not take into
 account the context of the word. Thus, it suggests multiple possible
-accentuation variants for ambiguous words, leaving it up to the user to select
+accentuation variants for homographs, leaving it up to the user to select
 the correct one.
 
 In the absence of a high-quality, context-aware Grapheme-to-Phoneme (G2P)
