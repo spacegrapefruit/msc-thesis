@@ -47,10 +47,4 @@ uv run python python/run_inference.py --speakers "AS022,VP157" --model_dir train
 
 
 
-
-
-
-
-
-
 gcloud storage cp -r inference_output/ gs://mif-tts-audio-bucket/

@@ -184,11 +184,6 @@ def process_liepa2(
     sample_df = sample_duration_per_speaker(
         full_df, selected_speakers, duration_per_speaker
     )
-    # TODO remove saving intermediate csv
-    # sample_df.to_csv(
-    #     f"liepa_selected_{n_speakers_per_gender * 2}_speakers.csv", index=False
-    # )
-
     print(f"Selected speakers: {selected_speakers}")
     print(f"Total samples from selected speakers: {len(sample_df)}")
 
