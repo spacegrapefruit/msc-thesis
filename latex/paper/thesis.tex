@@ -100,10 +100,10 @@ Training high-quality TTS models typically requires large amounts of annotated
 speech data. The common recommendation is to use at least 10~hours of recorded
 speech from a single speaker to achieve good results.
 
-Liepa~2 is a recently released Lithuanian speech corpus that contains
-1000~hours of annotated speech; however, this data is distributed across more
-than 2600~speakers, with most speakers contributing only a few minutes of
-speech. The top speaker has around 2.5~hours of recorded speech.
+Liepa~2~\cite{liepa2project} is a recently released Lithuanian speech corpus
+that contains 1000~hours of annotated speech; however, this data is distributed
+across more than 2600~speakers, with most speakers contributing only a few
+minutes of speech. The top speaker has around 2.5~hours of recorded speech.
 
 Training a high-quality single-speaker TTS model on such limited data poses a
 challenge. Multi-speaker TTS models can utilize data from multiple speakers to
@@ -244,7 +244,7 @@ majority of the speech energy is concentrated.
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=0.6\textwidth]{figures/waveform_spectrograms.pdf}
+      \includegraphics[width=0.8\textwidth]{figures/waveform_spectrograms.pdf}
       \caption[Raw waveform, Spectrogram, and Mel-spectrogram]{Raw audio waveform (top), its spectrogram (middle), and Mel-spectrogram (bottom) representations for the utterance ``Štai ir visas mano bendravimas su vaiku''.}
       \label{fig:waveform_spectrograms}
 \end{figure}
@@ -394,7 +394,7 @@ Challenges in Lithuanian TTS synthesis include:
 
 \begin{itemize}
       \item \textbf{High OOV rate:} Due to extensive word inflection, the number of unique word forms is significantly higher than in English. This leads to data sparsity issues where many valid word forms may not appear in the training set.
-      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. Examples are shown in Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model without accentuation marks may struggle to predict the correct prosody, resulting in monotonic or mispronounced speech.
+      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. Examples are shown in Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model without accentuation marks may struggle to predict the correct prosody, resulting in monotonic or mispronounced speech~\cite{kasparaitis2005analysis}.
 \end{itemize}
 
 \begin{table}[ht]
@@ -414,13 +414,13 @@ Challenges in Lithuanian TTS synthesis include:
       \label{tab:lithuanian_ambiguity}
 \end{table}
 
-To overcome these challenges, tools like \textbf{Kirčiuoklis} (Vytautas Magnus
-University) are often employed in the text normalization pipeline. Kirčiuoklis
-automatically assigns stress marks to raw text. One weakness of Kirčiuoklis is
-that it relies on simple word-dictionary based lookup, which does not take into
-account the context of the word. Thus, it suggests multiple possible
-accentuation variants for homographs, leaving it up to the user to select the
-correct one.
+To overcome these challenges, tools like
+\textbf{Kirčiuoklis}~\cite{kirciuoklis} (Vytautas Magnus University) are often
+employed in the text normalization pipeline. Kirčiuoklis automatically assigns
+stress marks to raw text. One weakness of Kirčiuoklis is that it relies on
+simple word-dictionary based lookup, which does not take into account the
+context of the word. Thus, it suggests multiple possible accentuation variants
+for homographs, leaving it up to the user to select the correct one.
 
 In the absence of a high-quality, context-aware Grapheme-to-Phoneme (G2P)
 converter for Lithuanian, this thesis will focus on grapheme-based TTS
@@ -449,47 +449,6 @@ Usually, this is done using an embedding layer, which maps each ``categorical''
 input symbol to a learnable fixed-size vector representation. During training,
 these embeddings are learned jointly with the rest of the TTS model.
 
-\subsubsection{Speaker Embeddings}
-
-To enable multi-speaker synthesis, TTS models require a representation of the
-speaker's identity. There are several techniques for incorporating speaker
-information into TTS models:
-
-\textbf{Lookup Tables (LUT):} Early multi-speaker approaches used simple, learnable embeddings
-where each speaker ID is mapped to a unique vector. The vectors are initialized randomly and learned
-jointly with the TTS model. While this method is straightforward
-and efficient, it cannot generalize to speakers not seen during training.
-
-\textbf{d-vectors and x-vectors:} Transfer learning
-approaches~\cite{jia2018transfer} have demonstrated adapting speaker
-verification models for multispeaker TTS synthesis, enabling better
-speaker adaptation and higher voice quality. The general architecture of such a
-speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker
-encoder model pre-trained on a massive, noisy dataset with thousands of
-speakers (e.g., the VoxCeleb dataset) learns the general speaker space. Its pre-trained
-weights are frozen and used to extract embeddings for the TTS training
-data, allowing the TTS model to effectively account for multi-speaker variation.
-
-\begin{figure}[ht]
-      \centering
-      % \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
-      \caption[General architecture of a Speaker Encoder]{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
-      \label{fig:speaker_encoder}
-\end{figure}
-
-\textbf{d-vectors:} d-vectors~\cite{variani2014deep} are fixed-length speaker embeddings derived from a separate speaker verification model. A reference encoder network takes a reference audio recording of arbitrary length and compresses it into a fixed-length vector known as a d-vector, that summarizes the speaker's timbral and prosodic characteristics. These d-vectors are then provided as additional input to the TTS model, and are kept fixed during TTS training.
-
-\textbf{x-vectors:} An evolution of d-vectors, x-vectors~\cite{snyder2018x} use a Time Delay Neural Network (TDNN) architecture to capture the temporal context more effectively. These embeddings have shown an improved ability in zero-shot TTS scenarios.
-
-One limitation of d-vectors and x-vectors is that if the reference audio is of
-poor quality or contains background noise, the resulting speaker embedding may
-not accurately represent the speaker's identity, leading to degraded synthesis
-quality.
-
-% TODO How Coqui TTS handles speakers: Specifically, how speaker embeddings are
-% concatenated or added to the encoder outputs to condition the synthesis on a
-% specific voice identity.
-
 \subsection{Deep learning for TTS}
 
 The limitations of complex, multi-stage pipelines motivated the creation of the
@@ -504,7 +463,7 @@ a significant leap in TTS technology.
 
 Although deep learning TTS models are more robust to variations in data quality
 compared to concatenative approaches, they are essentially ``data-hungry''
-beasts that require large amounts of training data to achieve optimal
+systems that require large amounts of training data to achieve optimal
 performance. Their performance follows general scaling
 laws~\cite{kaplan2020scaling}, improving as the amount of training data
 increases.
@@ -558,9 +517,17 @@ This architecture has three main components:
 
 \begin{enumerate}
       \item \textbf{Encoder:} The encoder's input is a character or phoneme sequence. A stack of convolutional layers followed by a bidirectional LSTM converts the character sequence into a high-level hidden feature representation.
-      \item \textbf{Attention mechanism:} A location-sensitive attention mechanism learns to align the high-level text representation with the decoder steps. This alignment helps the model determine which parts of the input text should be attended to when generating each of the output audio frames.
-      \item \textbf{Decoder:} Finally, the decoder is an autoregressive LSTM-based recurrent neural network that generates the Mel-spectrogram frame by frame.
+      \item \textbf{Attention mechanism:} A location-sensitive attention mechanism learns to align the high-level text representation with the decoder steps. This alignment determines which parts of the input text should be attended to when generating each of the output audio frames.
+      \item \textbf{Decoder and Post-net:} The autoregressive LSTM decoder generates a coarse Mel-spectrogram frame. This output is then passed through a convolutional \textbf{Post-net} which predicts a residual to refine the spectral details and improve reconstruction quality.
+      \item \textbf{Stopnet:} A linear layer projects the decoder output to a scalar, predicting the probability that the current frame is the ``stop token'', which halts the synthesis process. This allows the model to dynamically determine the output duration.
 \end{enumerate}
+
+The model is optimized by minimizing a combination of losses: the mean squared
+error (MSE) between the predicted and ground truth Mel-spectrograms (both the
+Decoder and Post-net outputs), the spectral similarity index (SSIM) loss for
+improving spectral similarity, the ``guided attention'' loss to encourage
+diagonal attention alignments, and the binary cross-entropy loss for the stop
+token prediction.
 
 While Tacotron~2 can generate high-quality speech, its autoregressive nature
 makes inference slow, as each audio frame must be generated sequentially.
@@ -569,7 +536,7 @@ like skipped or repeated words in the synthesized speech.
 
 \begin{figure}[ht]
       \centering
-      % \includegraphics[width=\textwidth]{figures/tacotron2_arch.pdf}
+      % \includegraphics[width=\textwidth]{}
       \caption[Tacotron~2 architecture]{The Tacotron~2 architecture. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps.~\cite{shen2018natural}}
       \label{fig:tacotron_arch}
 \end{figure}
@@ -592,7 +559,7 @@ modeling of prosody through pitch and duration predictors:
       \item \textbf{Pitch predictor:} A separate module predicts the fundamental frequency ($F_0$) for every character. This pitch contour is projected and added to the latent representation before decoding.
 \end{itemize}
 
-The explicit duration modeling allows FastPitch to control the length of the
+The explicit duration predictor allows FastPitch to control the length of the
 generated speech and upsample the encoder output to match the target
 Mel-spectrogram length. The pitch predictor enables explicit control over
 intonation.
@@ -623,16 +590,24 @@ architecture.
 
 \subsubsection{Neural vocoders}
 
-Acoustic TTS models like Tacotron~2 and FastPitch generate intermediate
-acoustic features (Mel-spectrograms), but do not directly produce raw audio
-waveforms. Spectrograms are lossy representations that only capture the
-magnitude of the sound frequency bands, discarding phase information.
-Converting a lossy spectrogram into audio is a non-trivial task, as the phase
-information must be estimated. This challenge is known as the \textit{inversion
-      problem}.
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\textwidth]{figures/tts_pipeline.pdf}
+      \caption[Text-to-Speech synthesis pipeline]{Text-to-Speech synthesis pipeline. The TTS model generates Mel-spectrograms from input text, which are then converted to raw audio waveforms by a neural vocoder.}
+      \label{fig:tts_pipeline}
+\end{figure}
 
-The component used to convert spectrograms back into waveforms is called a
-vocoder.
+As illustrated in Figure~\ref{fig:tts_pipeline}, modern TTS systems typically
+employ a two-stage pipeline: an acoustic model like Tacotron~2 and FastPitch
+generate intermediate acoustic features (Mel-spectrograms), but do not directly
+produce raw audio waveforms. Spectrograms are lossy representations that only
+capture the magnitude of the sound frequency bands, discarding phase
+information. Converting a lossy spectrogram into audio is a non-trivial task,
+as the phase information must be estimated. This challenge is known as the
+\textit{inversion problem}.
+
+An additional component called a vocoder is required to reconstruct the raw
+waveform from the Mel-spectrogram.
 
 Traditionally, the Griffin-Lim algorithm~\cite{griffin1984signal} has been used
 to iteratively estimate and reconstruct the phase information from the
@@ -656,13 +631,26 @@ hardware while maintaining high perceptual quality.
 
 The framework used in this thesis, Coqui TTS~\cite{coqui2021}, comes with a
 pre-trained HiFi-GAN v2 vocoder trained on a large multi-speaker dataset
-(VCTK~\cite{veaux2019cstr}) with 110 English speakers. Given the HiFi-GAN v2's
-widespread adoption and status as a state-of-the-art neural vocoder, this
-thesis will use the HiFi-GAN v2 model for waveform generation. In order to
-ensure compatibility between the TTS models and the vocoder, the TTS models'
-acoustic parameters will be configured to the exact same settings (sampling
-rate, FFT parameters, Mel filterbank settings) as those used during the
-HiFi-GAN v2's training.
+(VCTK~\cite{veaux2019cstr}) with 110 English speakers.
+
+The use of a vocoder trained on English data for Lithuanian synthesis is
+justified by the language-agnostic nature of the phase reconstruction task.
+Neural vocoders' primary function is to model the physics of human speech
+production rather than linguistic features. While language-dependent phonetic
+nuances exist, studies have shown that vocoders trained on large, diverse
+datasets can effectively generalize to unseen speakers and
+languages~\cite{lorenzo2019towards}. Therefore, this thesis will utilize the
+pre-trained HiFi-GAN~v2 model for waveform generation.
+
+This should allow the vocoder model to effectively generalize to unseen
+speakers and languages, provided that the acoustic feature parameters
+(including sampling rate, FFT size, Mel-filterbank limits) of the input
+Mel-spectrograms match those used during the vocoder's training.
+
+Therefore, this thesis will utilize the pre-trained HiFi-GAN v2 model for
+waveform generation. The TTS models' acoustic parameters will be configured to
+the exact same acoustic parameters used during the vocoder's training to ensure
+compatibility.
 
 \subsection{Multi-speaker TTS}
 
@@ -673,20 +661,56 @@ of each voice and synthesize speech that sounds like a specific individual,
 while still being able to generalize the shared linguistic and acoustic
 patterns across speakers.
 
-\subsubsection{Techniques}
+\subsubsection{Speaker embeddings}
 
-In multi-speaker models, the network is conditioned on a speaker embedding. The
-model learns a shared representation of phonetics (how text maps to sound
-generally) while using an additional input --- the speaker embedding --- to
-adjust the timbre and prosodic characteristics specific to a voice.
+To enable multi-speaker synthesis, TTS models require a representation of the
+speaker's identity. In multi-speaker models, the network is conditioned on a
+speaker embedding. The model learns a shared representation of phonetics (how
+text maps to sound generally) while using an additional input --- the speaker
+embedding --- to adjust the timbre and prosodic characteristics specific to a
+voice.
 
 Early successful implementations of this approach include Deep Voice
 2~\cite{gibiansky2017deep}, which demonstrated effective multi-speaker
 synthesis by learning speaker-specific embeddings.
 
-As mentioned in an earlier section, the speaker embeddings can be learned
-jointly with the TTS model during training, or they can be pre-trained using a
-separate speaker verification model.
+Nowadays there are several techniques for incorporating speaker embeddings into
+TTS models:
+
+\textbf{Lookup Tables (LUT):} Early multi-speaker approaches used simple, learnable embeddings
+where each speaker ID is mapped to a unique vector. The vectors are initialized randomly and learned
+jointly with the TTS model. While this method is straightforward
+and efficient, it cannot generalize to speakers not seen during training.
+
+\textbf{d-vectors and x-vectors:} Transfer learning
+approaches~\cite{jia2018transfer} have demonstrated adapting speaker
+verification models for multispeaker TTS synthesis, enabling better
+speaker adaptation and higher voice quality. The general architecture of such a
+speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker
+encoder model pre-trained on a massive, noisy dataset with thousands of
+speakers (e.g., the VoxCeleb dataset) learns the general speaker space. Its pre-trained
+weights are frozen and used to extract embeddings for the TTS training
+data, allowing the TTS model to effectively account for multi-speaker variation.
+
+\begin{figure}[ht]
+      \centering
+      % \includegraphics[width=\textwidth]{figures/speaker_encoder_diagram.pdf}
+      \caption[General architecture of a Speaker Encoder]{General architecture of a Speaker Encoder. A reference audio of arbitrary length is processed (typically by LSTM or TDNN layers) and pooled to produce a fixed-length embedding vector (e.g., d-vector) representing the speaker identity.}
+      \label{fig:speaker_encoder}
+\end{figure}
+
+\textbf{d-vectors:} d-vectors~\cite{variani2014deep} are fixed-length speaker embeddings derived from a separate speaker verification model. A reference encoder network takes a reference audio recording of arbitrary length and compresses it into a fixed-length vector known as a d-vector, that summarizes the speaker's timbral and prosodic characteristics. These d-vectors are then provided as additional input to the TTS model, and are kept fixed during TTS training.
+
+\textbf{x-vectors:} An evolution of d-vectors, x-vectors~\cite{snyder2018x} use a Time Delay Neural Network (TDNN) architecture to capture the temporal context more effectively. These embeddings have shown an improved ability in zero-shot TTS scenarios.
+
+One limitation of d-vectors and x-vectors is that if the reference audio is of
+poor quality or contains background noise, the resulting speaker embedding may
+not accurately represent the speaker's identity, leading to degraded synthesis
+quality.
+
+% TODO How Coqui TTS handles speakers: Specifically, how speaker embeddings are
+% concatenated or added to the encoder outputs to condition the synthesis on a
+% specific voice identity.
 
 \subsubsection{Challenges}
 
@@ -701,28 +725,6 @@ for a single professional speaker. However, deep learning models capable of
 with significantly less data, potentially as little as a few minutes --- if the
 base model has been pre-trained on a sufficiently diverse multi-speaker
 dataset.
-
-\subsection{Data selection in TTS}
-
-As TTS models require large amounts of annotated speech data for training,
-training on all available data can be computationally prohibitive and
-time-consuming.
-% TODO transition
-
-In this thesis, the efficiency of such TTS models will be evaluated by fixing
-the total dataset size while varying the distribution:
-
-\begin{itemize}
-      \item \textbf{High-resource per speaker:} Fewer speakers (30), but high fidelity (45 min each).
-      \item \textbf{Balanced:} Moderate diversity (60 speakers), moderate data (22.5 min each).
-      \item \textbf{High-diversity:} Many speakers (180), low resource (7.5 min each).
-\end{itemize}
-
-This experimental design aims to determine whether modern architectures benefit
-more from observing a wider variety of vocal characteristics (high diversity)
-or from observing more detailed prosodic and acoustic patterns for specific
-voices (high resource), particularly when evaluated on a set speakers seen
-during training.
 
 \subsection{Evaluation metrics}
 
@@ -776,74 +778,109 @@ experimental design:
             but never the same sentence-system combination twice.
 \end{enumerate}
 
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.6\textwidth]{figures/latin_square_design.pdf}
+      \caption[Latin square design for TTS evaluation]{Latin square design for TTS evaluation. Each listener group hears each sentence exactly once, and each TTS system exactly once per block, ensuring balanced exposure and mitigating order/repetition biases.}
+      \label{fig:latin_square}
+\end{figure}
+
+An example Latin square design for 4 TTS systems and 4 test sentences is
+illustrated in Figure~\ref{fig:latin_square}.
+
 For a multi-speaker TTS evaluation (as is the case in this thesis), the Latin
 square design ensures that the ratings reflect the quality of the model rather
 than the linguistic content of the sentence or listener fatigue. By rotating
 the systems and sentences across listener groups, the influence of specific
 difficult sentences is averaged out across all models.
 
+\subsection{Research gap}
+
+While the literature demonstrates the capabilities of modern deep learning TTS
+architectures like Tacotron~2 and FastPitch to produce highly natural-sounding
+speech, several questions remain unanswered regarding their application to
+low-resource, morphologically complex languages like Lithuanian.
+
+Firstly, although neural TTS models follow general scaling
+laws~\cite{kaplan2020scaling}, implying that performance improves with more
+data, there is limited understanding of the optimal composition of training
+data under a fixed budget. In low-resource settings, scaling up the dataset
+size is not always feasible, and this may be further constrained by the
+computational resources required for training large models. A critical question
+is whether it is more beneficial to train on a smaller number of speakers with
+more data per speaker (high depth) or a larger number of speakers with less
+data per speaker (high breadth).
+
+Current research primarily focuses on high-resource languages like English,
+where the availability of large, balanced multi-speaker datasets masks the
+nuances of this trade-off. For a pitch-accent language like Lithuanian, the
+requirements may be different. It is hypothesized that high-diversity datasets
+may help the model learn a richer representation of prosodic patterns, while
+high-depth datasets may improve the model's naturalness for the target
+speakers.
+
+Secondly, most multi-speaker TTS research assumes access to large-scale
+datasets with thousands of utterances per speaker. There is a lack of research
+exploring how different TTS architectures (autoregressive vs.
+non-autoregressive) perform when the data per speaker is scarce (e.g., under 10
+minutes).
+
+This thesis aims to fill the research gap by systematically evaluating the
+efficiency of Tacotron~2 and FastPitch models trained on Lithuanian speech
+data. By controlling the total dataset size and varying the distribution of
+speakers and data per speaker, this study will provide insights into the
+optimal data composition for training multi-speaker TTS models in low-resource
+settings.
+
+To summarize, the key research questions this thesis seeks to answer are:
+
+\begin{itemize}
+      \item How does the trade-off between data breadth (number of speakers) and data depth
+            (minutes per speaker) affect the performance of multi-speaker TTS models for
+            Lithuanian?
+      \item How do different TTS architectures (Tacotron~2 vs. FastPitch) perform under
+            varying data selection strategies in low-resource settings?
+\end{itemize}
+
+The experiments will involve training models on three distinct data selection
+strategies:
+
+\begin{itemize}
+      \item \textbf{High-resource per speaker:} Fewer speakers (30), but high fidelity (45 min each).
+      \item \textbf{Balanced:} Moderate diversity (60 speakers), moderate data (22.5 min each).
+      \item \textbf{High-diversity:} Many speakers (180), low resource (7.5 min each).
+\end{itemize}
+
 \subsection{Summary}
 
-Modern TTS synthesis has evolved from complex, multi-stage concatenative and
-statistical pipelines to end-to-end deep learning architectures. Models such as
-Tacotron~2 and FastPitch, combined with neural vocoders like HiFi-GAN, are
-capable of generating natural-sounding speech that can be indistinguishable
-from human speech. These systems rely on digital signal processing techniques
-to convert raw audio into representations like Mel-spectrograms --- and learned
-embeddings to handle text-to-audio alignment and speaker identity.
+This literature review has provided an overview of the theoretical foundations
+required for modern Text-to-Speech synthesis. The evolution of TTS systems from
+mechanical apparatuses, through concatenative and statistical methods, to
+end-to-end deep learning architectures capable of generating natural-sounding
+speech has been discussed.
 
-% However, these deep learning models are notoriously data-hungry, requiring
-% large amounts of high-quality, annotated speech. While English benefits from
-% massive, well-curated datasets (e.g., LJSpeech, VCTK), low-resource languages
-% face distinct challenges. Specifically, Lithuanian possesses a complex prosodic
-% structure characterized by free stress and pitch accents, requiring accurate
-% text normalization and accentuation handling. Furthermore, multi-speaker
-% synthesis requires the model not only to learn these linguistic features but
-% also to generalize across a latent speaker space, typically managed via
-% d-vector or x-vector embeddings.
+We have reviewed the entire TTS pipeline --- from signal processing (sampling,
+quantization, Fourier transforms, and Mel-spectrogram extraction), through text
+normalization and representation (graphemes vs.\ phonemes), to deep learning
+architectures for acoustic modeling and vocoding. The literature highlights two
+architectures for acoustic modeling: the autoregressive Tacotron~2, known for
+high-quality spectral output but slow inference and stability issues, and the
+non-autoregressive FastPitch, which offers parallel generation with explicit
+control over pitch and duration.
 
-\subsection{Research Gap}
+We have examined the challenges specific to Lithuanian TTS synthesis. Unlike
+English, Lithuanian languages's high inflectional morphology leads to a large
+number of unique word forms, and its prosodic system requires handling of free
+stress and pitch accents, necessitating the use of tools like Kirčiuoklis for
+accentuation marking.
 
-% Despite the advancements in model architectures, a significant gap remains in
-% the literature regarding \textbf{data selection strategies for highly
-%       fragmented, imbalanced corpora} in low-resource settings.
-
-% Most current state-of-the-art multi-speaker TTS research relies on datasets
-% that are either:
-% \begin{enumerate}
-%       \item \textbf{Single-speaker high-resource:} Hundreds of hours of studio-quality speech from a single professional voice actor.
-%       \item \textbf{Multi-speaker balanced:} Curated datasets like VCTK, where roughly 100 speakers have a similar amount of clean data.
-% \end{enumerate}
-
-% The Liepa~2 corpus, which serves as the foundation for this thesis, is a
-% realistic scenario common for lesser-resourced languages: it contains a massive
-% number of speakers (2621) but is highly imbalanced, with data per speaker
-% ranging from a few seconds to over two hours.
-
-% Current literature does not adequately address how to optimally sample from
-% such a distribution under strict computational constraints. While scaling
-% laws~\cite{kaplan2020scaling} suggest that increasing total dataset size
-% improves performance, training on the full 1000-hour corpus is computationally
-% prohibitive for many academic and industrial applications. Consequently,
-% researchers must select a subset of data (e.g., 30 hours), but it is unclear
-% which selection strategy gives the best synthesis quality:
-
-% \begin{itemize}
-%       \item Does maximizing the \textit{speaker depth} (selecting the ``Top-N'' speakers
-%             with the most data) allow the model to learn stable alignments and prosody
-%             better?
-%       \item Or does maximizing the \textit{speaker breadth} (selecting a ``Balanced'' or
-%             ``Random'' set of many speakers with less data per person) allow the model to
-%             learn a more robust, generalized representation of the language's phonetics?
-% \end{itemize}
-
-% This thesis addresses this gap by evaluating different data selection
-% strategies for training multi-speaker TTS models on the Lithuanian Liepa~2
-% corpus. By keeping the total training data budget fixed (30 hours) and varying
-% the selection logic (Top-N vs. Random vs. Balanced) across autoregressive
-% (Tacotron~2) and non-autoregressive (FastPitch) architectures, this research
-% aims to provide practical guidelines for training high-quality TTS systems in
-% resource-constrained, high-speaker-count scenarios.
+Finally, we have reviewed the role of speaker embeddings in enabling
+multi-speaker synthesis and the use of neural vocoders, specifically HiFi-GAN,
+to reconstruct high-fidelity waveforms from Mel-spectrograms. Despite these
+advancements, a gap remains in understanding how data diversity versus quantity
+affects model performance for complex, low-resource languages --- a challenge
+this thesis addresses through the experiments detailed in the following
+chapters.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Methodology
