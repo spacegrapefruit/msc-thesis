@@ -159,10 +159,11 @@ time intervals. The rate at which these samples are taken is called the
 sampling rate. According to the Nyquist-Shannon~\cite{shannon1949communication}
 sampling theorem, accurate reconstruction of a continuous signal requires a
 sampling rate that is strictly greater than twice the highest frequency present
-in the signal. The majority of human speech information is concentrated between
-100~Hz and 8~kHz~\cite{rabiner2010theory}. Thus, in text-to-speech
-applications, common sampling rates for audio are 22.05~kHz and 24~kHz, which
-can capture frequencies up to approx. 11~kHz and 12~kHz, respectively.
+in the signal. Frequencies in the range between 300~Hz and 3400~Hz contribute
+most to human speech intelligibility and
+recognition.~\cite{jothilakshmi2016large}. In text-to-speech applications,
+common sampling rates for audio are 22.05~kHz and 24~kHz, which can capture
+frequencies up to approx. 11~kHz and 12~kHz, respectively.
 
 Quantization (also known as bit depth) is the mapping of continuous amplitude
 values to discrete levels for digital representation, which determines the
@@ -206,8 +207,8 @@ representation. The signal is decomposed into a sum of sine and cosine waves at
 various frequencies, each with a specific amplitude and phase. This allows us
 to analyze the frequency content of the signal.
 
-Short-Time Fourier Transform~\cite{oppenheim1999discrete} (STFT) extends the FT
-by applying it to short, overlapping segments (frames) of the signal. This
+Short-Time Fourier Transform~\cite{gabor1946theory} (STFT) extends the FT by
+applying it to short, overlapping segments (frames) of the signal. This
 transformation provides a time-frequency representation, showing how the
 frequency content of the signal changes over time.
 
@@ -261,7 +262,7 @@ accessibility tools, and language learning platforms.
 Early attempts at artificial speech synthesis evolved from the first mechanical
 devices in the 18th century to electronic systems. Wolfgang von Kempelen's
 mechanical speech machine demonstrated basic phoneme production using a
-physical model of the vocal tract. In 1937, Homer Dudley's invention of the
+physical model of the vocal tract. In 1939, Homer Dudley's invention of the
 Voder~\cite{klatt1987review} became the first electronic speech synthesizer
 that could produce intelligible speech through operator-controlled acoustic
 parameters, establishing the foundation for modern electronic synthesis
@@ -283,15 +284,15 @@ properties.
 During synthesis, the system breaks down the input text into short linguistic
 units (such as phonemes or syllables) using a text analysis module. Then, it
 queries the speech database to find the best-matching segments for each unit
-using selection cost functions~\cite{black1995optimising}. The retrieved
+using selection cost functions~\cite{black1996optimising}. The retrieved
 segments are blended and concatenated to form a continuous speech waveform.
 Finally, the system uses signal processing techniques to smooth the transitions
 between segments and adjust pitch and duration to match the desired output
 characteristics.
 
 Concatenative synthesis can produce natural-sounding individual speech units,
-but the final audio often has noticeable audible discontinuities at the
-concatenation points~\cite{black1995optimising}. The segments may not blend
+but the final audio often has noticeable audible continuity distortions at the
+concatenation points~\cite{black1996optimising}. The segments may not blend
 smoothly due to differences in pitch, duration, and timbre. The prosody also
 tends to sound ``choppy'' and unnatural, since stringing disjointed segments
 together does not capture the natural rhythm and intonation patterns of
@@ -341,10 +342,10 @@ grapheme-to-phoneme conversion, and possibly prosody prediction.
 \subsubsection{Text normalization}
 
 Text normalization~\cite{sproat2001normalization} is the process of converting
-raw written text into a more standardized ``spoken'' form. Typical steps
-include expanding abbreviations (e.g., expanding ``Dr.'' to ``Doctor''),
-punctuation removal, number normalization (e.g., converting ``123'' to ``one
-hundred twenty-three''), and lowercasing.
+raw written text with non-standard words (NSWs) into a more standardized
+``spoken'' form. Typical steps include expanding abbreviations (e.g., expanding
+``Dr.'' to ``Doctor''), punctuation removal, number normalization (e.g.,
+converting ``123'' to ``one hundred twenty-three''), and lowercasing.
 
 As an example, the input text ``Dr. Smith has 2 cats.'' could be normalized to
 ``doctor smith has two cats''.
@@ -394,7 +395,7 @@ Challenges in Lithuanian TTS synthesis include:
 
 \begin{itemize}
       \item \textbf{High OOV rate:} Due to extensive word inflection, the number of unique word forms is significantly higher than in English. This leads to data sparsity issues where many valid word forms may not appear in the training set.
-      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. Examples are shown in Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model without accentuation marks may struggle to predict the correct prosody, resulting in monotonic or mispronounced speech~\cite{kasparaitis2005analysis}.
+      \item \textbf{Ambiguity without accentuation:} Typically, stress marks are omitted in written Lithuanian. However, stress position and tone (acute, circumflex, or short) determine the meaning of monographic words. Examples are shown in Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model with accentuation marks has been shown to improve synthesis quality in Lithuanian.~\cite{kasparaitis2023investigation}.
 \end{itemize}
 
 \begin{table}[ht]
@@ -439,7 +440,7 @@ dimensional, embeddings provide a dense, lower-dimensional representation that
 captures semantic relationships between underlying entities. For instance, in
 word embeddings, similar words tend to have more similar (correlated) vector
 representations, while dissimilar words map to more distant points in the
-vector space.
+vector space.~\cite{mikolov2013efficient}
 
 \subsubsection{Text Embeddings}
 
@@ -464,9 +465,9 @@ a significant leap in TTS technology.
 Although deep learning TTS models are more robust to variations in data quality
 compared to concatenative approaches, they are essentially ``data-hungry''
 systems that require large amounts of training data to achieve optimal
-performance. Their performance follows general scaling
-laws~\cite{kaplan2020scaling}, improving as the amount of training data
-increases.
+performance. Extrapolating from results in language modeling, it is observed
+that model performance follows general scaling laws~\cite{kaplan2020scaling},
+improving as the amount of training data increases.
 
 However, in the context of multi-speaker synthesis, there is a trade-off
 between the breadth of the data (number of distinct speakers) and the depth of
@@ -474,12 +475,10 @@ the data (duration of audio per speaker). In theory, training on a dataset with
 a massive number of speakers, even with limited data per speaker, may allow the
 model to learn a more generalized latent space of voice characteristics. This
 high variance in the training data could act as a form of regularization,
-potentially improving the model's ability to generalize to unseen speakers
-(zero-shot capabilities) and adapt to new voices with minimal data (few-shot
-adaptation). In contrast, datasets with fewer speakers but high duration per
-speaker allow the model to capture fine-grained prosodic details specific to
-those voices, potentially achieving higher stability but lower generalization
-capabilities.
+preventing overfitting to noise and idiosyncrasies of individual speakers. In
+contrast, datasets with fewer speakers but high duration per speaker allow the
+model to capture fine-grained prosodic details specific to those voices,
+potentially achieving higher stability but lower generalization capabilities.
 
 \subsubsection{Feedforward neural networks}
 
@@ -504,8 +503,9 @@ translation (text-to-text) and text-to-speech synthesis (text-to-audio frames).
 \subsubsection{Sequence-to-Sequence models and Tacotron~2}
 
 A common approach in modern neural TTS is the sequence-to-sequence (seq2seq)
-framework, which uses an encoder-decoder architecture with an attention
-mechanism to map input (text) sequences to output (audio) frames.
+framework~\cite{sutskever2014sequence}, which uses an encoder-decoder
+architecture with an attention mechanism to map input (text) sequences to
+output (audio) frames.
 
 Tacotron~\cite{wang2017tacotron} and Tacotron~2~\cite{shen2018natural} are two
 notable TTS models based on the sequence-to-sequence architecture. The variant
@@ -517,9 +517,9 @@ This architecture has three main components:
 
 \begin{enumerate}
       \item \textbf{Encoder:} The encoder's input is a character or phoneme sequence. A stack of convolutional layers followed by a bidirectional LSTM converts the character sequence into a high-level hidden feature representation.
-      \item \textbf{Attention mechanism:} A location-sensitive attention mechanism learns to align the high-level text representation with the decoder steps. This alignment determines which parts of the input text should be attended to when generating each of the output audio frames.
+      \item \textbf{Attention mechanism:} A location-sensitive attention~\cite{chorowski2015attention} mechanism learns to align the high-level text representation with the decoder steps. This alignment determines which parts of the input text should be attended to when generating each of the output audio frames.
       \item \textbf{Decoder and Post-net:} The autoregressive LSTM decoder generates a coarse Mel-spectrogram frame. This output is then passed through a convolutional \textbf{Post-net} which predicts a residual to refine the spectral details and improve reconstruction quality.
-      \item \textbf{Stopnet:} A linear layer projects the decoder output to a scalar, predicting the probability that the current frame is the ``stop token'', which halts the synthesis process. This allows the model to dynamically determine the output duration.
+      \item \textbf{Stopnet:} A linear layer projects the LSTM decoder's output to a scalar, predicting the probability that the current frame is the ``stop token'', which halts the synthesis process. This allows the model to dynamically determine the output duration.
 \end{enumerate}
 
 The model is optimized by minimizing a combination of losses: the mean squared
@@ -546,8 +546,8 @@ like skipped or repeated words in the synthesized speech.
 To address the slow inference speed and stability issues of autoregressive
 models, non-autoregressive (parallel) models were developed.
 FastPitch~\cite{lancucki2020fastpitch} is a notable example of such a model
-that replaces the recurrent layers with Transformer architecture blocks relying
-on self-attention.
+that replaces the recurrent layers with Transformer~\cite{vaswani2023attention}
+architecture blocks relying on self-attention.
 
 Unlike Tacotron~2, FastPitch model generates the entire Mel-spectrogram in
 parallel, significantly speeding up the inference. It utilizes a feed-forward
@@ -582,11 +582,11 @@ manually during synthesis).
 \subsubsection{Other notable TTS models}
 
 Besides Tacotron~2 and FastPitch, other notable TTS architectures include
-\textbf{Glow-TTS}, which uses flow-based generative models for parallel
-inference, and \textbf{VITS}~\cite{kim2021conditional} (Conditional Variational
-Autoencoder with Adversarial Learning), which combines the acoustic TTS model
-(Glow-TTS) with a neural vocoder (HiFi-GAN) into a single end-to-end
-architecture.
+\textbf{Glow-TTS}~\cite{kim2020glowtts}, which uses flow-based generative
+models for parallel inference, and \textbf{VITS}~\cite{kim2021conditional}
+(Conditional Variational Autoencoder with Adversarial Learning), which combines
+the acoustic TTS model (Glow-TTS) with a neural vocoder (HiFi-GAN) into a
+single end-to-end architecture.
 
 \subsubsection{Neural vocoders}
 
@@ -671,8 +671,8 @@ embedding --- to adjust the timbre and prosodic characteristics specific to a
 voice.
 
 Early successful implementations of this approach include Deep Voice
-2~\cite{gibiansky2017deep}, which demonstrated effective multi-speaker
-synthesis by learning speaker-specific embeddings.
+2~\cite{arik2017deep}, which demonstrated effective multi-speaker synthesis by
+learning speaker-specific embeddings.
 
 Nowadays there are several techniques for incorporating speaker embeddings into
 TTS models:
@@ -683,14 +683,15 @@ jointly with the TTS model. While this method is straightforward
 and efficient, it cannot generalize to speakers not seen during training.
 
 \textbf{d-vectors and x-vectors:} Transfer learning
-approaches~\cite{jia2018transfer} have demonstrated adapting speaker
-verification models for multispeaker TTS synthesis, enabling better
-speaker adaptation and higher voice quality. The general architecture of such a
-speaker encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker
-encoder model pre-trained on a massive, noisy dataset with thousands of
-speakers (e.g., the VoxCeleb dataset) learns the general speaker space. Its pre-trained
-weights are frozen and used to extract embeddings for the TTS training
-data, allowing the TTS model to effectively account for multi-speaker variation.
+approaches~\cite{jia2019transfer} have demonstrated adapting speaker
+verification models for multispeaker TTS synthesis, enabling better speaker
+adaptation and higher voice quality. The general architecture of such a speaker
+encoder is illustrated in Figure~\ref{fig:speaker_encoder}. A speaker encoder
+model pre-trained on a massive, noisy dataset with thousands of speakers (e.g.,
+the VoxCeleb dataset~\cite{nagrani2017voxceleb}) learns the general speaker
+space. Its pre-trained weights are frozen and used to extract embeddings for
+the TTS training data, allowing the TTS model to effectively account for
+multi-speaker variation.
 
 \begin{figure}[ht]
       \centering
@@ -801,7 +802,7 @@ architectures like Tacotron~2 and FastPitch to produce highly natural-sounding
 speech, several questions remain unanswered regarding their application to
 low-resource, morphologically complex languages like Lithuanian.
 
-Firstly, although neural TTS models follow general scaling
+Firstly, although neural TTS models may follow general neural model scaling
 laws~\cite{kaplan2020scaling}, implying that performance improves with more
 data, there is limited understanding of the optimal composition of training
 data under a fixed budget. In low-resource settings, scaling up the dataset
@@ -846,10 +847,16 @@ The experiments will involve training models on three distinct data selection
 strategies:
 
 \begin{itemize}
-      \item \textbf{High-resource per speaker:} Fewer speakers (30), but high fidelity (45 min each).
-      \item \textbf{Balanced:} Moderate diversity (60 speakers), moderate data (22.5 min each).
-      \item \textbf{High-diversity:} Many speakers (180), low resource (7.5 min each).
+      \item \textbf{High-resource per speaker:} Fewer speakers (30), but high fidelity (45 min each), total: 22.5 hours.
+      \item \textbf{Balanced:} Moderate diversity (60 speakers), moderate data (22.5 min each), total: 22.5 hours.
+      \item \textbf{High-diversity:} Many speakers (180), low resource (7.5 min each), total: 22.5 hours.
 \end{itemize}
+
+The extreme low-depth condition (7.5 minutes per speaker) might pose
+convergence challenges for the models, especially for Tacotron~2, which relies
+on learning robust attention alignment. Thus, alignment convergence and
+training stability will be monitored to assess how data composition affects
+model robustness.
 
 \subsection{Summary}
 
@@ -1033,7 +1040,7 @@ involves:
 
 \begin{itemize}
       \item \textbf{Speaker encoder model}: Pre-trained model from Coqui TTS based on TODO
-            % the approach described in~\cite{jia2018transfer}.
+            % the approach described in~\cite{jia2019transfer}.
       \item \textbf{Embedding extraction}: Each speaker's audio samples are processed
             through the speaker encoder to generate 512-dimensional speaker embeddings
             (d-vectors).
