@@ -86,8 +86,8 @@
     "training_seed": 54321,
     // OPTIMIZER
     "grad_clip": 0.05, // upper limit for gradients for clipping.
-    "epochs": 400, // total number of epochs to train.
-    "lr": 0.0002, // Initial learning rate. If Noam decay is active, maximum learning rate.
+    "epochs": 200, // total number of epochs to train.
+    "lr": 0.0005, // Initial learning rate. If Noam decay is active, maximum learning rate.
     "precision": "fp32",
     "optimizer": "RAdam",
     "optimizer_params": {
@@ -97,9 +97,17 @@
         ],
         "weight_decay": 1e-06
     },
-    "lr_scheduler": "NoamLR",
+    "lr_scheduler": "MultiStepLR",
     "lr_scheduler_params": {
-        "warmup_steps": 4000
+        "milestones": [
+            20000,
+            30000,
+            40000,
+            50000,
+            60000,
+            70000
+        ],
+        "gamma": 0.5
     },
     "scheduler_after_epoch": false,
     "wd": 0.000001, // Weight decay weight.
@@ -158,7 +166,7 @@
     "gst": null,
     "gst_style_input": null,
     "use_d_vector_file": true,
-    "d_vector_file": "data/processed/tts_dataset_liepa2_30spk/speakers.pth",
+    "d_vector_file": "data/processed/tts_dataset_liepa2_spk/speakers.pth",
     "d_vector_dim": 512,
     // DATASETS
     "datasets": // List of datasets. They all merged and they get different speaker_ids.
