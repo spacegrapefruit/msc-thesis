@@ -62,7 +62,7 @@
     },
     "use_phonemes": false,
     "compute_input_seq_cache": true,
-    "text_cleaner": "english_cleaners",
+    "text_cleaner": null,
     "enable_eos_bos_chars": false,
     "test_sentences_file": "",
     "characters": {
@@ -92,7 +92,7 @@
             "language": "lt"
         }
     ],
-    "optimizer": "Adam",
+    "optimizer": "AdamW",
     "optimizer_params": {
         "betas": [
             0.9,
@@ -105,11 +105,11 @@
         "warmup_steps": 4000
     },
     "test_sentences": [
-        "aš labai mėgstu skaityti knygas.",
-        "šiandien oras yra puikus idealiai tinkantis pasivaikščiojimams gamtoje.",
-        "technologijos sparčiai keičia mūsų kasdienį gyvenimą ir darbo būdus.",
-        "muzika turi galią sujungti žmones iš skirtingų kultūrų ir kalbų.",
-        "kelionės atveria protą naujoms idėjoms ir patirtims."
+        "a`š labai mė´gstu skaity´ti knyga`s.",
+        "šian~dien o´ras yra puiku`s idealiai tin~kantis pasiva´ikščiojimams gamtoje`.",
+        "technolo`gijos spar~čiai kei~čia mū´sų kasdie~nį gyve~nimą ir~ da´rbo būdu`s.",
+        "mu`zika turi ga~lią sujungti žmo´nes i`š skirti`ngų kultū~rų ir~ kalbų.",
+        "kelio~nės a`tveria pro~tą naujo´ms idė´joms ir~ patirti`ms."
     ],
     "use_speaker_embedding": false,
     // "speakers_file": "data/processed/tts_dataset_liepa2/speakers.json",
