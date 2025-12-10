@@ -165,6 +165,12 @@ def process_liepa2(
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
 
+    longer_than_15_sec = full_df["duration"] > 15.0
+    full_df = full_df[~longer_than_15_sec]
+    print(
+        f"Samples longer than 15 sec: {longer_than_15_sec.sum()}, remaining samples: {len(full_df)}"
+    )
+
     speaker_counts_df = (
         full_df
         # calculate total count and duration per speaker

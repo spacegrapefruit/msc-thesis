@@ -25,12 +25,12 @@
     "distributed_url": "tcp://localhost:54321",
     "mixed_precision": false,
     "precision": "fp32",
-    "epochs": 400,
+    "epochs": 200,
     "batch_size": 64,
     "eval_batch_size": 64,
     "grad_clip": 0.05,
     "scheduler_after_epoch": false,
-    "lr": 0.0002,
+    "lr": 0.0005,
     "optimizer": "RAdam",
     "optimizer_params": {
         "betas": [
@@ -39,9 +39,17 @@
         ],
         "weight_decay": 1e-06
     },
-    "lr_scheduler": "NoamLR",
+    "lr_scheduler": "MultiStepLR",
     "lr_scheduler_params": {
-        "warmup_steps": 4000
+        "milestones": [
+            20000,
+            30000,
+            40000,
+            50000,
+            60000,
+            70000
+        ],
+        "gamma": 0.5
     },
     "use_grad_scaler": false,
     "allow_tf32": true,
@@ -128,7 +136,7 @@
         {
             "formatter": "ljspeech_liepa2",
             "dataset_name": "liepa2",
-            "path": "data/processed/tts_dataset_liepa2_60spk/",
+            "path": "data/processed/tts_dataset_liepa2_30spk/",
             "meta_file_train": "metadata.csv",
             "ignored_speakers": null,
             "language": "lt",
@@ -157,7 +165,7 @@
     "gst_style_input": null,
     "use_capacitron_vae": false,
     "capacitron_vae": null,
-    "num_speakers": 60,
+    "num_speakers": 30,
     "num_chars": 44,
     "r": 2,
     "gradual_training": null,
@@ -185,11 +193,11 @@
     "bidirectional_decoder": false,
     "double_decoder_consistency": false,
     "ddc_r": 7,
-    "speakers_file": "training_output/Tacotron2-DCA-December-07-2025_11+49PM-5c7391a/speakers.pth",
+    "speakers_file": "training_output/Tacotron2-DCA-December-09-2025_10+45PM-8355c56/speakers.pth",
     "use_speaker_embedding": true,
     "speaker_embedding_dim": 512,
     "use_d_vector_file": true,
-    "d_vector_file": "data/processed/tts_dataset_liepa2_60spk/speakers.pth",
+    "d_vector_file": "data/processed/tts_dataset_liepa2_30spk/speakers.pth",
     "d_vector_dim": 512,
     "seq_len_norm": false,
     "decoder_loss_alpha": 0.25,
