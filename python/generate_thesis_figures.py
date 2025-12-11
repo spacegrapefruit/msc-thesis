@@ -533,9 +533,9 @@ def create_tacotron2_architecture():
     print("✓ Generated tacotron2_arch.pdf")
 
 
-def create_fastpitch_architecture():
+def create_glow_tts_architecture():
     """
-    Create a diagram showing the FastPitch architecture.
+    Create a diagram showing the Glow-TTS architecture.
     """
     fig, ax = plt.subplots(1, 1, figsize=(16, 10))
 
@@ -548,53 +548,59 @@ def create_fastpitch_architecture():
             "label": "Text Input\n(Phonemes)",
             "color": "lightblue",
         },
-        "char_embedding": {
+        "text_embedding": {
             "pos": (2, 2.5),
             "size": (2, 0.8),
-            "label": "Character\nEmbedding",
+            "label": "Text\nEmbedding",
             "color": "lightgreen",
         },
         # Encoder
         "transformer_enc": {
             "pos": (2, 4.5),
             "size": (2, 1.5),
-            "label": "Transformer\nEncoder\n(Self-Attention)",
+            "label": "Text Encoder\n(Transformer)",
             "color": "orange",
         },
-        # Duration and Pitch prediction
+        # Duration prediction
         "duration_pred": {
-            "pos": (5.5, 3),
-            "size": (1.5, 0.8),
-            "label": "Duration\nPredictor",
+            "pos": (5.5, 4.5),
+            "size": (1.8, 1.2),
+            "label": "Duration\nPredictor\n(Stochastic)",
             "color": "lightyellow",
         },
-        "pitch_pred": {
-            "pos": (5.5, 5),
-            "size": (1.5, 0.8),
-            "label": "Pitch\nPredictor",
-            "color": "lightcoral",
-        },
-        # Length regulation and pitch injection
+        # Length regulation
         "length_reg": {
             "pos": (8.5, 4.5),
             "size": (1.5, 0.8),
             "label": "Length\nRegulator",
             "color": "lightsteelblue",
         },
-        "pitch_inject": {
-            "pos": (8.5, 6),
-            "size": (1.5, 0.8),
-            "label": "Pitch\nEmbedding",
-            "color": "lightpink",
-        },
-        # Decoder
-        "transformer_dec": {
+        # Flow decoder
+        "flow_block1": {
             "pos": (11.5, 5.5),
-            "size": (2, 1.5),
-            "label": "Transformer\nDecoder\n(Self-Attention)",
+            "size": (1.5, 0.8),
+            "label": "Flow Block\n(ActNorm + Coupling)",
             "color": "lightcyan",
         },
-        # Output
+        "flow_block2": {
+            "pos": (11.5, 4.5),
+            "size": (1.5, 0.8),
+            "label": "Flow Block\n(Affine Coupling)",
+            "color": "lightcyan",
+        },
+        "flow_block3": {
+            "pos": (11.5, 3.5),
+            "size": (1.5, 0.8),
+            "label": "Flow Block\n(1x1 Conv)",
+            "color": "lightcyan",
+        },
+        # Prior and output
+        "prior": {
+            "pos": (14.5, 3),
+            "size": (1.8, 1),
+            "label": "Gaussian\nPrior\nz ~ N(0,I)",
+            "color": "lavender",
+        },
         "mel_output": {
             "pos": (14.5, 5.5),
             "size": (2, 0.8),
@@ -606,12 +612,6 @@ def create_fastpitch_architecture():
             "pos": (5.5, 1.5),
             "size": (1.5, 0.6),
             "label": "Duration\nTargets\n(Training)",
-            "color": "lightgray",
-        },
-        "pitch_target": {
-            "pos": (8.5, 1.5),
-            "size": (1.5, 0.6),
-            "label": "Pitch\nTargets\n(Training)",
             "color": "lightgray",
         },
     }
@@ -640,35 +640,47 @@ def create_fastpitch_architecture():
             fontweight="bold",
         )
 
+    # Add dots to indicate more flow blocks
+    ax.text(11.5, 2.8, "⋮", ha="center", va="center", fontsize=24, fontweight="bold")
+
     # Draw connections
     arrows = [
         # Main forward path
         ((2, 1.8), (2, 2.1)),  # text -> embedding
         ((2, 2.9), (2, 3.8)),  # embedding -> transformer enc
-        ((3, 4.5), (4.75, 4.5)),  # transformer enc -> duration/pitch predictors
-        ((3, 4.5), (4.75, 3)),  # transformer enc -> duration pred
-        ((3, 4.5), (4.75, 5)),  # transformer enc -> pitch pred
+        ((3, 4.5), (4.6, 4.5)),  # transformer enc -> duration pred
         # Duration path
-        ((6.25, 3), (7.75, 4.1)),  # duration pred -> length reg
-        # Pitch path
-        ((6.25, 5), (7.75, 5.6)),  # pitch pred -> pitch injection
+        ((6.4, 4.5), (7.75, 4.5)),  # duration pred -> length reg
         # To decoder
-        ((9.25, 4.5), (10.5, 5.1)),  # length reg -> decoder
-        ((9.25, 6), (10.5, 5.9)),  # pitch injection -> decoder
-        # Output
-        ((12.5, 5.5), (13.5, 5.5)),  # decoder -> mel output
+        ((9.25, 4.5), (10.75, 5.1)),  # length reg -> flow block 1
+        ((10.75, 4.5), (10.75, 4.5)),  # between flow blocks
+        ((12.25, 5.5), (13.5, 5.5)),  # flow blocks -> mel output
+        # Prior connection
+        ((13.6, 3.5), (12.25, 4.1)),  # prior -> flow blocks (reverse direction)
         # Training connections (dotted)
-        ((5.5, 2.1), (5.5, 2.6)),  # duration targets -> duration pred
-        ((8.5, 2.1), (8.5, 4.1)),  # pitch targets -> length reg (via pitch)
+        ((5.5, 2.1), (5.5, 3.3)),  # duration targets -> duration pred
     ]
 
-    for i, (start, end) in enumerate(arrows):
-        if i >= len(arrows) - 2:  # Training connections
+    # Flow connections between blocks
+    flow_arrows = [
+        ((11.5, 5.1), (11.5, 4.9)),  # flow1 -> flow2
+        ((11.5, 4.1), (11.5, 3.9)),  # flow2 -> flow3
+    ]
+
+    for start, end in arrows:
+        if start == ((5.5, 2.1)) and end == ((5.5, 3.3)):  # Training connection
             ax.annotate(
                 "",
                 xy=end,
                 xytext=start,
                 arrowprops=dict(arrowstyle="->", lw=2, color="gray", linestyle="--"),
+            )
+        elif start == ((13.6, 3.5)):  # Prior connection (sampling)
+            ax.annotate(
+                "",
+                xy=end,
+                xytext=start,
+                arrowprops=dict(arrowstyle="->", lw=2, color="purple", linestyle="--"),
             )
         else:
             ax.annotate(
@@ -678,11 +690,32 @@ def create_fastpitch_architecture():
                 arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
             )
 
+    # Flow block connections
+    for start, end in flow_arrows:
+        ax.annotate(
+            "",
+            xy=end,
+            xytext=start,
+            arrowprops=dict(arrowstyle="<->", lw=2, color="teal"),
+        )
+
     # Add key features annotations
     ax.text(
+        11.5,
+        7,
+        "Normalizing Flow\n(Invertible Transformations)",
+        ha="center",
+        fontsize=12,
+        style="italic",
+        fontweight="bold",
+        color="teal",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcyan", alpha=0.7),
+    )
+
+    ax.text(
         8.5,
-        7.5,
-        "Parallel Generation\n(Non-autoregressive)",
+        6.5,
+        "Fast Parallel Generation\n(Non-autoregressive)",
         ha="center",
         fontsize=12,
         style="italic",
@@ -692,9 +725,9 @@ def create_fastpitch_architecture():
     )
 
     ax.text(
-        11.5,
-        3,
-        "Explicit Duration\nand Pitch Control",
+        5.5,
+        6.5,
+        "Maximum Likelihood\nTraining",
         ha="center",
         fontsize=12,
         style="italic",
@@ -707,16 +740,16 @@ def create_fastpitch_architecture():
     ax.text(
         2,
         0.2,
-        "INPUT",
+        "ENCODER",
         ha="center",
         fontsize=14,
         fontweight="bold",
         bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.7),
     )
     ax.text(
-        6.5,
+        7,
         0.2,
-        "PREDICTION",
+        "DURATION",
         ha="center",
         fontsize=14,
         fontweight="bold",
@@ -725,7 +758,7 @@ def create_fastpitch_architecture():
     ax.text(
         11.5,
         0.2,
-        "DECODER",
+        "FLOW DECODER",
         ha="center",
         fontsize=14,
         fontweight="bold",
@@ -745,12 +778,12 @@ def create_fastpitch_architecture():
     ax.set_ylim(0, 8)
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_title("FastPitch Architecture", fontsize=16, fontweight="bold", pad=20)
+    ax.set_title("Glow-TTS Architecture", fontsize=16, fontweight="bold", pad=20)
 
     plt.tight_layout()
-    plt.savefig(FIGURES_DIR / "fastpitch_arch.pdf", dpi=300, bbox_inches="tight")
+    plt.savefig(FIGURES_DIR / "glow_tts_arch.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated fastpitch_arch.pdf")
+    print("✓ Generated glow_tts_arch.pdf")
 
 
 def create_latin_square_figure():
@@ -930,7 +963,7 @@ def create_tts_pipeline_figure():
     ax.text(
         4.25,
         3.9,
-        "FastPitch",
+        "Glow-TTS",
         ha="center",
         va="center",
         fontsize=15,
@@ -1033,7 +1066,7 @@ def main():
         create_waveform_spectrograms_figure()
         create_speaker_encoder_diagram()
         create_tacotron2_architecture()
-        create_fastpitch_architecture()
+        create_glow_tts_architecture()
         create_latin_square_figure()
         create_tts_pipeline_figure()
 
