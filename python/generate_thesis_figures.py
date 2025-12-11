@@ -753,6 +753,276 @@ def create_fastpitch_architecture():
     print("✓ Generated fastpitch_arch.pdf")
 
 
+def create_latin_square_figure():
+    """
+    Create a visual representation of Latin square design for subjective evaluation.
+    Shows how sentences and models are balanced across listener groups.
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Latin square assignment (each model appears once per group, each sentence once per group)
+    # Rows = listener groups, columns = presentation order
+    latin_square = [
+        ["A-S1", "B-S2", "C-S3", "D-S4"],
+        ["B-S3", "C-S4", "D-S1", "A-S2"],
+        ["C-S2", "D-S1", "A-S4", "B-S3"],
+        ["D-S4", "A-S3", "B-S1", "C-S2"],
+    ]
+
+    # Color mapping for systems
+    colors = {"A": "#FF6B6B", "B": "#4ECDC4", "C": "#45B7D1", "D": "#FFA07A"}
+
+    # Create the grid
+    NUM_GROUPS = 4
+    for i in range(NUM_GROUPS):
+        for j, assignment in enumerate(latin_square[i]):
+            system, sentence = assignment.split("-")
+
+            # Draw rectangle with system color
+            rect = mpatches.Rectangle(
+                (j, 3 - i),
+                1,
+                1,
+                linewidth=2,
+                edgecolor="black",
+                facecolor=colors[system],
+                alpha=0.7,
+            )
+            ax.add_patch(rect)
+
+            # Add text
+            ax.text(
+                j + 0.5,
+                3 - i + 0.6,
+                f"Model {system}",
+                ha="center",
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+            )
+            ax.text(
+                j + 0.5,
+                3 - i + 0.3,
+                sentence.replace("Sentence ", "S"),
+                ha="center",
+                va="center",
+                fontsize=9,
+            )
+
+    # Set axis properties
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, 4)
+    ax.set_aspect("equal")
+
+    # Labels
+    ax.set_xticks([0.5, 1.5, 2.5, 3.5])
+    ax.set_xticklabels(["Order 1", "Order 2", "Order 3", "Order 4"], fontsize=11)
+    ax.set_yticks([0.5, 1.5, 2.5, 3.5])
+    ax.set_yticklabels(["Group 4", "Group 3", "Group 2", "Group 1"], fontsize=11)
+
+    ax.set_xlabel("Presentation order", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Listener group", fontsize=12, fontweight="bold")
+    ax.set_title(
+        "Latin square design for TTS evaluation", fontsize=14, fontweight="bold", pad=20
+    )
+
+    # Add legend
+    legend_elements = [
+        mpatches.Patch(
+            facecolor=colors[s],
+            alpha=0.7,
+            edgecolor="black",
+            linewidth=1.5,
+            label=f"Model {s}",
+        )
+        for s in ["A", "B", "C", "D"]
+    ]
+    ax.legend(
+        handles=legend_elements,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1),
+        fontsize=10,
+        frameon=True,
+    )
+
+    # Remove spines
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "latin_square_design.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated latin_square_design.pdf")
+
+
+def create_tts_pipeline_figure():
+    """
+    Create a flowchart showing the TTS pipeline:
+    [Text, Speaker Embeddings] -> Acoustic Model -> Mel-Spectrogram -> Vocoder -> Audio
+    """
+    fig, ax = plt.subplots(figsize=(14, 6))
+    ax.axis("off")
+
+    # Define box positions and sizes
+    boxes = {
+        "text": {"pos": (0.3, 5), "width": 1.6, "height": 1, "color": "#E8F4F8"},
+        "speaker": {"pos": (0.3, 3.2), "width": 1.6, "height": 1, "color": "#E8F4F8"},
+        "acoustic": {"pos": (3, 3.5), "width": 2.5, "height": 2, "color": "#FFE5CC"},
+        "mel": {"pos": (6.6, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
+        "vocoder": {"pos": (9.5, 3.5), "width": 2.2, "height": 2, "color": "#FFE5CC"},
+        "audio": {"pos": (12.3, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
+    }
+
+    # Draw boxes
+    for name, props in boxes.items():
+        x, y = props["pos"]
+        w, h = props["width"], props["height"]
+        rect = mpatches.FancyBboxPatch(
+            (x, y),
+            w,
+            h,
+            boxstyle="round,pad=0.1",
+            linewidth=2,
+            edgecolor="#2C3E50",
+            facecolor=props["color"],
+        )
+        ax.add_patch(rect)
+
+    # Add text labels
+    ax.text(
+        1.1, 5.5, "Input text", ha="center", va="center", fontsize=16, fontweight="bold"
+    )
+    ax.text(
+        1.1, 5.1, '"Labas rytas"', ha="center", va="center", fontsize=13, style="italic"
+    )
+
+    ax.text(
+        1.1,
+        3.7,
+        "Speaker\nembedding",
+        ha="center",
+        va="center",
+        fontsize=16,
+        fontweight="bold",
+    )
+    ax.text(1.1, 3.2, "vector", ha="center", va="center", fontsize=12, style="italic")
+
+    ax.text(
+        4.25,
+        5.0,
+        "Acoustic model",
+        ha="center",
+        va="center",
+        fontsize=18,
+        fontweight="bold",
+    )
+    ax.text(
+        4.25,
+        4.5,
+        "Tacotron 2",
+        ha="center",
+        va="center",
+        fontsize=15,
+        style="italic",
+        color="#E74C3C",
+    )
+    ax.text(4.25, 4.2, "or", ha="center", va="center", fontsize=13)
+    ax.text(
+        4.25,
+        3.9,
+        "FastPitch",
+        ha="center",
+        va="center",
+        fontsize=15,
+        style="italic",
+        color="#3498DB",
+    )
+
+    ax.text(
+        7.4,
+        4.5,
+        "Mel-\nspectrogram",
+        ha="center",
+        va="center",
+        fontsize=16,
+        fontweight="bold",
+    )
+
+    ax.text(
+        10.6, 5.0, "Vocoder", ha="center", va="center", fontsize=18, fontweight="bold"
+    )
+    ax.text(
+        10.6,
+        4.5,
+        "Griffin-Lim",
+        ha="center",
+        va="center",
+        fontsize=15,
+        style="italic",
+        color="#E74C3C",
+    )
+    ax.text(10.6, 4.2, "or", ha="center", va="center", fontsize=13)
+    ax.text(
+        10.6,
+        3.9,
+        "HiFi-GAN",
+        ha="center",
+        va="center",
+        fontsize=15,
+        style="italic",
+        color="#3498DB",
+    )
+
+    ax.text(
+        13.1,
+        4.5,
+        "Audio\nwaveform",
+        ha="center",
+        va="center",
+        fontsize=16,
+        fontweight="bold",
+    )
+
+    # Draw arrows
+    arrow_props = dict(arrowstyle="->", lw=3.5, color="#34495E")
+
+    # Text to acoustic model
+    ax.annotate("", xy=(3, 4.8), xytext=(1.9, 5.3), arrowprops=arrow_props)
+
+    # Speaker embedding to acoustic model
+    ax.annotate("", xy=(3, 4.0), xytext=(1.9, 3.7), arrowprops=arrow_props)
+
+    # Acoustic model to mel-spectrogram
+    ax.annotate("", xy=(6.6, 4.5), xytext=(5.5, 4.5), arrowprops=arrow_props)
+
+    # Mel-spectrogram to vocoder
+    ax.annotate("", xy=(9.5, 4.5), xytext=(8.2, 4.5), arrowprops=arrow_props)
+
+    # Vocoder to audio
+    ax.annotate("", xy=(12.3, 4.5), xytext=(11.7, 4.5), arrowprops=arrow_props)
+
+    # Set axis limits
+    ax.set_xlim(0, 14)
+    ax.set_ylim(2.0, 6.5)
+    ax.set_aspect("equal")
+
+    # Add title
+    ax.text(
+        7,
+        7.0,
+        "End-to-End Text-to-Speech pipeline",
+        ha="center",
+        va="center",
+        fontsize=21,
+        fontweight="bold",
+    )
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "tts_pipeline.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("✓ Generated tts_pipeline.pdf")
+
+
 def main():
     """Generate all thesis figures."""
     print("Generating figures for MSc thesis...")
@@ -764,6 +1034,8 @@ def main():
         create_speaker_encoder_diagram()
         create_tacotron2_architecture()
         create_fastpitch_architecture()
+        create_latin_square_figure()
+        create_tts_pipeline_figure()
 
         print("\n✅ All figures generated successfully!")
         print(f"Generated files:")

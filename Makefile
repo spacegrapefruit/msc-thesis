@@ -3,6 +3,7 @@ DATASET ?= liepa2
 N_SPEAKERS_PER_GENDER ?= 15
 EXECUTOR := uv run
 CONFIG_FILE := configs/config.json
+CONFIG_FILE_GLOW_TTS := configs/config_glow_tts.json
 
 # --- Paths ---
 # Raw data input paths
@@ -67,6 +68,20 @@ train: compute-embeddings-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model
 	  --coqpit.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
 	  --coqpit.d_vector_file=$(EMBEDDINGS_LIEPA2_CHECK_FILE) \
 	  --coqpit.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))
+	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
+
+train-glow-tts: compute-embeddings-liepa2 $(CONFIG_FILE_GLOW_TTS) ## Start or resume the TTS model training with Liepa-2.
+	@echo "Launching TTS training with $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers using config '$(CONFIG_FILE_GLOW_TTS)'..."
+	@echo "Dataset path: $(PROCESSED_LIEPA2_DIR)"
+	@echo "Speaker embeddings: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
+	@echo "Number of speakers: $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))"
+	$(EXECUTOR) python python/train.py \
+	  --config_path $(CONFIG_FILE_GLOW_TTS) \
+	  --coqpit.datasets.0.path=$(PROCESSED_LIEPA2_DIR)/ \
+	  --coqpit.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
+	  --coqpit.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) \
+	  --coqpit.model_args.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
+	  --coqpit.model_args.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 
 # 5. Format Code
