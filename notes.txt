@@ -9,8 +9,8 @@ rm inference_output/*
 
 # AS009,AS024,AS027,AS034,AS220,AS221,AS224,IS016,IS017,IS018,IS031,IS038,MS001,MS004,MS007,MS051,MS052,MS054,MS140,VP013,VP018,VP019,VP022,VP038,VP131,VP154,VP427,VP444,VP450,VP466
 uv run python python/run_inference.py \
-    --speakers "AS009" \
-    --model_dir training_output/Glow-December-11-2025_10+21PM-619b46c/ \
+    --speakers "AS009,AS221,IS031,MS051,VP018,VP154" \
+    --model_dir training_output/Glow-December-12-2025_07+12AM-171616c/ \
     --vocoder_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
     --vocoder_config_path /home/aleks/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
     --use_gpu

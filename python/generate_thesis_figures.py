@@ -10,7 +10,6 @@ import numpy as np
 import seaborn as sns
 from pathlib import Path
 import librosa
-import librosa.display
 
 # Set the style for publication-ready figures
 plt.style.use("seaborn-v0_8-whitegrid")

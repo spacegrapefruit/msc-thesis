@@ -67,7 +67,7 @@
     "run_eval": true,
     "eval_split_max_size": null,
     "eval_split_size": 0.01,
-    "test_delay_epochs": 50, //Testing only wastes computation time.
+    "test_delay_epochs": 50, //Until attention is aligned, testing only wastes computation time.
     "test_sentences": [
         "a`š labai mė´gstu skaity´ti knyga`s.",
         "šian~dien o´ras yra puiku`s idealiai tin~kantis pasiva´ikščiojimams gamtoje`.",
@@ -78,7 +78,7 @@
     "training_seed": 54321,
     // OPTIMIZER
     "grad_clip": 5.0, // upper limit for gradients for clipping.
-    "epochs": 200, // total number of epochs to train.
+    "epochs": 400, // total number of epochs to train.
     "lr": 0.001, // Initial learning rate. If Noam decay is active, maximum learning rate.
     "precision": "bf16",
     "optimizer": "RAdam",
