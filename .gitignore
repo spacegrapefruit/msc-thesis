@@ -228,4 +228,4 @@ latex/paper/out/
 cloud_sql_proxy
 
 # Generated waveforms
-inference_output/
+results/

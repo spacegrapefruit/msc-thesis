@@ -51,7 +51,7 @@ DB_TABLE = os.environ.get("DB_TABLE", "ratings")
 
 # Google Cloud Storage configuration
 GCS_BUCKET = os.environ.get("GCS_BUCKET")
-GCS_AUDIO_PREFIX = os.environ.get("GCS_AUDIO_PREFIX", "inference_output/")
+GCS_AUDIO_PREFIX = os.environ.get("GCS_AUDIO_PREFIX", "test_samples/")
 storage_client = storage.Client() if os.environ.get("GOOGLE_CLOUD_PROJECT") else None
 
 # Connection pool

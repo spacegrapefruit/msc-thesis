@@ -113,7 +113,7 @@ inference: ## Run inference on test samples.
 	  --model_dir $(TRAIN_OUTPUT_DIR)/Tacotron2-DCA-November-06-2025_10+04PM-6805a9d/ \
 	  --vocoder_path "/home/aleks/.local/share/tts/vocoder_models--en--ljspeech--multiband-melgan/model.pth" \
 	  --speakers VP382,VP460
-	@echo "\nInference complete. Check 'inference_output/' for generated audio files."
+	@echo "\nInference complete. Check 'results/inference_output/' for generated audio files."
 
 
 # --- Helper for Missing Data ---

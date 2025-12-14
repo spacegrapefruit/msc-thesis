@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="inference_output",
+        default="results/inference_output",
         help="Output directory for generated audio files",
     )
     parser.add_argument(

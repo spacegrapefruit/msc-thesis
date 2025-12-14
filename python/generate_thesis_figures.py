@@ -4,6 +4,7 @@ Script to generate all figures for the MSc thesis on TTS synthesis.
 This script creates publication-ready figures for LaTeX inclusion.
 """
 
+import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -121,7 +122,7 @@ def create_waveform_spectrograms_figure():
     """
     # Load an example audio file
     waveform, sr = librosa.load(
-        "/home/aleks/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav",
+        os.path.expanduser("~/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav"),
         sr=22050,
     )
     duration = len(waveform) / sr
