@@ -17,6 +17,8 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning}
 
 \usepackage{titlesec}
 \newcommand{\sectionbreak}{\clearpage}
@@ -82,63 +84,117 @@
 
 The goal of creating machines that can speak like humans has captivated
 researchers for centuries. One of the earliest known attempts dates back to the
-18th century, with Wolfgang von Kempelen's mechanical speech machine that
-utilized a bellows-driven lung and physical models of the tongue and lips.
+18th century, with Wolfgang von Kempelen's mechanical ``speaking
+machine''~\cite{dudley1950speaking} that utilized a bellows-driven lung and
+physical models of the tongue and lips to produce rudimentary speech sounds.
 
 Over the centuries, advancements in technology and understanding of human
 speech have driven significant progress in this field. Today's state-of-the-art
-systems, dominated by end-to-end (E2E) neural models, have achieved highly
-naturalistic speech with unprecedented acoustic quality. Notably, these
-end-to-end systems have unified the entire synthesis process into a single
-neural network, eliminating the need for complex multi-stage pipelines.
+Text-to-Speech (TTS) systems, dominated by end-to-end (E2E) neural models, have
+achieved highly naturalistic speech with unprecedented acoustic quality.
+Notably, these end-to-end systems have unified the entire synthesis process
+into a single neural network, learning to map text inputs (graphemes or
+phonemes) directly to audio outputs, and eliminating the need for complex
+multi-stage pipelines.
 
-% \subsection{Background and motivation}
+These advancements have moved beyond academic curiosity to become essential
+tools in daily life. High-quality speech synthesis now powers popular virtual
+assistants~\cite{hoy2018alexa} and navigation systems, serving as a primary
+interface for human-computer interaction. More importantly, it plays a critical
+role in accessibility, enabling screen readers for the visually
+impaired~\cite{isewon2014design} and providing a voice for the non-verbal, thus
+democratizing access to digital information~\cite{taylor2009text}.
 
-% \subsection{Problem statement}
+However, the transition to deep learning techniques has introduced a new
+dependency: data. While modern neural TTS models are capable of producing
+remarkably natural speech, they are inherently ``data-hungry''. This poses a
+significant challenge for low-resource languages, where large, high-quality
+single-speaker datasets are often unavailable.
 
 Training high-quality TTS models typically requires large amounts of annotated
-speech data. The common recommendation is to use at least 10~hours of recorded
-speech from a single speaker to achieve good results.
+speech data. The common recommendation is to use at least 10 to 20~hours of
+recorded speech from a single speaker to achieve good synthesis quality.
 
-Liepa~2~\cite{liepa2project} is a recently released Lithuanian speech corpus
+The majority of existing research and commercial TTS systems focus on
+high-resource languages like English, where large single-speaker datasets
+(e.g., LJSpeech~\cite{ljspeech17}, VCTK~\cite{veaux2019cstr}) are readily
+available. However, less-resourced languages, such as Lithuanian, often lack
+such extensive datasets.
+
+Liepa~2~\cite{liepa2project} is a Lithuanian speech corpus, released in 2020,
 that contains 1000~hours of annotated speech; however, this data is distributed
 across 2621~speakers, with most speakers contributing under 20~minutes each.
-The top speaker has around 2.5~hours of recorded speech.
+The top speaker has only around 2.5~hours of recorded speech, well below the
+standard recommendation for single-speaker TTS training.
 
-Training a high-quality single-speaker TTS model on such limited data poses a
-challenge. Multi-speaker TTS models can utilize data from multiple speakers to
-improve performance. However, training on all available data is a
-time-consuming and computationally expensive process, especially in the context
-of a master's thesis.
+Having such a fragmented dataset presents a distinct engineering challenge.
+While multi-speaker TTS models can leverage transfer learning to improve
+quality with limited data, training on the entire 1000-hour corpus is a
+time-consuming and computationally expensive process, especially in the scope
+of a master's thesis. As a result, one must select a subset of the data. This
+necessitates a choice between two competing strategies under a fixed
+computational budget: prioritizing \textbf{breadth} (many speakers with little
+data each) or \textbf{depth} (fewer speakers with more data each).
+Consequently, the question that arises is: what is the optimal strategy for
+sampling multi-speaker data to maximize synthesis quality? The hypothesis is
+that the depth is a more critical factor, and a minimum amount of data per
+speaker is required to achieve stable convergence and high-quality synthesis.
 
-Therefore, it makes sense to explore strategies for selecting smaller subsets
-of the available data for training. The question that arises is, what is the
-best way to sample multi-speaker data for training TTS models?
+This thesis investigates the optimal data selection strategy for training
+Lithuanian multi-speaker TTS models under a fixed data budget. It aims to
+answer the following research questions:
 
-% \subsection{Research questions}
+\begin{enumerate}
+      \item \textbf{Data Composition Trade-off:} How does the trade-off between
+            dataset breadth (number of speakers) and depth (duration per speaker) affect
+            the synthesis quality and convergence stability of multi-speaker TTS models?
+      \item \textbf{Architectural Robustness:} How do autoregressive (Tacotron~2)
+            and non-autoregressive (Glow-TTS) architectures compare in their ability to
+            handle data sparsity (e.g., speakers with under 10 minutes of data)?
+      \item \textbf{Optimal Strategy for Liepa~2:} What is the most effective
+            sampling strategy for the Liepa~2 corpus to maximize the naturalness of
+            synthesized Lithuanian speech?
+\end{enumerate}
 
-This thesis aims to answer the following research questions:
+To answer these questions, the following research objectives are defined:
 
 \begin{itemize}
-      \item TODO
+      \item To preprocess the Liepa~2 corpus and curate three distinct training subsets
+            (High-Depth, Balanced, High-Breadth) that maintain a constant total duration of
+            22.5 hours but vary in speaker distribution.
+      \item To train and fine-tune two distinct acoustic model architectures, Tacotron~2
+            (with Dynamic Convolutional Attention) and Glow-TTS, on each of the curated
+            subsets.
+      \item To implement a text processing pipeline capable of handling Lithuanian
+            accentuation and grapheme-based input.
+      \item To evaluate the models using objective metrics (MCD, F0 RMSE) and conduct a
+            subjective Mean Opinion Score (MOS) listening test with native Lithuanian
+            speakers to assess naturalness.
 \end{itemize}
 
-% \subsection{Objectives}
+This study is exclusively focused on the Lithuanian language and the Liepa~2
+speech corpus. It investigates a fixed total training data size of 22.5~hours
+to simulate a realistic resource budget. The models are limited to Tacotron~2
+with DCA and Glow-TTS architectures within the Coqui TTS framework, and a
+pre-trained HiFi-GAN vocoder is used to isolate the performance of the acoustic
+models.
 
-% \subsection{Scope of the study}
-
-Scope: This study is exclusively focused on the Lithuanian language and the
-Liepa~2 speech corpus. It investigates a fixed total training data size of
-22.5~hours. The models are limited to Tacotron~2 with DCA and Glow-TTS
-architectures within the Coqui TTS framework, using a pre-trained WaveGlow
-vocoder for waveform generation.
-
-Limitations: The findings may not generalize to other languages, datasets with
-different characteristics, or other TTS architectures. The 22.5-hour training
+The findings regarding the specific numeric trade-offs may not generalize
+perfectly to other languages with different features or datasets with different
+recording conditions, or different TTS architectures. The 22.5-hour training
 data size is a practical constraint and may not reflect performance at larger
-scales.
+scales. Additionally, the study focuses on read speech --- spontaneous speech
+synthesis is outside the scope of this work.
 
-% \subsection{Thesis structure}
+The remainder of this thesis is organized as follows: \textbf{Section~2}
+presents a literature review of relevant concepts in digital signal processing,
+neural TTS architectures, and the specific challenges of Lithuanian TTS.
+\textbf{Section~3} describes the methodology for data selection, model
+configurations, and the experimental design. \textbf{Section~4} presents the
+results of the objective and subjective synthesis quality evaluations,
+analyzing the failure modes of the models. Finally, \textbf{Section~5}
+summarizes the key findings and offers potential recommendations for future
+research directions in low-resource TTS synthesis.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Literature review
@@ -255,13 +311,22 @@ of converting written text into human-like spoken words. Nowadays TTS is a key
 technology in numerous applications, including virtual assistants,
 accessibility tools, and language learning platforms.
 
+The \textit{one-to-many} nature of the mapping from text to speech adds
+presents a significant challenge, where a single text input can map to multiple
+speech outputs with a variety of speaking styles, emotions, and prosodic
+variations.~\cite{jawaid2024style} Thus, TTS is inherently a
+\textit{large-scale inverse problem}~\cite{wang2017tacotron} --- reconstructing
+the original waveform from incomplete data (text) requires inferring missing
+information.
+
 \subsubsection{Traditional TTS approaches}
 
 Early attempts at artificial speech synthesis evolved from the first mechanical
 devices in the 18th century to electronic systems. Wolfgang von Kempelen's
-mechanical speech machine demonstrated basic phoneme production using a
-physical model of the vocal tract. In 1939, Homer Dudley's invention of the
-Voder~\cite{klatt1987review} became the first electronic speech synthesizer
+mechanical speaking machine~\cite{dudley1950speaking} demonstrated basic
+phoneme, and later short phrase production using a physical model of the vocal
+tract. In 1939, Homer Dudley's invention of the
+Voder~\cite{dudley1939synthetic} became the first electronic speech synthesizer
 that could produce intelligible speech through operator-controlled acoustic
 parameters, establishing the foundation for modern electronic synthesis
 methods.
@@ -288,18 +353,25 @@ Finally, the system uses signal processing techniques to smooth the transitions
 between segments and adjust pitch and duration to match the desired output
 characteristics.
 
-Concatenative synthesis can produce natural-sounding individual speech units,
-but the final audio often has noticeable audible continuity distortions at the
-concatenation points~\cite{black1996optimising}. The segments may not blend
-smoothly due to differences in pitch, duration, and timbre. The prosody also
-tends to sound ``choppy'' and unnatural, since stringing disjointed segments
-together does not capture the natural rhythm and intonation patterns of
-connected speech.
+Although concatenative synthesis is a fast method capable of producing
+high-quality speech, its performance is heavily dependent on the size and
+quality of the underlying speech corpus~\cite{kuligowska2018speech}. A
+significant limitation is that the system fails to maintain naturalness when
+the required speech segments are not present in the database. However, even the
+largest corpora cannot cover all variants of contextual speech segments. When
+the system has to synthesize out-of-database segments, the final audio suffers
+from audible continuity distortions at the concatenation
+points~\cite{black1996optimising}. The segments may not blend smoothly due to
+differences in pitch, duration, and timbre --- as a result, stringing
+disjointed segments together does not capture the natural rhythm and intonation
+patterns of connected speech.
 
-Finally, concatenative synthesis requires language-specific expertise to design
-and maintain the underlying speech database and selection algorithms. This need
-for extensive data can make it challenging to develop concatenative TTS systems
-for low-resource languages or dialects.
+The creation of a comprehensive corpus for such a purpose is costly and
+time-consuming. Improving a concatenative system requires
+language-specific expertise to design and update the corpus with good-quality,
+well-pronounced word units.~\cite{kuligowska2018speech} These rigid
+requirements are especially challenging for languages with rich morphology, and
+especially for low-resource languages like Lithuanian.
 
 \subsubsection{Parametric synthesis}
 
@@ -598,8 +670,7 @@ generates intermediate acoustic features (Mel-spectrograms), but do not
 directly produce raw audio waveforms. Spectrograms are lossy representations
 that only capture the magnitude of the sound frequency bands, discarding phase
 information. Converting a lossy spectrogram into audio is a non-trivial task,
-as the phase information must be estimated. This challenge is known as the
-\textit{inversion problem}.
+as the phase information must be estimated.
 
 An additional component called a vocoder is required to reconstruct the raw
 waveform from the Mel-spectrogram.
@@ -893,6 +964,39 @@ factorial design to compare the performance of two architectures --- Tacotron~2
 (autoregressive) and Glow-TTS (non-autoregressive) --- under varying degrees of
 data breadth and depth, while controlling for the total training budget.
 
+The high-level experimental workflow is illustrated in
+Figure~\ref{fig:pipeline}.
+
+\begin{figure}[ht]
+      \centering
+      \begin{tikzpicture}[node distance=1.5cm, auto,
+                  block/.style={rectangle, draw, fill=blue!10, text width=5em, text centered, rounded corners, minimum height=3em},
+                  line/.style={draw, -latex, thick},
+                  cloud/.style={draw, ellipse, fill=red!10, node distance=2.5cm, minimum height=2em}]
+
+            % Nodes
+            \node [block] (raw) {Raw Liepa-2};
+            \node [block, right=of raw] (filter) {Filter \& Subset};
+            \node [block, right=of filter] (preproc) {Pre-process};
+            \node [block, below=of preproc] (train) {Train Models};
+            \node [block, left=of train] (synth) {Synthesize};
+            \node [block, left=of synth] (eval) {Evaluation};
+
+            % Edges
+            \path [line] (raw) -- (filter);
+            \path [line] (filter) -- (preproc);
+            \path [line] (preproc) -- (train);
+            \path [line] (train) -- (synth);
+            \path [line] (synth) -- (eval);
+
+            % Labels
+            \node [below=0.2cm of filter, text width=2cm, align=center] {\scriptsize 3 Strategies};
+            \node [right=0.2cm of train, text width=2.5cm, align=center] {\scriptsize Tacotron 2\\ Glow-TTS};
+            \node [below=0.2cm of eval, text width=2.5cm, align=center] {\scriptsize Objective\\ Subjective (MOS)};
+      \end{tikzpicture}
+      \caption{Experimental pipeline overview. The process flows from raw corpus selection to comparative evaluation.}\label{fig:pipeline}
+\end{figure}
+
 \subsection{Research Design}
 
 To investigate the impact of data distribution on synthesis quality, the
@@ -953,7 +1057,8 @@ speakers for each subset were selected based on the following criteria:
 Three datasets were generated from the filtered Liepa~2 data. All strategies
 maintain a fixed total training budget of 22.5 hours to ensure fair comparison
 across experiments. The configurations are defined in
-Table~\ref{tab:data_subsets}.
+Table~\ref{tab:data_subsets} and visually represented in
+Figure~\ref{fig:data_strategy}.
 
 \begin{table}[ht]
       \centering
@@ -968,6 +1073,28 @@ Table~\ref{tab:data_subsets}.
             \bottomrule
       \end{tabular}
 \end{table}
+
+\begin{figure}[ht]
+      \centering
+      \begin{tikzpicture}[scale=0.6]
+            % Axes
+            \draw[->] (0,0) -- (10,0) node[right] {Number of Speakers ($N$)};
+            \draw[->] (0,0) -- (0,6) node[above] {Duration per Speaker};
+
+            % Set Depth
+            \draw[fill=blue!30, opacity=0.8] (0,0) rectangle (2, 5) node[midway, align=center, black, opacity=1] {\textbf{Depth}\\(30 spk)};
+
+            % Set Balance
+            \draw[fill=green!30, opacity=0.6] (0,0) rectangle (4, 2.5) node[pos=0.75, align=center, black, opacity=1] {\textbf{Balance}\\(60 spk)};
+
+            % Set Breadth
+            \draw[fill=red!30, opacity=0.4] (0,0) rectangle (9, 0.8) node[pos=0.75, align=center, black, opacity=1] {\textbf{Breadth}\\(180 spk)};
+
+            % Constraint Line
+            \draw[dashed, thick] (1, 5.5) -- (9.5, 0.5) node[midway, above, sloped] {Fixed Budget (22.5 hours)};
+      \end{tikzpicture}
+      \caption{Visual representation of the data strategies. The area of each rectangle (Total Audio) remains constant ($\approx 22.5 hours$), illustrating the trade-off between speaker diversity (Breadth) and data density (Depth).}\label{fig:data_strategy}
+\end{figure}
 
 \subsubsection{Text Normalization and Accentuation}
 
@@ -1048,16 +1175,29 @@ Convolutional Attention (DCA) to accelerate alignment convergence.
       \item \textbf{Decoder:} 2-layer LSTM (1024 units) with location-sensitive attention.
 \end{itemize}
 
+The training objective $\mathcal{L}_{T2}$ is a weighted sum of auxiliary
+losses:
+\begin{equation}
+      \mathcal{L}_{T2} = \mathcal{L}_{L1} + \mathcal{L}_{Post} + \lambda_{SSIM}(\mathcal{L}_{SSIM}) + \lambda_{attn}(\mathcal{L}_{Guided}) + \lambda_{stop}(\mathcal{L}_{Stop})
+\end{equation}
+Where $\mathcal{L}_{Guided}$ enforces diagonal attention alignment, critical for long-form synthesis.
+
 \subsubsection{Glow-TTS (Non-autoregressive)}
 
 The non-autoregressive model used is \textbf{Glow-TTS}, a flow-based
-architecture with monotonic alignment search.
+architecture with Monotonic Alignment Search (MAS).
 
 \begin{itemize}
       \item \textbf{Backbone:} Transformer encoder and flow-based decoder.
       \item \textbf{Alignment:} Trained using unsupervised Soft-DTW (Dynamic Time Warping) to generate duration targets without external aligners.
       \item \textbf{Predictors:} Explicit 1D-convolutional predictors for pitch and duration.
 \end{itemize}
+
+The objective function is the exact log-likelihood of the data:
+\begin{equation}
+      \log P_X(x|c) = \sum_{j=1}^{T_{mel}} \log \left| \det \frac{\partial z_j}{\partial x_j} \right| + \sum_{j=1}^{T_{mel}} \log \mathcal{N}(z_j; \mu, \sigma)
+\end{equation}
+Additionally, a duration predictor is trained via MSE loss $\mathcal{L}_{dur}$ to predict the length of each phoneme in the logarithmic domain.
 
 \subsubsection{Vocoder}
 

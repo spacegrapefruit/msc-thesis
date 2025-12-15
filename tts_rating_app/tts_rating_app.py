@@ -1,7 +1,9 @@
 import os
-import random
 import json
+import random
+from collections import defaultdict
 from datetime import UTC, datetime
+from functools import lru_cache
 from flask import (
     Flask,
     render_template,
@@ -51,7 +53,7 @@ DB_TABLE = os.environ.get("DB_TABLE", "ratings")
 
 # Google Cloud Storage configuration
 GCS_BUCKET = os.environ.get("GCS_BUCKET")
-GCS_AUDIO_PREFIX = os.environ.get("GCS_AUDIO_PREFIX", "test_samples/")
+GCS_AUDIO_PREFIX = os.environ.get("GCS_AUDIO_PREFIX", "inference_output/")
 storage_client = storage.Client() if os.environ.get("GOOGLE_CLOUD_PROJECT") else None
 
 # Connection pool
@@ -136,6 +138,15 @@ def init_database():
 
     try:
         with conn.cursor() as cur:
+            # Create users table for Latin square design
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id SERIAL PRIMARY KEY,
+                    user_email VARCHAR(255) NOT NULL UNIQUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Create table if it doesn't exist
             cur.execute(f"""
                 CREATE TABLE IF NOT EXISTS {DB_TABLE} (
@@ -301,6 +312,42 @@ def get_user_rating_count(user_email):
         return_db_connection(conn)
 
 
+def get_or_create_user_id(user_email):
+    """Get user_id for the given email, or create a new user if not exists."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    try:
+        with conn.cursor() as cur:
+            # Try to get existing user_id
+            cur.execute(
+                "SELECT user_id FROM users WHERE user_email = %s", (user_email,)
+            )
+            result = cur.fetchone()
+
+            if result:
+                return result[0]
+
+            # Create new user
+            cur.execute(
+                "INSERT INTO users (user_email) VALUES (%s) RETURNING user_id",
+                (user_email,),
+            )
+            result = cur.fetchone()
+            conn.commit()
+
+            return result[0] if result else None
+
+    except Exception as e:
+        print(f"Error getting/creating user_id: {e}")
+        conn.rollback()
+        return None
+    finally:
+        return_db_connection(conn)
+
+
+@lru_cache(maxsize=1)
 def get_audio_files():
     """Get list of available audio files from GCS bucket."""
     if not storage_client or not GCS_BUCKET:
@@ -325,8 +372,8 @@ def get_audio_files():
         return []
 
 
-def get_random_audio():
-    """Get a random audio file from an unrated phrase."""
+def get_latin_square_audio():
+    """Get audio file using Latin square design for balanced model/sample assignment."""
     audio_files = get_audio_files()
     if not audio_files:
         return None
@@ -335,39 +382,60 @@ def get_random_audio():
     if not user_email:
         return None
 
+    # Get or create user_id for Latin square design
+    user_id = get_or_create_user_id(user_email)
+    if user_id is None:
+        return None
+
     # Get files already rated by this user
     rated_files = get_user_rated_files(user_email)
 
-    # Group files by phrase_id
-    phrase_groups = {}
+    # Group files by model and phrase
+    # Structure: {phrase_id: {model_key: filename}}
+    phrase_model_groups = defaultdict(dict)
+    expected_models = set()
     for filename in audio_files:
         parsed = parse_filename(filename)
         if not parsed:
             continue
 
         phrase_id = parsed["phrase_id"]
-        if phrase_id not in phrase_groups:
-            phrase_groups[phrase_id] = []
-        phrase_groups[phrase_id].append(filename)
+        # Use model_name + model_version as unique model key
+        model_key = f"{parsed['model_name']}-{parsed['model_version']}"
+
+        expected_models.add(model_key)
+        phrase_model_groups[phrase_id][model_key] = filename
 
     # Find phrase_ids that user hasn't rated any version of
-    rated_phrase_ids = set()
-    for filename in rated_files:
-        parsed = parse_filename(filename)
-        if parsed:
-            rated_phrase_ids.add(parsed["phrase_id"])
+    rated_phrase_ids = {
+        parse_filename(f)["phrase_id"] for f in rated_files if parse_filename(f)
+    }
 
-    # Get unrated phrases
-    unrated_phrases = [
-        pid for pid in phrase_groups.keys() if pid not in rated_phrase_ids
+    # Sort expected models for consistent ordering
+    expected_models = sorted(expected_models)
+    N = len(expected_models)
+
+    # Filter phrases that have all expected models and are unrated
+    complete_unrated_phrases = [
+        pid
+        for pid in phrase_model_groups.keys()
+        if pid not in rated_phrase_ids
+        and set(phrase_model_groups[pid].keys()) == set(expected_models)
     ]
 
-    if not unrated_phrases:
+    if not complete_unrated_phrases:
         return None
 
-    # Pick random phrase and random sample from that phrase
-    random_phrase = random.choice(unrated_phrases)
-    return random.choice(phrase_groups[random_phrase])
+    # Sort phrases for consistent ordering
+    selected_phrase = random.choice(complete_unrated_phrases)
+    phrase_index = int(selected_phrase[1:])
+
+    # Latin square design
+    model_index = (phrase_index + user_id) % N
+    selected_model = expected_models[model_index]
+
+    # Return the audio file for this phrase and model
+    return phrase_model_groups[selected_phrase][selected_model]
 
 
 @app.route("/")
@@ -453,7 +521,7 @@ def rating():
             "completion.html", rated_count=rated_count, total_files=total_phrases
         )
 
-    audio_file = get_random_audio()
+    audio_file = get_latin_square_audio()
     if not audio_file:
         # This shouldn't happen given the check above, but just in case
         return render_template(
@@ -553,7 +621,7 @@ def serve_audio(filename):
 
 @app.route("/stats")
 def stats():
-    """Show rating statistics (optional feature)."""
+    """Show rating statistics."""
     if "user_email" not in session:
         return redirect(url_for("index"))
 

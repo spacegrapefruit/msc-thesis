@@ -119,7 +119,9 @@
             <div class="navbar-nav ms-auto">
                 {% if session.user_email %}
                 <a class="nav-link" href="{{ url_for('rating') }}">Rate Audio</a>
+                {% if session.user_email == 'a.smoliakovas@gmail.com' %}
                 <a class="nav-link" href="{{ url_for('stats') }}">Statistics</a>
+                {% endif %}
                 <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                 <a class="nav-link" href="{{ url_for('login') }}">Login</a>

@@ -122,7 +122,9 @@ def create_waveform_spectrograms_figure():
     """
     # Load an example audio file
     waveform, sr = librosa.load(
-        os.path.expanduser("~/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav"),
+        os.path.expanduser(
+            "~/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav"
+        ),
         sr=22050,
     )
     duration = len(waveform) / sr

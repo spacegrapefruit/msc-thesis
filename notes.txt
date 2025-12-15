@@ -1,27 +1,13 @@
 # AS009,AS024,AS027,AS034,AS220,AS221,AS224,IS016,IS017,IS018,IS031,IS038,MS001,MS004,MS007,MS051,MS052,MS054,MS140,VP013,VP018,VP019,VP022,VP038,VP131,VP154,VP427,VP444,VP450,VP466
 uv run python python/run_inference.py \
     --speakers "AS009,AS024,MS051" \
-    --model_dir training_output/Glow-December-13-2025_11+03AM-171616c/ \
+    --model_dir training_output/Glow-December-14-2025_12+20AM-7c09065/ \
     --vocoder_path ~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
     --vocoder_config_path ~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
     --use_gpu
 
 
-uv run python python/run_inference.py \
-    --speakers "AS009,AS024,MS051" \
-    --model_dir training_output/Glow-December-13-2025_02+22PM-595f0d3/ \
-    --vocoder_path /home/jupyter/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
-    --vocoder_config_path /home/jupyter/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
-    --use_gpu
-
-
-uv run python python/run_inference.py \
-    --speakers "AS009,AS024,MS051" \
-    --model_dir training_output/Glow-December-13-2025_07+36PM-595f0d3/ \
-    --vocoder_path /home/jupyter/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
-    --vocoder_config_path /home/jupyter/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
-    --use_gpu
-
-gcloud storage cp -r results/test_samples/ gs://mif-tts-audio-bucket/
-
-make train N_SPEAKERS_PER_GENDER=90
+# for all subfolders in results/test_samples, copy to gcs bucket
+for folder in ~/msc-thesis/results/test_samples/*/; do
+    gcloud storage cp -r "$folder"/* gs://mif-tts-audio-bucket/inference_output/
+done

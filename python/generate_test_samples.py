@@ -4,13 +4,16 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 from tqdm import tqdm
-from text_utils import load_accented_words
+from text_utils import load_accented_words, normalize_text
 
 
 EXCLUDED_MODELS = [
     "Glow-December-13-2025_11+03AM-171616c",
+    "Glow-December-13-2025_02+22PM-595f0d3",
+    "Glow-December-13-2025_07+36PM-595f0d3",
     "Tacotron2-DCA-November-20-2025_09+07PM-da89dae",
     "Tacotron2-DCA-November-22-2025_01+41PM-2b683eb",
     "Tacotron2-DCA-November-23-2025_09+47AM-e6df90a",
@@ -101,6 +104,7 @@ def generate_test_samples(
     use_gpu: bool = True,
     vocoder_path: str = None,
     vocoder_config_path: str = None,
+    num_threads: int = 4,
 ):
     """Generate synthesized audio for all test sentences using specified models."""
 
@@ -115,6 +119,7 @@ def generate_test_samples(
 
     print(f"Loaded {len(metadata)} test samples")
     print(f"Unique speakers: {sorted(metadata['speaker_id'].unique())}")
+    print(f"Using {num_threads} threads for parallel inference")
 
     output_dir.mkdir(exist_ok=True, parents=True)
     ground_truth_dir = output_dir / "ground_truth"
@@ -146,32 +151,46 @@ def generate_test_samples(
         model_output_dir = output_dir / f"{model_name}-{model_version}"
         model_output_dir.mkdir(exist_ok=True)
 
-        successful = 0
-        total = len(metadata)
-
-        for row_i, row in tqdm(
-            metadata.iterrows(), total=total, desc=f"{model_name}-{model_version}"
-        ):
+        # Prepare inference tasks
+        tasks = []
+        for row_i, row in metadata.iterrows():
             speaker_id = row["speaker_id"]
-            text = row["normalized_text"]
-
+            text = normalize_text(row["original_text"])
             output_filename = (
                 f"{model_name}-{model_version}-p{row_i + 1:03d}-{speaker_id}.wav"
             )
             output_path = model_output_dir / output_filename
 
-            if run_tts_inference(
-                model_path,
-                config_path,
-                speakers_path,
-                text,
-                speaker_id,
-                output_path,
-                use_gpu=use_gpu,
-                vocoder_path=vocoder_path,
-                vocoder_config_path=vocoder_config_path,
-            ):
-                successful += 1
+            tasks.append(
+                {
+                    "model_path": model_path,
+                    "config_path": config_path,
+                    "speakers_path": speakers_path,
+                    "text": text,
+                    "speaker_id": speaker_id,
+                    "output_path": output_path,
+                    "use_gpu": use_gpu,
+                    "vocoder_path": vocoder_path,
+                    "vocoder_config_path": vocoder_config_path,
+                }
+            )
+
+        # Run inference in parallel
+        successful = 0
+        total = len(tasks)
+
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            # Submit all tasks
+            future_to_task = {
+                executor.submit(run_tts_inference, **task): task for task in tasks
+            }
+
+            # Process results with progress bar
+            with tqdm(total=total, desc=f"{model_name}-{model_version}") as pbar:
+                for future in as_completed(future_to_task):
+                    if future.result():
+                        successful += 1
+                    pbar.update(1)
 
         print(f"Generated {successful}/{total} audio files successfully")
 
@@ -212,14 +231,24 @@ if __name__ == "__main__":
     parser.add_argument(
         "--vocoder_path",
         type=str,
-        default=os.path.expanduser("~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth"),
+        default=os.path.expanduser(
+            "~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth"
+        ),
         help="Path to vocoder model file",
     )
     parser.add_argument(
         "--vocoder_config_path",
         type=str,
-        default=os.path.expanduser("~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json"),
+        default=os.path.expanduser(
+            "~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json"
+        ),
         help="Path to vocoder config file",
+    )
+    parser.add_argument(
+        "--num_threads",
+        type=int,
+        default=5,
+        help="Number of parallel threads for inference (default: 5)",
     )
 
     args = parser.parse_args()
@@ -256,4 +285,5 @@ if __name__ == "__main__":
         use_gpu=args.use_gpu,
         vocoder_path=args.vocoder_path,
         vocoder_config_path=args.vocoder_config_path,
+        num_threads=args.num_threads,
     )
