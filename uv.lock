@@ -650,6 +650,15 @@ wheels = [
 ]
 
 [[package]]
+name = "fastdtw"
+version = "0.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/43/30f2d8db076f216b15c10db663b46e22d1750b1ebacd7af6e62b83d6ab98/fastdtw-0.3.4.tar.gz", hash = "sha256:2350fa6ec36bcad186eaf81f46eff35181baf04e324f522de8aeb43d0243f64f", size = 133402, upload-time = "2019-10-07T16:02:29.982Z" }
+
+[[package]]
 name = "filelock"
 version = "3.19.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1422,11 +1431,14 @@ dependencies = [
     { name = "cloud-sql-python-connector" },
     { name = "coqui-tts" },
     { name = "datasets" },
+    { name = "fastdtw" },
     { name = "google-cloud-storage" },
     { name = "ipykernel" },
+    { name = "librosa" },
     { name = "pandas" },
     { name = "psycopg2-binary" },
     { name = "pydub" },
+    { name = "pyworld" },
     { name = "ruff" },
     { name = "seaborn" },
     { name = "sqlalchemy" },
@@ -1438,11 +1450,14 @@ requires-dist = [
     { name = "cloud-sql-python-connector", specifier = ">=1.18.5" },
     { name = "coqui-tts", specifier = ">=0.27.2" },
     { name = "datasets", specifier = ">=4.1.1" },
+    { name = "fastdtw", specifier = ">=0.3.4" },
     { name = "google-cloud-storage", specifier = ">=3.6.0" },
     { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "librosa", specifier = ">=0.10.2" },
     { name = "pandas", specifier = ">=2.3.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pydub", specifier = ">=0.25.1" },
+    { name = "pyworld", specifier = ">=0.3.4" },
     { name = "ruff", specifier = ">=0.13.2" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
@@ -2154,6 +2169,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884, upload-time = "2025-03-25T02:25:00.538Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225, upload-time = "2025-03-25T02:24:58.468Z" },
+]
+
+[[package]]
+name = "pyworld"
+version = "0.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/0f/c78d631ffbb4c1aaebf80ff2bf9e791213b381dbe404f9ce1a3eb3672931/pyworld-0.3.5.tar.gz", hash = "sha256:1b93e53cddb67a0e4faa34d6cf919ac6c662feb1c8c0ed901d71b595ab396aa3", size = 261021, upload-time = "2025-01-20T16:07:51.261Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/5c/7e8fb5417ef96cbeca125b5ee507ec5568ce4bde7b576d20db2d2d4a80fc/pyworld-0.3.5-cp313-cp313-win_amd64.whl", hash = "sha256:860c5c3528f1dbc5c68fa71a16e3bb6990244619e5b9baf62952f3a6bfc6131c", size = 222371, upload-time = "2025-01-21T15:59:08.319Z" },
 ]
 
 [[package]]

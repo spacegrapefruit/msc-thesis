@@ -1,0 +1,270 @@
+\documentclass[svgnames, 12pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[lithuanian,english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{subfig}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multirow}
+
+% --- THEME & COLORS ---
+\definecolor{mifcolor}{RGB}{0, 71, 127}
+\definecolor{dimgr}{RGB}{105, 105, 105}
+\definecolor{sky}{RGB}{0, 191, 255}
+\setbeamercolor{alerted text}{fg=red,bg=sky}
+\newcommand{\boxalert}[1]{{%
+      \usebeamercolor{alerted
+        text}\colorbox{bg}{\alert{#1}}%
+    }}
+
+\mode<presentation>{
+  \usetheme{Madrid}
+  \usecolortheme[named=mifcolor]{structure}
+  \setbeamertemplate{footline}
+  {%
+    \leavevmode%
+    \hbox{
+      \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm
+          plus1fill,rightskip=.3cm]{author in
+          head/foot}%
+        \usebeamerfont{author in head/foot}\insertshortauthor
+        \hfill
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{institute in
+          head/foot}%
+        \usebeamerfont{institute in
+          head/foot}\insertshortinstitute
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{date in
+          head/foot}%
+        \usebeamerfont{date in head/foot}\insertshortdate
+      \end{beamercolorbox}%
+
+      \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,
+          rightskip=.3cm plus1fil]{title in
+          head/foot}%
+        \usebeamerfont{title in
+          head/foot}\insertshorttitle\hfill p.
+        \insertframenumber\enspace of
+        \inserttotalframenumber\enspace
+      \end{beamercolorbox} }%
+    \vskip0pt%
+  }
+}
+
+\title[Multi-Speaker TTS Strategies]{Data Selection Strategies for Multi-Speaker TTS in Lithuanian}
+\subtitle{Progress Report 3}
+\author[A. J. Smoliakov]{Aleksandr Jan Smoliakov\inst{1}\\
+  \vspace{0.5em}
+  \small{Supervisor: Dr.~Gerda Ana Melnik-Leroy}\\
+  \small{Scientific Advisor: Dr.~Gražina Korvel}}
+\institute[VU MIF]{\inst{1} Vilnius University, Faculty of Mathematics and
+  Informatics}
+\date{2025--12--16}
+
+\begin{document}
+
+\begin{frame}
+  \includegraphics[scale=0.15]{MIF Garamond-logo.png}
+  \hfill
+  \includegraphics[scale=0.15]{Logo_spalvotas.eps}
+
+  \titlepage
+\end{frame}
+
+% \begin{frame}{Table of Contents}
+%   \tableofcontents
+% \end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Recap \& Experimental design}
+  \textbf{Liepa 2 challenge:}
+  \begin{itemize}
+    \item 1000 hours of audio, distributed across 2,621 speakers.
+    \item Most speakers have < 30 minutes of data.
+    \item Standard TTS requires 10--20 hours single-speaker data.
+    \item \textbf{Core RQ}: Under a fixed data budget, what is the optimal data selection strategy for Lithuanian multi-speaker TTS\@?
+  \end{itemize}
+
+  \vspace{1em}
+
+  \begin{block}{Three datasets, fixed trainset budget (22.5~h audio)}
+    \begin{itemize}
+      \item \textbf{Depth}: 30 speakers, 45 min/speaker
+      \item \textbf{Balance}: 60 speakers*, 22.5 min/speaker
+      \item \textbf{Breadth}: 180 speakers*, 7.5 min/speaker
+    \end{itemize}
+  \end{block}
+
+  \vspace{0.5em}
+  \footnotesize{*Speakers are nested (30 $\subset$ 60 $\subset$ 180) and gender-balanced (50/50).}
+\end{frame}
+
+\begin{frame}{Model architectures}
+  Two distinct acoustic model architectures were trained on all three subsets (6 experiments total).
+
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Tacotron~2}
+      \begin{itemize}
+        \item Autoregressive sequence-to-sequence model.
+        \item Trained for 200 epochs (on each subset) --- until convergence.
+      \end{itemize}
+
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Glow-TTS}
+      \begin{itemize}
+        \item Flow-based generative model.
+        \item Trained for 400 epochs (on each subset) --- until convergence.
+      \end{itemize}
+
+    \end{column}
+  \end{columns}
+
+  \vspace{1em}
+  \textbf{Vocoder:} Pre-trained \textbf{HiFi-GAN~v2} (frozen) used for all models.
+\end{frame}
+
+\section{Results}
+
+\begin{frame}{Objective results}
+  Metrics evaluated on held-out test set (60 sentences).
+
+  \begin{table}[]
+    \centering
+    \small
+    \begin{tabular}{lccc}
+      \toprule
+      \textbf{Model}              & \textbf{Speakers (N)} & \textbf{MCD (dB)} & \textbf{F0 RMSE (Hz)} \\
+      \midrule
+      \multirow{3}{*}{Tacotron 2} & 30                    & 9.58              & 31.28                 \\
+                                  & \textbf{60}           & \textbf{9.55}     & \textbf{30.49}        \\
+                                  & 180                   & 9.63              & 31.06                 \\
+      \midrule
+      \multirow{3}{*}{Glow-TTS}   & \textbf{30}           & \textbf{9.90}     & 37.86                 \\
+                                  & 60                    & 10.00             & 36.18                 \\
+                                  & 180                   & 9.98              & \textbf{35.69}        \\
+      \bottomrule
+    \end{tabular}
+    \caption{Tacotron~2 moderately, but consistently outperforms Glow-TTS in spectral and pitch accuracy (lower is better).}
+  \end{table}
+
+  \textbf{Observation:} Both models were surprisingly insensitive to data composition in terms of objective metrics.
+\end{frame}
+
+\begin{frame}{Subjective evaluation (MOS)}
+  \textbf{Methodology:}
+  \begin{itemize}
+    \item 60 sentences (being) rated by 21 Native Lithuanian speakers.
+    \item Latin Square Design to mitigate bias.
+    \item Scale: 1 (Bad) to 5 (Excellent).
+    \item Tacotron~2 significantly outperforms Glow-TTS in naturalness.
+  \end{itemize}
+
+  \begin{table}[]
+    \centering
+    \begin{tabular}{lcc}
+      \toprule
+      \textbf{Configuration}         & \textbf{Tacotron 2 MOS} & \textbf{Glow-TTS MOS} \\
+      \midrule
+      30 Speakers (Depth)            & 3.39                    & 2.40                  \\
+      \textbf{60 Speakers (Balance)} & \textbf{3.48}           & 2.39                  \\
+      180 Speakers (Breadth)         & 3.27                    & 2.16                  \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{MOS by speaker}
+  \begin{table}[]
+    \centering
+    \caption{Average MOS per speaker across all models.}\label{tab:speaker_mos}
+    \begin{tabular}{lcc}
+      \toprule
+      \textbf{Speaker ID} & \textbf{Tacotron~2 MOS}   & \textbf{Glow-TTS MOS} \\
+      \midrule
+      AS009               & \underline{\textbf{4.22}} & \textbf{2.68}         \\
+      IS031               & 3.28                      & 2.28                  \\
+      IS038               & 3.60                      & 2.58                  \\
+      MS052               & 2.19                      & 1.94                  \\
+      VP131               & 2.54                      & 2.00                  \\
+      VP427               & 3.18                      & 1.64                  \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Visual analysis}
+  \begin{figure}[ht]
+    \centering
+    \subfloat[Tacotron 2 (60 speakers)]{
+      \includegraphics[width=0.45\textwidth]{mel_sp_taco2.png}
+    }
+    \hfill
+    \subfloat[Glow-TTS (60 speakers)]{
+      \includegraphics[width=0.45\textwidth]{mel_sp_glow.png}
+    }
+    \caption{Mel-spectrograms generated by Tacotron~2 and Glow-TTS for the same input text.}\label{fig:spectrogram_comparison}
+  \end{figure}
+
+  \textbf{Spectrogram comparison:}
+  Tacotron 2 generates finer spectral details and more dynamic pitch contours compared to the ``flatter'' output of Glow-TTS\@.
+\end{frame}
+
+\section{Discussion \& Conclusion}
+
+\begin{frame}{Discussion \& Conclusions}
+  \begin{itemize}
+    \item Tacotron 2 consistently produced more natural speech than Glow-TTS across all
+          data strategies.
+    \item Overall, data composition had a limited effect on objective metrics for both
+          models, and only a moderate effect on subjective naturalness.
+    \item All models' synthesis quality strongly depended on individual speaker
+          characteristics.
+    \item Using 7.5 minutes per speaker (180 speakers) is viable for intelligible
+          multi-speaker TTS in low-resource settings.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Progress summary}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Completed:}
+      \begin{itemize}
+        \item[\textcolor{green}{\checkmark}] Trained 6 multi-speaker TTS models
+        \item[\textcolor{green}{\checkmark}] Conducted objective evaluations
+        \item[\textcolor{green}{\checkmark}] Preliminary subjective results and drafted findings
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Ongoing:}
+      \begin{itemize}
+        \item[\textcolor{orange}{\bullet}] Subjective evaluation (MOS study)
+        \item[\textcolor{orange}{\bullet}] Analysis of subjective results
+        \item[\textcolor{orange}{\bullet}] Writing thesis draft
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Thank You!}
+  \begin{center}
+    \vspace{2em}
+
+    \Large Thank you for your attention!
+  \end{center}
+\end{frame}
+
+\end{document}
