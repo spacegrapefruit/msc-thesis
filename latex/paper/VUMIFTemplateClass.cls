@@ -219,5 +219,5 @@
 \captionsetup*[table]{name=, labelsep=space, labelfont=bf, font=it}
 \captionsetup*[figure]{name=, labelsep=space, labelfont=bf, font=it}
 
-% \renewcommand\thefigure{\arabic{figure} figure.}
-% \renewcommand\thetable{\arabic{table} table.}
+\renewcommand\thefigure{\arabic{figure} figure.}
+\renewcommand\thetable{\arabic{table} table.}

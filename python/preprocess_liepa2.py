@@ -71,7 +71,7 @@ def process_liepa2(
     print(f"Loading parquet files from: {input_path}")
 
     # Get all train parquet files
-    train_files = sorted(input_path.glob("train-*.parquet"))
+    train_files = sorted(input_path.glob("*.parquet"))
     print(f"Found {len(train_files)} training parquet files")
 
     print("First pass: determining top speakers...")

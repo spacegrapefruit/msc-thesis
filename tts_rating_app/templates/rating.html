@@ -13,7 +13,10 @@
                 </h2>
 
                 <div class="text-center mb-4">
-                    <p>Rate the audio quality from 1 (Bad) to 5 (Excellent)</p>
+                    <p class="lead">Rate the <strong>naturalness</strong> of the audio sample</p>
+                    <p class="text-info">
+                        <i class="fas fa-headphones"></i> <strong>Please use headphones</strong> for accurate evaluation
+                    </p>
 
                     {% if progress %}
                     <div class="mt-3">
@@ -65,15 +68,24 @@
                                     </span>
                                     <div class="mt-1">
                                         <small class="rating-label text-muted">
-                                            {% if i == 1 %}Bad
-                                            {% elif i == 2 %}Poor
-                                            {% elif i == 3 %}Fair
-                                            {% elif i == 4 %}Good
-                                            {% elif i == 5 %}Excellent
+                                            {% if i == 1 %}<strong>Bad</strong>
+                                            {% elif i == 2 %}<strong>Poor</strong>
+                                            {% elif i == 3 %}<strong>Fair</strong>
+                                            {% elif i == 4 %}<strong>Good</strong>
+                                            {% elif i == 5 %}<strong>Excellent</strong>
                                             {% endif %}
                                         </small>
                                         <br>
-                                        <small class="text-muted">{{ i }}</small>
+                                        <small class="text-muted" style="font-size: 0.7rem;">
+                                            {% if i == 1 %}Very annoying /<br>Unintelligible
+                                            {% elif i == 2 %}Annoying
+                                            {% elif i == 3 %}Slightly annoying
+                                            {% elif i == 4 %}Perceptible but<br>not annoying
+                                            {% elif i == 5 %}Imperceptible from<br>real speech
+                                            {% endif %}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted"><strong>{{ i }}</strong></small>
                                     </div>
                                 </div>
                                 {% endfor %}
