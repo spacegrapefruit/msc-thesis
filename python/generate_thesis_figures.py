@@ -12,6 +12,28 @@ import seaborn as sns
 from pathlib import Path
 import librosa
 
+# Configure matplotlib for LaTeX documents
+plt.rcParams.update(
+    {
+        "text.usetex": False,  # Set to True if LaTeX is installed
+        "font.family": "serif",
+        "font.serif": ["Computer Modern Roman"],
+        "font.size": 12,
+        "axes.labelsize": 12,
+        "axes.titlesize": 14,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+        "legend.fontsize": 11,
+        "figure.titlesize": 14,
+        "figure.dpi": 100,
+        "savefig.dpi": 300,
+        "savefig.format": "pdf",
+        "savefig.bbox": "tight",
+        "axes.grid": True,
+        "grid.alpha": 0.3,
+    }
+)
+
 # Set the style for publication-ready figures
 plt.style.use("seaborn-v0_8-whitegrid")
 sns.set_palette("husl")
@@ -81,10 +103,10 @@ def create_sampling_quantization_figure():
         label="Digital signal",
     )
 
-    ax.set_xlabel("Time (seconds)", fontsize=14)
-    ax.set_ylabel("Amplitude", fontsize=14)
-    ax.set_title("Analog-to-Digital conversion process", fontsize=16, fontweight="bold")
-    ax.legend(fontsize=12)
+    ax.set_xlabel("Time (s)", fontsize=12)
+    ax.set_ylabel("Amplitude (normalized)", fontsize=12)
+    ax.set_title("Analog-to-Digital conversion process", fontsize=14, fontweight="bold")
+    ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 4)
     ax.set_ylim(-3.5, 3.5)
@@ -143,9 +165,11 @@ def create_waveform_spectrograms_figure():
     time_axis = np.linspace(0, duration, len(waveform))
     axes[0].plot(time_axis, waveform, color="darkblue", linewidth=0.8)
     axes[0].set_title("Raw audio waveform", fontsize=14, fontweight="bold")
-    axes[0].set_ylabel("Amplitude", fontsize=12)
+    axes[0].set_ylabel("Amplitude (normalized)", fontsize=12)
+    axes[0].set_xlabel("Time (s)", fontsize=12)
     axes[0].grid(True, alpha=0.3)
     axes[0].set_xlim(0, duration)
+    axes[0].set_ylim(-1, 1)
 
     # Plot spectrogram
     freqs = librosa.fft_frequencies(sr=sr, n_fft=2048)
@@ -160,7 +184,9 @@ def create_waveform_spectrograms_figure():
     )
     axes[1].set_title("Linear frequency spectrogram", fontsize=14, fontweight="bold")
     axes[1].set_ylabel("Frequency (Hz)", fontsize=12)
+    axes[1].set_xlabel("Time (s)", fontsize=12)
     axes[1].set_ylim(0, 8000)  # Focus on relevant frequency range
+    axes[1].set_xlim(0, duration)
 
     # Plot mel-spectrogram
     im2 = axes[2].imshow(
@@ -171,15 +197,16 @@ def create_waveform_spectrograms_figure():
         cmap="viridis",
     )
     axes[2].set_title("Mel-frequency spectrogram", fontsize=14, fontweight="bold")
-    axes[2].set_ylabel("Mel bins", fontsize=12)
-    axes[2].set_xlabel("Time (seconds)", fontsize=12)
+    axes[2].set_ylabel("Mel bin index", fontsize=12)
+    axes[2].set_xlabel("Time (s)", fontsize=12)
+    axes[2].set_xlim(0, duration)
 
     # Add colorbars
     cbar1 = plt.colorbar(im1, ax=axes[1], format="%d dB")
-    cbar1.set_label("Magnitude (dB)", fontsize=10)
+    cbar1.set_label("Magnitude (dB)", fontsize=11)
 
     cbar2 = plt.colorbar(im2, ax=axes[2], format="%d dB")
-    cbar2.set_label("Power (dB)", fontsize=10)
+    cbar2.set_label("Power (dB)", fontsize=11)
 
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "waveform_spectrograms.pdf", dpi=300, bbox_inches="tight")
@@ -855,8 +882,8 @@ def create_latin_square_figure():
     ax.set_yticks([0.5, 1.5, 2.5, 3.5])
     ax.set_yticklabels(["Group 4", "Group 3", "Group 2", "Group 1"], fontsize=11)
 
-    ax.set_xlabel("Presentation order", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Listener group", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Presentation order (sequence)", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Listener group (ID)", fontsize=12, fontweight="bold")
     ax.set_title(
         "Latin square design for TTS evaluation", fontsize=14, fontweight="bold", pad=20
     )
