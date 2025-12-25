@@ -1,16 +1,15 @@
 import argparse
+import io
 import json
-import multiprocessing as mp
 import pandas as pd
-from functools import partial
 from pathlib import Path
 from tqdm import tqdm
-from dataset_utils import get_duration, parse_filename, process_audio_file
+from dataset_utils import parse_filename, save_audio_file
+from pydub import AudioSegment
 from text_utils import load_accented_words, normalize_text
 
 
 def parse_and_filter_df(df):
-    df["path"] = df["audio"].apply(lambda x: x["path"])
     df[
         [
             "lossiness",
@@ -22,7 +21,7 @@ def parse_and_filter_df(df):
             "recording_id",
             "sentence_id",
         ]
-    ] = df.path.apply(parse_filename).tolist()
+    ] = df["file_name"].apply(parse_filename).tolist()
 
     return df[
         (df["speech_type"] == "read")
@@ -46,18 +45,18 @@ def sample_duration_per_speaker(df, selected_speakers, seconds_per_speaker):
     return pd.concat(sampled_dfs, ignore_index=True)
 
 
-def process_liepa2(
+def create_trainset(
     input_path: Path,
     output_path: Path,
-    n_speakers_per_gender: int = 10,
+    n_speakers_per_gender: int = 15,
 ):
     """
     Prepares the Liepa-2 dataset for multi-speaker TTS training.
 
     Args:
-        input_path (Path): Path to the Liepa-2 directory containing parquet files.
+        input_path (Path): Path to the Liepa-2 directory containing sliced audio data.
         output_path (Path): Path to save the processed dataset.
-        n_speakers_per_gender (int, optional): Number of top speakers per gender to process. Defaults to 10.
+        n_speakers_per_gender (int, optional): Number of top speakers per gender to process. Defaults to 15.
     """
     print("Starting Liepa-2 preprocessing for multiple speakers...")
 
@@ -68,30 +67,31 @@ def process_liepa2(
     output_wav_path.mkdir(exist_ok=True)
 
     # load all parquet files
-    print(f"Loading parquet files from: {input_path}")
+    print(f"Loading sliced audio data from: {input_path}")
 
-    # Get all train parquet files
-    train_files = sorted(input_path.glob("*.parquet"))
-    print(f"Found {len(train_files)} training parquet files")
-
-    print("First pass: determining top speakers...")
-    speaker_stats = []
-    for file_path in tqdm(train_files, desc="Analyzing speakers"):
-        df = pd.read_parquet(file_path, columns=["audio"])
-        df["duration"] = df.apply(get_duration, axis=1)
-        df = parse_and_filter_df(df)
-
-        stats = (
-            df.groupby(["speaker_gender", "speaker_id"])["duration"]
-            .sum()
-            .reset_index(name="total_duration")
+    def read_audio_segment(audio_data):
+        return AudioSegment.from_raw(
+            io.BytesIO(audio_data), sample_width=2, frame_rate=16000, channels=1
         )
-        speaker_stats.append(stats)
+
+    full_df = pd.read_parquet(input_path / "sliced_dataset.parquet")
+    full_df["audio"] = full_df["audio"].apply(read_audio_segment)
+    full_df["duration"] = full_df["audio"].apply(lambda x: x.duration_seconds)
+    print(f"Total samples in metadata: {len(full_df)}")
+
+    print("Determining top speakers...")
+
+    full_df = parse_and_filter_df(full_df)
+
+    speaker_stats_df = (
+        full_df.groupby(["speaker_gender", "speaker_id"])["duration"]
+        .sum()
+        .reset_index(name="total_duration")
+    )
 
     # calculate total count and duration per speaker
     speaker_counts_df = (
-        pd.concat(speaker_stats, ignore_index=True)
-        .groupby(["speaker_gender", "speaker_id"])
+        speaker_stats_df.groupby(["speaker_gender", "speaker_id"])
         .sum()
         .reset_index()
         .sort_values(by=["total_duration"], ascending=False)
@@ -103,16 +103,8 @@ def process_liepa2(
     selected_speakers = set(selected_speakers_df["speaker_id"].to_list())
     print(f"Selected speakers: {sorted(selected_speakers)}")
 
-    print("Second pass: loading data for selected speakers...")
-    dfs = []
-    for file_path in tqdm(train_files, desc="Loading filtered data"):
-        df = pd.read_parquet(file_path)
-        df = parse_and_filter_df(df)
-        df = df[df["speaker_id"].isin(selected_speakers)]
-        dfs.append(df)
-
-    full_df = pd.concat(dfs, ignore_index=True)
-    full_df["duration"] = full_df.apply(get_duration, axis=1)
+    print("Saving data for selected speakers...")
+    full_df = full_df[full_df["speaker_id"].isin(selected_speakers)]
 
     print(f"Total samples loaded: {len(full_df)}")
     print(f"Unique speakers found: {full_df['speaker_id'].nunique()}")
@@ -142,36 +134,24 @@ def process_liepa2(
             f"  {row['speaker_id']} ({row['speaker_gender']}): {row['total_utterances']} samples, {row['total_duration']:.2f} sec"
         )
 
-    n_processes = mp.cpu_count()
-    print(f"Using {n_processes} processes for audio conversion")
-
-    # process audio files
-    print("Converting audio files...")
-    process_func = partial(
-        process_audio_file,
-        output_wav_path=output_wav_path,
-        normalize_text_fn=normalize_text,
-    )
-
-    with mp.Pool(n_processes) as pool:
-        results = list(
-            tqdm(
-                pool.imap(process_func, sample_df.iterrows()),
-                total=len(sample_df),
-                desc="Processing audio",
-            )
+    results = [
+        save_audio_file(
+            row,
+            output_wav_path=output_wav_path,
+            normalize_text_fn=normalize_text,
         )
-
-    # filter successful results
-    metadata = [result for result in results if result is not None]
-    print(f"Successfully processed {len(metadata)} files out of {len(sample_df)}")
+        for _, row in tqdm(
+            sample_df.iterrows(), total=len(sample_df), desc="Saving audio files"
+        )
+    ]
+    print(f"Successfully saved {len(results)} audio files.")
 
     # save metadata
     metadata_file_path = output_path / "metadata.csv"
     print(f"Writing metadata to: {metadata_file_path}")
     with open(metadata_file_path, "w", encoding="utf-8") as f:
         # metadata now includes speaker_id
-        for line in metadata:
+        for line in results:
             f.write(f"{line}\n")
 
     # create speakers.json for training
@@ -186,7 +166,7 @@ def process_liepa2(
         json.dump(speakers_info, f, ensure_ascii=False, indent=2)
 
     print(f"\nPreprocessing complete!")
-    print(f"   - Processed {len(metadata)} audio files.")
+    print(f"   - Processed {len(results)} audio files.")
     print(f"   - Number of unique speakers: {len(speakers_info)}")
     print(f"   - WAV files saved in: {output_wav_path}")
     print(f"   - Metadata file saved as: {metadata_file_path}")
@@ -200,30 +180,31 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_path",
         type=str,
-        required=True,
-        help="Path to the root of the Liepa-2 directory containing parquet files.",
+        default="data/processed",
+        help="Path to the root directory with sliced Liepa-2 data.",
     )
     parser.add_argument(
         "--output_path",
         type=str,
-        default="data/processed/tts_dataset_liepa2",
+        default="data/datasets",
         help="Path to the directory to save the formatted dataset.",
     )
     parser.add_argument(
         "--n_speakers_per_gender",
         type=int,
-        default=10,
-        help="Number of top speakers to process based on sample count. Default is 20.",
+        default=15,
+        help="Number of top speakers per gender to process based on sample count. Default is 15.",
     )
 
     args = parser.parse_args()
 
     input_path = Path(args.input_path)
     output_path = Path(args.output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     load_accented_words(input_path / "final_accented_words.csv")
 
-    process_liepa2(
+    create_trainset(
         input_path,
         output_path,
         n_speakers_per_gender=args.n_speakers_per_gender,

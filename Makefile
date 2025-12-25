@@ -7,11 +7,12 @@ CONFIG_FILE_GLOW_TTS := configs/config_glow_tts.json
 
 # --- Paths ---
 # Raw data input paths
-RAW_LIEPA2_DIR := data/raw/liepa2
-RAW_LIEPA2_CHECK_FILE := $(RAW_LIEPA2_DIR)/train-00000-of-00130.parquet
+DATA_DIR := data
+RAW_LIEPA2_DIR := $(DATA_DIR)/processed
+RAW_LIEPA2_CHECK_FILE := $(DATA_DIR)/processed/sliced_dataset.parquet
 
 # Processed data output paths
-PROCESSED_LIEPA2_DIR := data/processed/tts_dataset_liepa2_$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))spk
+PROCESSED_LIEPA2_DIR := $(DATA_DIR)/datasets/tts_dataset_liepa2_$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))spk
 PROCESSED_LIEPA2_CHECK_FILE := $(PROCESSED_LIEPA2_DIR)/metadata.csv
 
 # Embedding output paths
@@ -33,9 +34,9 @@ install: ## Install required Python packages using uv.
 	@echo "\nDependencies installed."
 
 # Liepa-2 dataset processing
-$(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/preprocess_liepa2.py
+$(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/create_trainset.py
 	@echo "Processing Liepa-2 data ($(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers)..."
-	$(EXECUTOR) python python/preprocess_liepa2.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers_per_gender $(N_SPEAKERS_PER_GENDER)
+	$(EXECUTOR) python python/create_trainset.py --input_path $(RAW_LIEPA2_DIR) --output_path $(PROCESSED_LIEPA2_DIR) --n_speakers_per_gender $(N_SPEAKERS_PER_GENDER)
 	@echo "\nLiepa-2 data preprocessing complete. Output at: $(PROCESSED_LIEPA2_DIR)"
 
 # Data processing targets

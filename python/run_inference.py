@@ -88,7 +88,7 @@ def run_inference(
 
 
 if __name__ == "__main__":
-    input_path = Path("data/raw/liepa2")
+    input_path = Path("data/raw/")
     load_accented_words(input_path / "final_accented_words.csv")
 
     parser = argparse.ArgumentParser(

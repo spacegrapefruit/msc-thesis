@@ -4,12 +4,11 @@ from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
-from dataset_utils import get_duration, parse_filename, process_audio_file
+from dataset_utils import get_duration, parse_filename, save_audio_file
 from text_utils import load_accented_words, normalize_text
 
 
 def parse_and_filter_df(df):
-    df["path"] = df["audio"].apply(lambda x: x["path"])
     df[
         [
             "lossiness",
@@ -21,7 +20,7 @@ def parse_and_filter_df(df):
             "recording_id",
             "sentence_id",
         ]
-    ] = df.path.apply(parse_filename).tolist()
+    ] = df["file_name"].apply(parse_filename).tolist()
 
     return df[
         (df["speech_type"] == "read")
@@ -29,7 +28,7 @@ def parse_and_filter_df(df):
     ]
 
 
-def prepare_test_set(
+def create_testset(
     input_path: Path,
     datasets_path: Path,
     output_path: Path,
@@ -144,8 +143,8 @@ def prepare_test_set(
     for index, row in tqdm(
         test_set_df.iterrows(), total=len(test_set_df), desc="Processing audio"
     ):
-        result = process_audio_file(
-            (index, row), output_wav_path, normalize_text_fn=normalize_text
+        result = save_audio_file(
+            row, output_wav_path, normalize_text_fn=normalize_text
         )
         if result:
             metadata.append(result)
@@ -196,7 +195,7 @@ if __name__ == "__main__":
 
     load_accented_words(input_path / "final_accented_words.csv")
 
-    prepare_test_set(
+    create_testset(
         input_path=input_path,
         datasets_path=datasets_path,
         output_path=output_path,
