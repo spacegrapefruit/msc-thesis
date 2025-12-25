@@ -128,7 +128,7 @@
         "use_spectral_norm_disriminator": false,
         "use_speaker_embedding": true,
         "num_speakers": 0,
-        "speakers_file": "data/processed/tts_dataset_liepa2/speakers.json",
+        "speakers_file": "data/datasets/tts_dataset_liepa2/speakers.json",
         "d_vector_file": null,
         "speaker_embedding_channels": 256,
         "use_d_vector_file": false,
@@ -192,7 +192,7 @@
     [
         {
             "dataset_name": "liepa2",
-            "path": "data/processed/tts_dataset_liepa2/",
+            "path": "data/datasets/tts_dataset_liepa2/",
             "meta_file_train": "metadata.csv",
             "meta_file_val": null,
             "formatter": "ljspeech_liepa2",
@@ -240,7 +240,7 @@
     "r": 1,
     "num_speakers": 20,
     "use_speaker_embedding": true,
-    "speakers_file": "data/processed/tts_dataset_liepa2/speakers.json",
+    "speakers_file": "data/datasets/tts_dataset_liepa2/speakers.json",
     "speaker_embedding_channels": 256,
     "language_ids_file": null,
     "use_language_embedding": false,

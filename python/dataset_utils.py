@@ -28,7 +28,8 @@ def get_duration(row):
 
 
 def parse_filename(filename):
-    filename = filename[:-4]
+    if filename.endswith(".wav"):
+        filename = filename[:-4]
     parts = filename.split("_")
     parts = [parts[0], parts[1][0], parts[1][1], parts[2][0], parts[2][1], *parts[3:]]
     parts_standardized = [
@@ -37,42 +38,47 @@ def parse_filename(filename):
     return parts_standardized
 
 
-def process_audio_file(row_data, output_wav_path, normalize_text_fn):
+def read_audio_segment(audio_data: bytes) -> AudioSegment:
     """
-    Worker function to process a single audio file from Liepa-2 dataset.
+    Reads raw audio data and returns a pydub AudioSegment.
+    Args:
+        audio_data (bytes): Raw audio data in bytes.
+
+    Returns:
+        AudioSegment: Pydub AudioSegment object.
+    """
+    return AudioSegment.from_raw(
+        io.BytesIO(audio_data), sample_width=2, frame_rate=16000, channels=1
+    )
+
+
+def save_audio_file(row, output_wav_path, normalize_text_fn):
+    """
+    Worker function to save a single audio file from Liepa-2 dataset.
 
     Args:
-        row_data: Tuple of (index, row) from pandas DataFrame
+        row: A pandas Series representing a row from the DataFrame
         output_wav_path: Path to the output WAV directory
         normalize_text_fn: Function to normalize text
 
     Returns:
         str or None: Metadata line if successful, None if failed
     """
-    index, row = row_data
-    try:
-        # extract audio data and speaker_id from the row
-        audio_data = row["audio"]
-        audio_bytes = audio_data["bytes"]
-        speaker_id = row["speaker_id"]
+    # extract audio data and speaker_id from the row
+    audio = row["audio"]
+    speaker_id = row["speaker_id"]
 
-        # create a unique filename
-        wav_filename = f"{row['path']}.wav"
-        wav_path = output_wav_path / wav_filename
+    # create a unique filename
+    wav_path = output_wav_path / row["file_name"]
 
-        # convert audio bytes to WAV
-        audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
-        # resample to 22050 Hz
-        audio = audio.set_frame_rate(22050).set_channels(1)
-        audio.export(wav_path, format="wav")
+    # resample to 22050 Hz
+    audio = audio.set_frame_rate(22050).set_channels(1)
+    audio.export(wav_path, format="wav")
 
-        # get the transcript
-        transcript = row["sentence"].replace("\n", " ").strip()
-        normalized_transcript = normalize_text_fn(transcript)
+    # get the transcript
+    transcript = row["sentence"].replace("\n", " ").strip()
+    normalized_transcript = normalize_text_fn(transcript)
 
-        # return metadata line in a multi-speaker format
-        # format: filename|original_transcript|normalized_transcript|speaker_id
-        return f"{wav_filename.replace('.wav', '')}|{transcript}|{normalized_transcript}|{speaker_id}"
-    except Exception as e:
-        print(f"Could not process audio at index {index}. Error: {e}")
-        return None
+    # return metadata line in a multi-speaker format
+    # format: filename|original_transcript|normalized_transcript|speaker_id
+    return f"{row['file_name']}|{transcript}|{normalized_transcript}|{speaker_id}"

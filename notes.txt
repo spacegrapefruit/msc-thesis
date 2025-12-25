@@ -1,3 +1,4 @@
+```shell
 # AS009,AS024,AS027,AS034,AS220,AS221,AS224,IS016,IS017,IS018,IS031,IS038,MS001,MS004,MS007,MS051,MS052,MS054,MS140,VP013,VP018,VP019,VP022,VP038,VP131,VP154,VP427,VP444,VP450,VP466
 uv run python python/run_inference.py \
     --speakers "AS009,AS024,MS051" \
@@ -5,9 +6,70 @@ uv run python python/run_inference.py \
     --vocoder_path ~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/model.pth \
     --vocoder_config_path ~/.local/share/tts/vocoder_models--en--vctk--hifigan_v2/config.json \
     --use_gpu
+```
 
 
+```shell
 # for all subfolders in results/test_samples, copy to gcs bucket
 for folder in ~/msc-thesis/results/test_samples/*/; do
     gcloud storage cp -r "$folder"/* gs://mif-tts-audio-bucket/inference_output/
 done
+```
+
+
+
+
+* [x] slice liepa2 data
+    ```shell
+    python python/slice_liepa2.py \
+        --input_dir data/raw \
+        --output_dir data/processed
+    ```
+
+* [x] prepare trainsets (30, 60, 180 speakers)
+    ```shell
+    make data N_SPEAKERS_PER_GENDER=15
+    make data N_SPEAKERS_PER_GENDER=30
+    make data N_SPEAKERS_PER_GENDER=90
+    ```
+
+* [ ] calculate speaker embeddings
+    ```shell
+    ```
+
+* [ ] train model
+    ```shell
+    ```
+
+* [x] prepare testset
+    ```shell
+    python python/create_testset.py \
+        --input_path data/processed \
+        --datasets_path data/datasets \
+        --n_phrases_per_speaker 10
+    ```
+
+* [ ] compute objective metrics
+    ```shell
+    ```
+
+* [ ] prepare test samples
+    ```shell
+    ```
+
+* [ ] push to gcs bucket
+    ```shell
+    ```
+
+* [ ] compute subjective metrics
+    ```shell
+    ```
+
+
+
+<!-- 
+
+tacotron2, glow-tts - breadth vs depth research?
+
+calculate error bars in SQL
+update app for latin square -->

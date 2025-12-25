@@ -1,11 +1,10 @@
 import argparse
-import io
 import json
 import pandas as pd
+import yaml
 from pathlib import Path
 from tqdm import tqdm
-from dataset_utils import parse_filename, save_audio_file
-from pydub import AudioSegment
+from dataset_utils import parse_filename, read_audio_segment, save_audio_file
 from text_utils import load_accented_words, normalize_text
 
 
@@ -48,6 +47,7 @@ def sample_duration_per_speaker(df, selected_speakers, seconds_per_speaker):
 def create_trainset(
     input_path: Path,
     output_path: Path,
+    whitelisted_speakers: list,
     n_speakers_per_gender: int = 15,
 ):
     """
@@ -56,9 +56,10 @@ def create_trainset(
     Args:
         input_path (Path): Path to the Liepa-2 directory containing sliced audio data.
         output_path (Path): Path to save the processed dataset.
+        whitelisted_speakers (list): List of speaker IDs to include in the dataset.
         n_speakers_per_gender (int, optional): Number of top speakers per gender to process. Defaults to 15.
     """
-    print("Starting Liepa-2 preprocessing for multiple speakers...")
+    print("Starting Liepa-2 train set preparation...")
 
     output_wav_path = output_path / "wavs"
 
@@ -68,11 +69,6 @@ def create_trainset(
 
     # load all parquet files
     print(f"Loading sliced audio data from: {input_path}")
-
-    def read_audio_segment(audio_data):
-        return AudioSegment.from_raw(
-            io.BytesIO(audio_data), sample_width=2, frame_rate=16000, channels=1
-        )
 
     full_df = pd.read_parquet(input_path / "sliced_dataset.parquet")
     full_df["audio"] = full_df["audio"].apply(read_audio_segment)
@@ -101,6 +97,7 @@ def create_trainset(
         n_speakers_per_gender
     )
     selected_speakers = set(selected_speakers_df["speaker_id"].to_list())
+    selected_speakers = whitelisted_speakers[: n_speakers_per_gender * 2]
     print(f"Selected speakers: {sorted(selected_speakers)}")
 
     print("Saving data for selected speakers...")
@@ -150,7 +147,6 @@ def create_trainset(
     metadata_file_path = output_path / "metadata.csv"
     print(f"Writing metadata to: {metadata_file_path}")
     with open(metadata_file_path, "w", encoding="utf-8") as f:
-        # metadata now includes speaker_id
         for line in results:
             f.write(f"{line}\n")
 
@@ -204,8 +200,14 @@ if __name__ == "__main__":
 
     load_accented_words(input_path / "final_accented_words.csv")
 
+    # load precomputed list of top speakers
+    speakers_path = input_path.parent / "raw" / "included_speakers.yml"
+    with open(speakers_path) as file:
+        whitelisted_speakers = yaml.safe_load(file)
+
     create_trainset(
         input_path,
         output_path,
+        whitelisted_speakers=whitelisted_speakers,
         n_speakers_per_gender=args.n_speakers_per_gender,
     )

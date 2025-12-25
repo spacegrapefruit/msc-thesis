@@ -161,7 +161,7 @@
     [
         {
             "dataset_name": "liepa2",
-            "path": "data/processed/tts_dataset_liepa2/",
+            "path": "data/datasets/tts_dataset_liepa2/",
             "meta_file_train": "metadata.csv",
             "meta_file_val": null,
             "formatter": "ljspeech_liepa2",

@@ -68,6 +68,7 @@ def main(args: argparse.Namespace):
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # load precomputed list of top speakers
     speakers_path = input_dir / "included_speakers.yml"
     with open(speakers_path) as file:
         whitelisted_speakers = yaml.safe_load(file)

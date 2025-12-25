@@ -135,7 +135,7 @@
     "stopnet": true, // Train stopnet predicting the end of synthesis.
     "separate_stopnet": true, // Train stopnet seperately if 'stopnet==true'. It prevents stopnet loss to influence the rest of the model. It causes a better model, but it trains SLOWER.
     "max_decoder_steps": 2000,
-    "speakers_file": "data/processed/tts_dataset_liepa2/speakers.json",
+    "speakers_file": "data/datasets/tts_dataset_liepa2/speakers.json",
     // TENSORBOARD and LOGGING
     "print_step": 25, // Number of steps to log training on console.
     "plot_step": 100, // Number of steps to plot TB training figures.
@@ -166,14 +166,14 @@
     "gst": null,
     "gst_style_input": null,
     "use_d_vector_file": true,
-    "d_vector_file": "data/processed/tts_dataset_liepa2_spk/speakers.pth",
+    "d_vector_file": "data/datasets/tts_dataset_liepa2_spk/speakers.pth",
     "d_vector_dim": 512,
     // DATASETS
     "datasets": // List of datasets. They all merged and they get different speaker_ids.
     [
         {
             "dataset_name": "liepa2",
-            "path": "data/processed/tts_dataset_liepa2/",
+            "path": "data/datasets/tts_dataset_liepa2/",
             "meta_file_train": "metadata.csv",
             "meta_file_val": null,
             "formatter": "ljspeech_liepa2",

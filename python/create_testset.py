@@ -1,10 +1,9 @@
 import argparse
-import random
 from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
-from dataset_utils import get_duration, parse_filename, save_audio_file
+from dataset_utils import parse_filename, read_audio_segment, save_audio_file
 from text_utils import load_accented_words, normalize_text
 
 
@@ -56,7 +55,7 @@ def create_testset(
         metadata_file = dataset_dir / "metadata.csv"
         trainset_df = pd.read_csv(metadata_file, sep="|", header=None)
         trainset_df.columns = [
-            "filename",
+            "file_name",
             "original_transcript",
             "normalized_transcript",
             "speaker_id",
@@ -71,34 +70,28 @@ def create_testset(
     common_speakers = sorted(common_speakers)
     print(f"Common speakers across datasets: {common_speakers}")
 
-    # Fixed seed for reproducibility
-    random.seed(201746)
-    selected_speakers = random.sample(common_speakers, k=6)
+    # fixed for reproducibility
+    selected_speakers = ["AS009", "IS031", "IS038", "MS052", "VP131", "VP427"]
     print(f"Selected speakers for test set: {sorted(selected_speakers)}")
 
     all_trainsets_df = pd.concat(all_trainsets, ignore_index=True)
     all_trainsets_df = all_trainsets_df.drop_duplicates(
-        subset=["filename"]
+        subset=["file_name"]
     ).reset_index(drop=True)
-    print(f"Total unique samples in combined trainsets: {len(all_trainsets_df)}")
+    print(f"Total unique samples in combined datasets: {len(all_trainsets_df)}")
 
-    # load all parquet files
-    print(f"Loading parquet files from: {input_path}")
+    # load all sliced audio data
+    print(f"Loading full sliced audio data from: {input_path}")
 
-    # Get all train parquet files
-    train_files = sorted(input_path.glob("train-*.parquet"))
-    print(f"Found {len(train_files)} training parquet files")
+    full_df = pd.read_parquet(input_path / "sliced_dataset.parquet")
+    full_df["audio"] = full_df["audio"].apply(read_audio_segment)
+    full_df["duration"] = full_df["audio"].apply(lambda x: x.duration_seconds)
+    print(f"Total samples in metadata: {len(full_df)}")
 
-    all_dfs = []
-    for file_path in tqdm(train_files, desc="Loading and filtering data"):
-        df = pd.read_parquet(file_path, columns=["audio", "sentence"])
-        df["duration"] = df.apply(get_duration, axis=1)
-        df = parse_and_filter_df(df)
-        df = df[df["speaker_id"].isin(selected_speakers)]
-        all_dfs.append(df)
+    full_df = parse_and_filter_df(full_df)
+    full_df = full_df[full_df["speaker_id"].isin(selected_speakers)]
 
-    full_df = pd.concat(all_dfs, ignore_index=True)
-    # filter out samples shorter than 3 seconds and longer than 15 seconds
+    # select samples shorter than 3 seconds and longer than 15 seconds
     full_df = full_df[(full_df["duration"] >= 3.0) & (full_df["duration"] <= 15.0)]
     # sentence starts with uppercase letter
     full_df["is_upper"] = full_df["sentence"].apply(lambda x: x[0].isupper())
@@ -113,11 +106,11 @@ def create_testset(
     for speaker_id in sorted(selected_speakers):
         speaker_df = full_df[full_df["speaker_id"] == speaker_id]
         speaker_trainset_filenames = set(
-            all_trainsets_df[all_trainsets_df["speaker_id"] == speaker_id]["filename"]
+            all_trainsets_df[all_trainsets_df["speaker_id"] == speaker_id]["file_name"]
         )
 
         speaker_unseen_df = speaker_df[
-            ~speaker_df["path"].isin(speaker_trainset_filenames)
+            ~speaker_df["file_name"].isin(speaker_trainset_filenames)
         ]
 
         samples_df = speaker_unseen_df.head(n_phrases_per_speaker)
@@ -138,27 +131,28 @@ def create_testset(
             f"  {row['speaker_id']} ({row['speaker_gender']}): {row['count']} samples"
         )
 
-    print("Converting audio files...")
-    metadata = []
-    for index, row in tqdm(
-        test_set_df.iterrows(), total=len(test_set_df), desc="Processing audio"
-    ):
-        result = save_audio_file(
-            row, output_wav_path, normalize_text_fn=normalize_text
+    print("Saving audio files...")
+    results = [
+        save_audio_file(
+            row,
+            output_wav_path=output_wav_path,
+            normalize_text_fn=normalize_text,
         )
-        if result:
-            metadata.append(result)
+        for _, row in tqdm(
+            test_set_df.iterrows(), total=len(test_set_df), desc="Saving audio files"
+        )
+    ]
+    print(f"Successfully saved {len(results)} audio files.")
 
-    print(f"Successfully processed {len(metadata)} files out of {len(test_set_df)}")
-
+    # save metadata
     metadata_file_path = output_path / "metadata.csv"
     print(f"Writing metadata to: {metadata_file_path}")
     with open(metadata_file_path, "w", encoding="utf-8") as f:
-        for line in metadata:
+        for line in results:
             f.write(f"{line}\n")
 
     print(f"\nPreprocessing complete!")
-    print(f"   - Processed {len(metadata)} audio files.")
+    print(f"   - Processed {len(results)} audio files.")
     print(f"   - Number of unique speakers: {len(selected_speakers)}")
     print(f"   - WAV files saved in: {output_wav_path}")
     print(f"   - Metadata file saved as: {metadata_file_path}")
@@ -171,13 +165,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_path",
         type=str,
-        required=True,
-        help="Path to the root of the Liepa-2 directory containing parquet files.",
+        default="data/processed",
+        help="Path to the root of the Liepa-2 directory with sliced data.",
     )
     parser.add_argument(
         "--datasets_path",
         type=str,
-        required=True,
+        default="data/datasets",
         help="Path to the root of the prepared datasets directory.",
     )
     parser.add_argument(
