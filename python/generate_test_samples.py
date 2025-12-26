@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--test_set_path",
         type=str,
-        default="data/processed/liepa2_test_set",
+        default="data/datasets/liepa2_test_set",
         help="Path to the test set directory",
     )
     parser.add_argument(
@@ -215,6 +215,12 @@ if __name__ == "__main__":
         type=str,
         nargs="+",
         help="List of model directories to use for generation",
+    )
+    parser.add_argument(
+        "--input_dir",
+        type=str,
+        default="data/processed/",
+        help="Input directory for accented words",
     )
     parser.add_argument(
         "--output_dir",
@@ -253,7 +259,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    input_path = Path("data/raw/liepa2")
+    input_path = Path(args.input_dir)
     load_accented_words(input_path / "final_accented_words.csv")
 
     test_set_path = Path(args.test_set_path)

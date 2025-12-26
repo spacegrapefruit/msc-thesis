@@ -9,15 +9,6 @@ uv run python python/run_inference.py \
 ```
 
 
-```shell
-# for all subfolders in results/test_samples, copy to gcs bucket
-for folder in ~/msc-thesis/results/test_samples/*/; do
-    gcloud storage cp -r "$folder"/* gs://mif-tts-audio-bucket/inference_output/
-done
-```
-
-
-
 
 * [x] slice liepa2 data
     ```shell
@@ -33,12 +24,18 @@ done
     make data N_SPEAKERS_PER_GENDER=90
     ```
 
-* [ ] calculate speaker embeddings
+* [x] calculate speaker embeddings
     ```shell
+    make compute-embeddings N_SPEAKERS_PER_GENDER=15
+    make compute-embeddings N_SPEAKERS_PER_GENDER=30
+    make compute-embeddings N_SPEAKERS_PER_GENDER=90
     ```
 
-* [ ] train model
+* [x] train model
     ```shell
+    make train N_SPEAKERS_PER_GENDER=15
+    make train N_SPEAKERS_PER_GENDER=30
+    make train N_SPEAKERS_PER_GENDER=90
     ```
 
 * [x] prepare testset
@@ -49,16 +46,22 @@ done
         --n_phrases_per_speaker 10
     ```
 
-* [ ] compute objective metrics
+* [x] compute objective metrics
     ```shell
+    python python/evaluate_objective_metrics.py
     ```
 
-* [ ] prepare test samples
+* [x] prepare test samples
     ```shell
+    python python/generate_test_samples.py
     ```
 
-* [ ] push to gcs bucket
+* [x] push to gcs bucket
     ```shell
+    # for all subfolders in results/test_samples, copy to gcs bucket
+    for folder in results/test_samples/*/; do
+        gcloud storage cp -r "$folder"/* gs://mif-tts-audio-bucket/inference_output/
+    done
     ```
 
 * [ ] compute subjective metrics

@@ -7,6 +7,7 @@ This script creates publication-ready figures for LaTeX inclusion.
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.patches import FancyArrowPatch
 import numpy as np
 import seaborn as sns
 from pathlib import Path
@@ -16,15 +17,15 @@ import librosa
 plt.rcParams.update(
     {
         "text.usetex": False,  # Set to True if LaTeX is installed
-        "font.family": "serif",
-        "font.serif": ["Computer Modern Roman"],
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Calibri"],
         "font.size": 12,
         "axes.labelsize": 12,
         "axes.titlesize": 14,
         "xtick.labelsize": 11,
         "ytick.labelsize": 11,
         "legend.fontsize": 11,
-        "figure.titlesize": 14,
+        # "figure.titlesize": 14,
         "figure.dpi": 100,
         "savefig.dpi": 300,
         "savefig.format": "pdf",
@@ -48,7 +49,7 @@ def create_sampling_quantization_figure():
     Create a visual representation of Analog-to-Digital conversion showing
     sampling rate and quantization levels.
     """
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
     # Generate continuous analog signal
     t = np.linspace(0, 4, 1000)
@@ -105,8 +106,7 @@ def create_sampling_quantization_figure():
 
     ax.set_xlabel("Time (s)", fontsize=12)
     ax.set_ylabel("Amplitude (normalized)", fontsize=12)
-    ax.set_title("Analog-to-Digital conversion process", fontsize=14, fontweight="bold")
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=11, frameon=True)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(0, 4)
     ax.set_ylim(-3.5, 3.5)
@@ -145,7 +145,7 @@ def create_waveform_spectrograms_figure():
     # Load an example audio file
     waveform, sr = librosa.load(
         os.path.expanduser(
-            "~/msc-thesis/data/processed/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.mp3.wav"
+            "~/msc-thesis/data/datasets/tts_dataset_liepa2_30spk/wavs/L_RA_F4_IS031_02_000189.wav"
         ),
         sr=22050,
     )
@@ -159,12 +159,12 @@ def create_waveform_spectrograms_figure():
     mel_spec = librosa.feature.melspectrogram(y=waveform, sr=sr, n_mels=80)
 
     # Create the figure with three subplots
-    fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+    fig, axes = plt.subplots(3, 1, figsize=(10, 8))
 
     # Plot waveform
     time_axis = np.linspace(0, duration, len(waveform))
     axes[0].plot(time_axis, waveform, color="darkblue", linewidth=0.8)
-    axes[0].set_title("Raw audio waveform", fontsize=14, fontweight="bold")
+    axes[0].set_title("Raw audio waveform", fontsize=14)
     axes[0].set_ylabel("Amplitude (normalized)", fontsize=12)
     axes[0].set_xlabel("Time (s)", fontsize=12)
     axes[0].grid(True, alpha=0.3)
@@ -182,7 +182,7 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, sr / 2],
         cmap="viridis",
     )
-    axes[1].set_title("Linear frequency spectrogram", fontsize=14, fontweight="bold")
+    axes[1].set_title("Linear frequency spectrogram", fontsize=14)
     axes[1].set_ylabel("Frequency (Hz)", fontsize=12)
     axes[1].set_xlabel("Time (s)", fontsize=12)
     axes[1].set_ylim(0, 8000)  # Focus on relevant frequency range
@@ -196,7 +196,7 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, 80],
         cmap="viridis",
     )
-    axes[2].set_title("Mel-frequency spectrogram", fontsize=14, fontweight="bold")
+    axes[2].set_title("Mel-spectrogram", fontsize=14)
     axes[2].set_ylabel("Mel bin index", fontsize=12)
     axes[2].set_xlabel("Time (s)", fontsize=12)
     axes[2].set_xlim(0, duration)
@@ -290,25 +290,29 @@ def create_speaker_encoder_diagram():
             fontweight="bold",
         )
 
-    # Draw arrows
+    # Draw arrows using FancyArrowPatch for precise alignment
     arrows = [
-        ((2.25, 4), (2.75, 4)),  # input -> preprocessing
-        ((4.75, 4), (5.4, 4.6)),  # preprocessing -> lstm1
-        ((4.75, 4), (5.4, 4.2)),  # preprocessing -> lstm2
-        ((4.75, 4), (5.4, 3.4)),  # preprocessing -> lstm3
+        ((1.75, 4), (2.75, 4)),  # input -> preprocessing
+        ((4.25, 4), (5.4, 5)),  # preprocessing -> lstm1
+        ((4.25, 4), (5.4, 3.8)),  # preprocessing -> lstm2
+        ((4.25, 4), (5.4, 2.6)),  # preprocessing -> lstm3
         ((7.2, 5), (7.9, 4.4)),  # lstm1 -> pooling
         ((7.2, 3.8), (7.9, 4)),  # lstm2 -> pooling
         ((7.2, 2.6), (7.9, 3.6)),  # lstm3 -> pooling
-        ((9.7, 4), (10.25, 4)),  # pooling -> embedding
+        ((9.1, 4), (10.25, 4)),  # pooling -> embedding
     ]
 
     for start, end in arrows:
-        ax.annotate(
-            "",
-            xy=end,
-            xytext=start,
-            arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
+        arrow = FancyArrowPatch(
+            start,
+            end,
+            arrowstyle="->",
+            mutation_scale=20,
+            linewidth=2,
+            color="darkblue",
+            zorder=3,
         )
+        ax.add_patch(arrow)
 
     # Add dots to indicate more LSTM layers
     ax.text(6, 2, "⋮", ha="center", va="center", fontsize=20, fontweight="bold")
@@ -337,7 +341,7 @@ def create_speaker_encoder_diagram():
     ax.set_ylim(2, 6)
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_title("Speaker Encoder Architecture", fontsize=16, fontweight="bold", pad=20)
+    # ax.set_title("Speaker Encoder Architecture", fontsize=16, fontweight="bold", pad=20)
 
     plt.tight_layout()
     plt.savefig(
@@ -464,48 +468,52 @@ def create_tacotron2_architecture():
             fontweight="bold",
         )
 
-    # Draw connections
+    # Draw connections using FancyArrowPatch
     arrows = [
         # Encoder path
-        ((2, 1.8), (2, 2.1)),  # text -> embedding
+        ((2, 1.4), (2, 2.1)),  # text -> embedding
         ((2, 2.9), (2, 3.6)),  # embedding -> conv
         ((2, 4.4), (2, 5.1)),  # conv -> lstm
         ((3, 5.5), (5, 4.6)),  # encoder lstm -> attention
         # Decoder path
-        ((10, 1.8), (10, 2.1)),  # prev frame -> prenet
+        ((10, 1.4), (10, 2.1)),  # prev frame -> prenet
         ((10, 2.9), (10, 3.6)),  # prenet -> decoder lstm
         ((10, 4.4), (10, 5.1)),  # decoder lstm -> linear proj
         ((10, 5.9), (10, 6.6)),  # linear proj -> mel output
         # Attention connections
-        ((6, 3.4), (9.25, 3.4)),  # attention -> decoder lstm
-        ((7, 4), (9.2, 5.8)),  # attention -> linear proj
-        # Recurrent connection
-        ((9.25, 7), (9.25, 1.8)),  # mel output -> prev frame (curved)
+        ((7, 4), (9.25, 4)),  # attention -> decoder lstm
+        ((7, 4.6), (9.25, 5.5)),  # attention -> linear proj
         # Post-net
         ((10.75, 7), (12.25, 6.25)),  # mel output -> postnet
         ((13, 6.25), (13, 7.1)),  # postnet -> final mel
         # Stop token
-        ((9.25, 5.5), (8.6, 6.7)),  # linear proj -> stop token
+        ((9.25, 5.9), (8.6, 6.7)),  # linear proj -> stop token
     ]
 
     for start, end in arrows:
-        if start[0] == 9.25 and start[1] == 7:  # Recurrent connection
-            # Create curved arrow for recurrent connection
-            ax.annotate(
-                "",
-                xy=end,
-                xytext=start,
-                arrowprops=dict(
-                    arrowstyle="->", lw=2, color="red", connectionstyle="arc3,rad=-0.3"
-                ),
-            )
-        else:
-            ax.annotate(
-                "",
-                xy=end,
-                xytext=start,
-                arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
-            )
+        arrow = FancyArrowPatch(
+            start,
+            end,
+            arrowstyle="->",
+            mutation_scale=20,
+            linewidth=2,
+            color="darkblue",
+            zorder=3,
+        )
+        ax.add_patch(arrow)
+
+    # Recurrent connection (curved)
+    recurrent_arrow = FancyArrowPatch(
+        (9.25, 7),
+        (9.25, 1.4),
+        arrowstyle="->",
+        mutation_scale=20,
+        linewidth=2,
+        color="red",
+        connectionstyle="arc3,rad=-0.3",
+        zorder=3,
+    )
+    ax.add_patch(recurrent_arrow)
 
     # Add labels for different sections
     ax.text(
@@ -552,9 +560,9 @@ def create_tacotron2_architecture():
     ax.set_ylim(0, 8.5)
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_title(
-        "Tacotron 2 Architecture with DDC", fontsize=16, fontweight="bold", pad=20
-    )
+    # ax.set_title(
+    #     "Tacotron 2 Architecture with DCA", fontsize=16, fontweight="bold", pad=20
+    # )
 
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "tacotron2_arch.pdf", dpi=300, bbox_inches="tight")
@@ -672,61 +680,75 @@ def create_glow_tts_architecture():
     # Add dots to indicate more flow blocks
     ax.text(11.5, 2.8, "⋮", ha="center", va="center", fontsize=24, fontweight="bold")
 
-    # Draw connections
+    # Draw connections using FancyArrowPatch
     arrows = [
         # Main forward path
-        ((2, 1.8), (2, 2.1)),  # text -> embedding
-        ((2, 2.9), (2, 3.8)),  # embedding -> transformer enc
+        ((2, 1.4), (2, 2.1)),  # text -> embedding
+        ((2, 2.9), (2, 3.75)),  # embedding -> transformer enc
         ((3, 4.5), (4.6, 4.5)),  # transformer enc -> duration pred
         # Duration path
         ((6.4, 4.5), (7.75, 4.5)),  # duration pred -> length reg
         # To decoder
-        ((9.25, 4.5), (10.75, 5.1)),  # length reg -> flow block 1
+        ((9.25, 4.5), (10.75, 5.5)),  # length reg -> flow block 1
         ((10.75, 4.5), (10.75, 4.5)),  # between flow blocks
         ((12.25, 5.5), (13.5, 5.5)),  # flow blocks -> mel output
-        # Prior connection
-        ((13.6, 3.5), (12.25, 4.1)),  # prior -> flow blocks (reverse direction)
-        # Training connections (dotted)
-        ((5.5, 2.1), (5.5, 3.3)),  # duration targets -> duration pred
     ]
 
-    # Flow connections between blocks
+    for start, end in arrows:
+        arrow = FancyArrowPatch(
+            start,
+            end,
+            arrowstyle="->",
+            mutation_scale=20,
+            linewidth=2,
+            color="darkblue",
+            zorder=3,
+        )
+        ax.add_patch(arrow)
+
+    # Prior connection (dashed purple)
+    prior_arrow = FancyArrowPatch(
+        (13.6, 3.5),
+        (12.25, 3.9),
+        arrowstyle="->",
+        mutation_scale=20,
+        linewidth=2,
+        color="purple",
+        linestyle="--",
+        zorder=3,
+    )
+    ax.add_patch(prior_arrow)
+
+    # Training connection (dashed gray)
+    training_arrow = FancyArrowPatch(
+        (5.5, 1.8),
+        (5.5, 3.9),
+        arrowstyle="->",
+        mutation_scale=20,
+        linewidth=2,
+        color="gray",
+        linestyle="--",
+        zorder=3,
+    )
+    ax.add_patch(training_arrow)
+
+    # Flow connections between blocks (bidirectional)
     flow_arrows = [
         ((11.5, 5.1), (11.5, 4.9)),  # flow1 -> flow2
         ((11.5, 4.1), (11.5, 3.9)),  # flow2 -> flow3
     ]
 
-    for start, end in arrows:
-        if start == ((5.5, 2.1)) and end == ((5.5, 3.3)):  # Training connection
-            ax.annotate(
-                "",
-                xy=end,
-                xytext=start,
-                arrowprops=dict(arrowstyle="->", lw=2, color="gray", linestyle="--"),
-            )
-        elif start == ((13.6, 3.5)):  # Prior connection (sampling)
-            ax.annotate(
-                "",
-                xy=end,
-                xytext=start,
-                arrowprops=dict(arrowstyle="->", lw=2, color="purple", linestyle="--"),
-            )
-        else:
-            ax.annotate(
-                "",
-                xy=end,
-                xytext=start,
-                arrowprops=dict(arrowstyle="->", lw=2, color="darkblue"),
-            )
-
-    # Flow block connections
     for start, end in flow_arrows:
-        ax.annotate(
-            "",
-            xy=end,
-            xytext=start,
-            arrowprops=dict(arrowstyle="<->", lw=2, color="teal"),
+        arrow = FancyArrowPatch(
+            start,
+            end,
+            arrowstyle="<->",
+            mutation_scale=20,
+            linewidth=2,
+            color="teal",
+            zorder=3,
         )
+        ax.add_patch(arrow)
 
     # Add key features annotations
     ax.text(
@@ -807,7 +829,7 @@ def create_glow_tts_architecture():
     ax.set_ylim(0, 8)
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_title("Glow-TTS Architecture", fontsize=16, fontweight="bold", pad=20)
+    # ax.set_title("Glow-TTS Architecture", fontsize=16, fontweight="bold", pad=20)
 
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "glow_tts_arch.pdf", dpi=300, bbox_inches="tight")
@@ -826,9 +848,9 @@ def create_latin_square_figure():
     # Rows = listener groups, columns = presentation order
     latin_square = [
         ["A-S1", "B-S2", "C-S3", "D-S4"],
-        ["B-S3", "C-S4", "D-S1", "A-S2"],
-        ["C-S2", "D-S1", "A-S4", "B-S3"],
-        ["D-S4", "A-S3", "B-S1", "C-S2"],
+        ["B-S3", "A-S4", "D-S1", "C-S2"],
+        ["C-S4", "D-S3", "A-S2", "B-S1"],
+        ["D-S2", "C-S1", "B-S4", "A-S3"],
     ]
 
     # Color mapping for systems
@@ -865,7 +887,7 @@ def create_latin_square_figure():
             ax.text(
                 j + 0.5,
                 3 - i + 0.3,
-                sentence.replace("Sentence ", "S"),
+                sentence.replace("S", "Sentence "),
                 ha="center",
                 va="center",
                 fontsize=9,
@@ -884,9 +906,9 @@ def create_latin_square_figure():
 
     ax.set_xlabel("Presentation order (sequence)", fontsize=12, fontweight="bold")
     ax.set_ylabel("Listener group (ID)", fontsize=12, fontweight="bold")
-    ax.set_title(
-        "Latin square design for TTS evaluation", fontsize=14, fontweight="bold", pad=20
-    )
+    # ax.set_title(
+    #     "Latin square design for TTS evaluation", fontsize=14, fontweight="bold", pad=20
+    # )
 
     # Add legend
     legend_elements = [
@@ -931,7 +953,7 @@ def create_tts_pipeline_figure():
         "speaker": {"pos": (0.3, 3.2), "width": 1.6, "height": 1, "color": "#E8F4F8"},
         "acoustic": {"pos": (3, 3.5), "width": 2.5, "height": 2, "color": "#FFE5CC"},
         "mel": {"pos": (6.6, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
-        "vocoder": {"pos": (9.5, 3.5), "width": 2.2, "height": 2, "color": "#FFE5CC"},
+        "vocoder": {"pos": (9.2, 3.5), "width": 2.2, "height": 2, "color": "#FFE5CC"},
         "audio": {"pos": (12.3, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
     }
 
@@ -1011,10 +1033,10 @@ def create_tts_pipeline_figure():
     )
 
     ax.text(
-        10.6, 5.0, "Vocoder", ha="center", va="center", fontsize=18, fontweight="bold"
+        10.3, 5.0, "Vocoder", ha="center", va="center", fontsize=18, fontweight="bold"
     )
     ax.text(
-        10.6,
+        10.3,
         4.5,
         "Griffin-Lim",
         ha="center",
@@ -1023,9 +1045,9 @@ def create_tts_pipeline_figure():
         style="italic",
         color="#E74C3C",
     )
-    ax.text(10.6, 4.2, "or", ha="center", va="center", fontsize=13)
+    ax.text(10.3, 4.2, "or", ha="center", va="center", fontsize=13)
     ax.text(
-        10.6,
+        10.3,
         3.9,
         "HiFi-GAN",
         ha="center",
@@ -1045,39 +1067,50 @@ def create_tts_pipeline_figure():
         fontweight="bold",
     )
 
-    # Draw arrows
-    arrow_props = dict(arrowstyle="->", lw=3.5, color="#34495E")
+    # Draw arrows using FancyArrowPatch for precise alignment
+    arrows = [
+        ("text", "acoustic"),
+        ("speaker", "acoustic"),
+        ("acoustic", "mel"),
+        ("mel", "vocoder"),
+        ("vocoder", "audio"),
+    ]
 
-    # Text to acoustic model
-    ax.annotate("", xy=(3, 4.8), xytext=(1.9, 5.3), arrowprops=arrow_props)
+    for node_from, node_to in arrows:
+        start_pos = list(boxes[node_from]["pos"])
+        start_pos[0] += boxes[node_from]["width"] + 0.1
+        start_pos[1] += boxes[node_from]["height"] / 2
 
-    # Speaker embedding to acoustic model
-    ax.annotate("", xy=(3, 4.0), xytext=(1.9, 3.7), arrowprops=arrow_props)
+        end_pos = list(boxes[node_to]["pos"])
+        end_pos[0] -= 0.05
+        end_pos[1] += boxes[node_to]["height"] / 2
 
-    # Acoustic model to mel-spectrogram
-    ax.annotate("", xy=(6.6, 4.5), xytext=(5.5, 4.5), arrowprops=arrow_props)
-
-    # Mel-spectrogram to vocoder
-    ax.annotate("", xy=(9.5, 4.5), xytext=(8.2, 4.5), arrowprops=arrow_props)
-
-    # Vocoder to audio
-    ax.annotate("", xy=(12.3, 4.5), xytext=(11.7, 4.5), arrowprops=arrow_props)
+        arrow = FancyArrowPatch(
+            start_pos,
+            end_pos,
+            arrowstyle="->",
+            mutation_scale=30,
+            linewidth=2,
+            color="#5E768D",
+            zorder=3,
+        )
+        ax.add_patch(arrow)
 
     # Set axis limits
-    ax.set_xlim(0, 14)
-    ax.set_ylim(2.0, 6.5)
+    ax.set_xlim(0, 14.2)
+    ax.set_ylim(2.5, 6.5)
     ax.set_aspect("equal")
 
-    # Add title
-    ax.text(
-        7,
-        7.0,
-        "End-to-End Text-to-Speech pipeline",
-        ha="center",
-        va="center",
-        fontsize=21,
-        fontweight="bold",
-    )
+    # # Add title
+    # ax.text(
+    #     7,
+    #     7.0,
+    #     "End-to-End Text-to-Speech pipeline",
+    #     ha="center",
+    #     va="center",
+    #     fontsize=21,
+    #     fontweight="bold",
+    # )
 
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "tts_pipeline.pdf", dpi=300, bbox_inches="tight")

@@ -1,10 +1,4 @@
-"""
-Evaluate objective metrics (MCD and F0 RMSE) for synthesized audio samples.
-Includes Dynamic Time Warping (DTW) for correct alignment.
-"""
-
 import argparse
-from email.mime import audio
 import warnings
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -12,111 +6,65 @@ import librosa
 import numpy as np
 import pandas as pd
 import pyworld as pw
+from speechmos import dnsmos
 from fastdtw import fastdtw
+from pesq import pesq
 from scipy.spatial.distance import euclidean
 from tqdm import tqdm
 
-
-# Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
 
 
 def get_hop_length(sr, frame_period_ms=5.0):
-    """Calculate hop length in samples to match the frame period."""
     return int(sr * (frame_period_ms / 1000))
 
 
 def extract_features(audio, sr, frame_period_ms=5.0, n_mcep=24):
-    """
-    Extract aligned MCEP (using PyWorld) and F0 features.
-    """
     audio = audio.astype(np.float64)
-
-    # Extract F0
     f0, timeaxis = pw.dio(audio, sr, frame_period=frame_period_ms)
     f0 = pw.stonemask(audio, f0, timeaxis, sr)
-
-    # Extract Spectral Envelope (removes pitch harmonics)
     sp = pw.cheaptrick(audio, f0, timeaxis, sr)
-
-    # Convert to Mel-Cepstrum (MCEP)
-    # PyWorld automatically handles the warping based on `sr`
     mcep = pw.code_spectral_envelope(sp, sr, n_mcep)
-
-    # Align lengths (internal consistency)
     min_len = min(len(f0), len(mcep))
     f0 = f0[:min_len]
     mcep = mcep[:min_len]
-
     return mcep, f0
 
 
 def compute_metrics_with_dtw(mfcc_ref, mfcc_synth, f0_ref, f0_synth):
-    """
-    Compute MCD and F0 RMSE using Dynamic Time Warping.
-    """
-    # 1. Prepare MFCCs (remove 0th coefficient - energy)
-    # Using coeff 1 onwards
     m_ref = mfcc_ref[:, 1:]
     m_synth = mfcc_synth[:, 1:]
-
-    # 2. Perform DTW on MFCCs
-    # We use MFCCs to find the alignment path because they contain
-    # the phonetic content (spectral envelope).
     dist, path = fastdtw(m_ref, m_synth, dist=euclidean)
-
-    # 3. Calculate MCD
-    # MCD formula: (10 * sqrt(2) / ln(10)) * mean_error
-    # fastdtw returns total distance, so we need per-frame average
-
-    # Unpack path indices
     path_ref = [p[0] for p in path]
     path_synth = [p[1] for p in path]
-
-    # Compute frame-wise squared difference along the warping path
     diff_squared = (m_ref[path_ref] - m_synth[path_synth]) ** 2
     mcd_frames = np.sqrt(2 * np.sum(diff_squared, axis=1))
-
     K = 10.0 / np.log(10.0)
     mcd = K * np.mean(mcd_frames)
-
-    # 4. Calculate F0 RMSE using the SAME warping path
-    # We map the F0 values using the alignment found by MFCCs
     f0_ref_aligned = f0_ref[path_ref]
     f0_synth_aligned = f0_synth[path_synth]
-
-    # Mask unvoiced frames (F0 = 0)
-    # Both frames must be voiced to be compared
     voiced_mask = (f0_ref_aligned > 0) & (f0_synth_aligned > 0)
-
     if np.sum(voiced_mask) == 0:
         f0_rmse = np.nan
     else:
         f0_diff = f0_ref_aligned[voiced_mask] - f0_synth_aligned[voiced_mask]
         f0_rmse = np.sqrt(np.mean(f0_diff**2))
-
     return mcd, f0_rmse
 
 
 def load_audio(audio_path, sr=22050):
     audio, _ = librosa.load(audio_path, sr=sr, mono=True)
-    # Trim silence (optional but recommended for evaluation)
     audio, _ = librosa.effects.trim(audio, top_db=30)
     return audio
 
 
 def parse_filename(filename):
-    """Parse filename: {model_name}-{model_version}-{phrase_id}-{speaker_id}.wav"""
     if not filename.endswith(".wav"):
         return None
-
     base = filename[:-4]
     parts = base.split("-")
-
     if len(parts) < 4:
         return None
-
-    # Handle model names with hyphens (like Tacotron2-DCA)
     if parts[0] == "Tacotron2" and len(parts) > 4:
         return {
             "model_name": f"{parts[0]}-{parts[1]}",
@@ -134,37 +82,42 @@ def parse_filename(filename):
 
 
 def evaluate_sample(synth_path, gt_path, sr=22050):
-    """Evaluate a single synthesized sample against ground truth."""
-    try:
-        # Load audio files
-        audio_synth = load_audio(synth_path, sr)
-        audio_gt = load_audio(gt_path, sr)
+    audio_synth = load_audio(synth_path, sr)
+    audio_gt = load_audio(gt_path, sr)
+    mfcc_synth, f0_synth = extract_features(audio_synth, sr)
+    mfcc_gt, f0_gt = extract_features(audio_gt, sr)
+    mcd, f0_rmse = compute_metrics_with_dtw(mfcc_gt, mfcc_synth, f0_gt, f0_synth)
 
-        # Extract features
-        mfcc_synth, f0_synth = extract_features(audio_synth, sr)
-        mfcc_gt, f0_gt = extract_features(audio_gt, sr)
+    # Compute PESQ (requires 16kHz or 8kHz)
+    if sr == 16000:
+        pesq_mode = "wb"  # wideband
+    elif sr == 8000:
+        pesq_mode = "nb"  # narrowband
+    else:
+        # Resample to 16kHz for PESQ
+        audio_gt_16k = librosa.resample(audio_gt, orig_sr=sr, target_sr=16000)
+        audio_synth_16k = librosa.resample(audio_synth, orig_sr=sr, target_sr=16000)
+        pesq_mode = "wb"
+        audio_gt = audio_gt_16k
+        audio_synth = audio_synth_16k
 
-        # Compute metrics with DTW
-        mcd, f0_rmse = compute_metrics_with_dtw(mfcc_gt, mfcc_synth, f0_gt, f0_synth)
+    pesq_score = pesq(
+        16000 if pesq_mode == "wb" else 8000, audio_gt, audio_synth, pesq_mode
+    )
 
-        return {
-            "mcd": mcd,
-            "f0_rmse": f0_rmse,
-            "success": True,
-        }
-    except Exception as e:
-        print(f"Error evaluating {synth_path.name}: {e}")
-        return {
-            "mcd": np.nan,
-            "f0_rmse": np.nan,
-            "success": False,
-            "error": str(e),
-        }
+    # normalize audio for DNSMOS
+    audio_synth_norm = audio_synth / (np.max(np.abs(audio_synth)) + 1e-7)
+    utmos_score = dnsmos.run(audio_synth_norm, sr=16000)["ovrl_mos"]
+
+    return {
+        "mcd": mcd,
+        "f0_rmse": f0_rmse,
+        "pesq": pesq_score,
+        "utmos": utmos_score,
+    }
 
 
-def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_workers=16):
-    """Evaluate all synthesized samples against ground truth."""
-
+def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_workers=8):
     gt_dir = samples_dir / "ground_truth"
     if not gt_dir.exists():
         raise FileNotFoundError(f"Ground truth directory not found: {gt_dir}")
@@ -252,17 +205,18 @@ def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_wor
                         "speaker_id": task["speaker_id"],
                         "mcd": result["mcd"],
                         "f0_rmse": result["f0_rmse"],
-                        "success": result["success"],
+                        "pesq": result["pesq"],
+                        "utmos": result["utmos"],
                     }
                 )
 
                 pbar.update(1)
 
     # Convert to DataFrame
-    df = pd.DataFrame(results)
+    results_df = pd.DataFrame(results)
 
     # Save detailed results
-    df.to_csv(output_file, index=False)
+    results_df.to_csv(output_file, index=False)
     print(f"\nDetailed results saved to: {output_file}")
 
     # Compute and display statistics per model
@@ -270,19 +224,16 @@ def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_wor
     print("EVALUATION RESULTS")
     print("=" * 80)
 
-    successful_df = df[df["success"] == True]
+    print(results_df.sort_values(by=["utmos"], ascending=False))
 
-    if len(successful_df) == 0:
-        print("No successful evaluations!")
-        return
-
-    # Group by model
     model_stats = (
-        successful_df.groupby(["model_name", "model_version"])
+        results_df.groupby(["model_name", "model_version"])
         .agg(
             {
                 "mcd": ["mean", "std", "count"],
                 "f0_rmse": ["mean", "std"],
+                "pesq": ["mean", "std"],
+                "utmos": ["mean", "std"],
             }
         )
         .round(4)
@@ -291,15 +242,20 @@ def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_wor
     print("\nPer-Model Statistics:")
     print(model_stats)
 
-    # Overall statistics
     print("\n" + "-" * 80)
     print(
-        f"Overall MCD: {successful_df['mcd'].mean():.4f} ± {successful_df['mcd'].std():.4f}"
+        f"Overall MCD: {results_df['mcd'].mean():.4f} ± {results_df['mcd'].std():.4f}"
     )
     print(
-        f"Overall F0 RMSE: {successful_df['f0_rmse'].mean():.4f} ± {successful_df['f0_rmse'].std():.4f}"
+        f"Overall F0 RMSE: {results_df['f0_rmse'].mean():.4f} ± {results_df['f0_rmse'].std():.4f}"
     )
-    print(f"Total evaluated: {len(successful_df)}/{len(df)} samples")
+    print(
+        f"Overall PESQ: {results_df['pesq'].mean():.4f} ± {results_df['pesq'].std():.4f}"
+    )
+    print(
+        f"Overall UTMOS: {results_df['utmos'].mean():.4f} ± {results_df['utmos'].std():.4f}"
+    )
+    print(f"Total evaluated: {len(results_df)} samples")
     print("-" * 80)
 
     # Save summary statistics
@@ -310,7 +266,7 @@ def evaluate_all_samples(samples_dir: Path, output_file: Path, sr=22050, num_wor
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Evaluate objective metrics (MCD and F0 RMSE) for synthesized audio"
+        description="Evaluate MCD, F0 RMSE, PESQ, and UTMOS"
     )
     parser.add_argument(
         "--samples_dir",
@@ -333,8 +289,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_workers",
         type=int,
-        default=16,
-        help="Number of parallel workers (default: 16)",
+        default=8,
+        help="Number of parallel workers (default: 8)",
     )
 
     args = parser.parse_args()
