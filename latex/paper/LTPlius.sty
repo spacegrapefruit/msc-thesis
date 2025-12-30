@@ -19,7 +19,7 @@
 % lietuviškame polyglossia išplėtime.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{LTPlius}[2023/06/01 1.4.3 Lithuanian language
-additions]
+  additions]
 
 % Pakeitimai:
 % 2023.06.01 (1.4.3 versija)
@@ -77,31 +77,31 @@ additions]
     \let\@svsec\@empty
   \else
     \refstepcounter{#1}%
-       % Buvo: \protected@edef\@svsec{\@seccntformat{#1}\relax}%
+    % Buvo: \protected@edef\@svsec{\@seccntformat{#1}\relax}%
     \protected@edef\@svsec{\csname the#1\endcsname.\quad\relax}%
   \fi
   \@tempskipa #5\relax
   \ifdim \@tempskipa>\z@
     \begingroup
-      #6{%
-        \@hangfrom{\hskip #3\relax\@svsec}%
-          \interlinepenalty \@M #8\@@par}%
+    #6{%
+      \@hangfrom{\hskip #3\relax\@svsec}%
+      \interlinepenalty \@M #8\@@par}%
     \endgroup
     \csname #1mark\endcsname{#7}%
     \addcontentsline{toc}{#1}{%
       \ifnum #2>\c@secnumdepth \else
-           % Buvo: \protect\numberline{\csname the#1\endcsname}%
+        % Buvo: \protect\numberline{\csname the#1\endcsname}%
         \protect\numberline{\csname the#1\endcsname.}%
       \fi
       #7}%
   \else
     \def\@svsechd{%
       #6{\hskip #3\relax
-      \@svsec #8}%
+          \@svsec #8}%
       \csname #1mark\endcsname{#7}%
       \addcontentsline{toc}{#1}{%
         \ifnum #2>\c@secnumdepth \else
-            % Buvo: \protect\numberline{\csname the#1\endcsname}%
+          % Buvo: \protect\numberline{\csname the#1\endcsname}%
           \protect\numberline{\csname the#1\endcsname.}%
         \fi
         #7}}%
@@ -129,11 +129,11 @@ additions]
   \item[\hskip \labelsep{\bfseries #2\ #1.}]\itshape}
 \def\@opargbegintheorem#1#2#3{\trivlist
   % Buvo:   \item[\hskip \labelsep{\bfseries #1\ #2\ (#3)}]\itshape}
-      \item[\hskip \labelsep{\bfseries #2\ (#3)\ #1.}]\itshape}
+  \item[\hskip \labelsep{\bfseries #2\ (#3)\ #1.}]\itshape}
 
 % Dedame tašką po aprašomo dalyko.
 \renewcommand*\descriptionlabel[1]{\hspace\labelsep
-                                \normalfont\bfseries #1.}
+  \normalfont\bfseries #1.}
 
 \RequirePackage{caption}
 % Teisingai formatuojame lentelių antraštes.

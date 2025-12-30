@@ -216,11 +216,11 @@
 
 \addto\captionenglish{\renewcommand{\proofname}{Proof}}
 
-\captionsetup*[table]{name=, labelsep=space, labelfont=bf, font=it}
-\captionsetup*[figure]{name=, labelsep=space, labelfont=bf, font=it}
+% \captionsetup*[table]{name=, labelsep=space, labelfont=bf, font=it}
+% \captionsetup*[figure]{name=, labelsep=space, labelfont=bf, font=it}
 
-\renewcommand\thefigure{Figure~\arabic{figure}.}
-\renewcommand\thetable{Table~\arabic{table}.}
+% \renewcommand\thefigure{Figure~\arabic{figure}.}
+% \renewcommand\thetable{Table~\arabic{table}.}
 
-\setlength{\cftfignumwidth}{2cm} % Increases space for "Figure 1."
-\setlength{\cfttabnumwidth}{2cm} % Increases space for "Table 1."
+% \setlength{\cftfignumwidth}{2cm} % Increases space for "Figure 1."
+% \setlength{\cfttabnumwidth}{2cm} % Increases space for "Table 1."
