@@ -4,6 +4,7 @@ import random
 from collections import defaultdict
 from datetime import UTC, datetime
 from functools import lru_cache
+from pathlib import Path
 from flask import (
     Flask,
     render_template,
@@ -23,6 +24,7 @@ import psycopg2.extras
 from psycopg2 import pool
 from google.cloud import storage
 import io
+import pandas as pd
 
 dotenv.load_dotenv()
 
@@ -348,6 +350,53 @@ def get_or_create_user_id(user_email):
 
 
 @lru_cache(maxsize=1)
+def load_phrase_text_mapping():
+    """Load mapping of phrase_id to text from metadata.csv in GCS."""
+    if not storage_client or not GCS_BUCKET:
+        print("GCS client or bucket not configured")
+        return {}
+
+    try:
+        bucket = storage_client.bucket(GCS_BUCKET)
+        blob_name = f"{GCS_AUDIO_PREFIX}metadata.csv"
+        blob = bucket.blob(blob_name)
+
+        if not blob.exists():
+            print(f"Metadata file not found in GCS: {blob_name}")
+            return {}
+
+        # Download and read CSV
+        csv_content = blob.download_as_text()
+        from io import StringIO
+
+        metadata = pd.read_csv(StringIO(csv_content), sep="|", header=None)
+        metadata.columns = [
+            "filename",
+            "original_text",
+            "normalized_text",
+            "speaker_id",
+        ]
+
+        # Create mapping: phrase_id -> original_text
+        phrase_mapping = {}
+        for row_i, row in metadata.iterrows():
+            phrase_id = f"p{row_i + 1:03d}"
+            phrase_mapping[phrase_id] = row["original_text"]
+
+        print(f"Loaded {len(phrase_mapping)} phrase texts from GCS")
+        return phrase_mapping
+    except Exception as e:
+        print(f"Error loading phrase text mapping from GCS: {e}")
+        return {}
+
+
+def get_phrase_text(phrase_id):
+    """Get the text prompt for a given phrase_id."""
+    phrase_mapping = load_phrase_text_mapping()
+    return phrase_mapping.get(phrase_id, "")
+
+
+@lru_cache(maxsize=1)
 def get_audio_files():
     """Get list of available audio files from GCS bucket."""
     if not storage_client or not GCS_BUCKET:
@@ -467,6 +516,9 @@ def auth_callback():
             session["user_name"] = user_info.get("name", "")
 
             flash("Successfully logged in!", "success")
+            # Redirect to consent page if not consented yet
+            if not session.get("consented"):
+                return redirect(url_for("consent"))
             return redirect(url_for("rating"))
         else:
             flash("Authentication failed. Please try again.", "error")
@@ -474,6 +526,25 @@ def auth_callback():
     except Exception as e:
         flash("Authentication error occurred.", "error")
         return redirect(url_for("index"))
+
+
+@app.route("/consent", methods=["GET", "POST"])
+def consent():
+    """Show consent form and handle consent submission."""
+    if "user_email" not in session:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        consent_value = request.form.get("consent")
+        if consent_value == "yes":
+            session["consented"] = True
+            flash("Thank you for consenting to participate!", "success")
+            return redirect(url_for("rating"))
+        else:
+            flash("Consent is required to participate.", "warning")
+            return redirect(url_for("logout"))
+
+    return render_template("consent.html")
 
 
 @app.route("/logout")
@@ -489,6 +560,10 @@ def rating():
     """Show rating page with random audio clip."""
     if "user_email" not in session:
         return redirect(url_for("index"))
+
+    # Require consent before rating
+    if not session.get("consented"):
+        return redirect(url_for("consent"))
 
     # Check if user has rated all available files
     audio_files = get_audio_files()
@@ -528,9 +603,14 @@ def rating():
             "completion.html", rated_count=rated_count, total_files=total_phrases
         )
 
+    # Get the phrase text for this audio file
+    parsed = parse_filename(audio_file)
+    phrase_text = get_phrase_text(parsed["phrase_id"]) if parsed else ""
+
     return render_template(
         "rating.html",
         audio_file=audio_file,
+        phrase_text=phrase_text,
         progress={
             "rated": rated_count,
             "total": total_phrases,
