@@ -7,6 +7,7 @@
 \usepackage{indentfirst}
 \usepackage{amsmath, amsthm, amssymb, amsfonts}
 \usepackage{mathtools}
+\usepackage{bm}
 \usepackage{physics}
 \usepackage{graphicx}
 \usepackage{verbatim}
@@ -46,13 +47,55 @@
 
 \supervisor{Dr.~Gerda Ana Melnik-Leroy}
 \reviewer{pedagogical/scientific title Name Surname}
-\scientificadvisor{Dr.~Gražina Korvel}
+\scientificadvisor{Prof.~Dr.~Gražina Korvel}
 
 \begin{document}
 \selectlanguage{english}
 
 \onehalfspacing
 \input{TitlePage}
+
+\sectionnonum{Summary}
+
+Developing high-quality Text-to-Speech (TTS) systems for low-resource languages
+is often hindered by a lack of large, single-speaker datasets. This thesis
+investigates training data composition strategies for Lithuanian multi-speaker
+TTS models, specifically testing the hypothesis that data depth is critical for
+synthesis quality. Using the Liepa-2 corpus, three datasets were constructed
+with a constant total duration of 22.5 hours, varying the trade-off between
+breadth (30 to 180 speakers) and depth (45 to 7.5 minutes per speaker).
+Tacotron 2 and Glow-TTS architectures were trained and evaluated via objective
+metrics (MCD, F0 RMSE) and subjective listening tests (MOS). Results
+demonstrate that Tacotron 2 consistently outperforms Glow-TTS in naturalness.
+Contrary to the hypothesis, statistical analysis reveals no significant
+difference in synthesis quality across the varying data strategies. This
+suggests that modern multi-speaker models are insensitive to the breadth-depth
+trade-off within this range, achieving convergence with as little as 7.5
+minutes of data per speaker.
+
+\textbf{Keywords:} text-to-speech, multi-speaker
+voice synthesis, low-resource language, Tacotron 2, Glow-TTS
+
+\sectionnonum{Santrauka}
+
+Aukštos kokybės šnekos sintezės (TTS) sistemų kūrimą mažai išteklių turinčioms
+kalboms dažnai sunkina didelių vieno kalbėtojo duomenų rinkinių trūkumas. Šiame
+darbe tiriamos mokymo duomenų parinkimo strategijos šnekos sintezės modelio
+apmokymui lietuvių kalba, naudojant kelių kalbėtojų balsus. Tikrinama iškelta
+hipotezė, kad duomenų gylis yra kritiškai svarbus sintezės kokybei. Naudojant
+Liepa-2 garsyną, buvo sudaryti trys duomenų rinkiniai, kurių bendra trukmė yra
+pastovi (22,5 val.), tačiau kinta santykis tarp pločio (nuo 30 iki 180
+kalbėtojų) ir gylio (nuo 45 iki 7,5 min.\ vienam kalbėtojui). Buvo apmokytos
+Tacotron 2 ir Glow-TTS architektūros bei atliktas jų vertinimas, panaudojant
+objektyvius rodiklius (MCD, F0 RMSE) ir subjektyvius klausymo testus (MOS).
+Rezultatai rodo, kad Tacotron 2 pagal natūralumą nuosekliai lenkia Glow-TTS\@.
+Statistinė analizė paneigė iškeltą hipotezę ir neatskleidė reikšmingo sintezės
+kokybės skirtumo taikant skirtingas duomenų strategijas. Tai leidžia teigti,
+kad šiuolaikiniai kelių kalbėtojų modeliai šiame intervale nėra jautrūs pločio ir
+gylio santykiui ir geba konverguoti turint vos 7,5 minutės duomenų vienam
+kalbėtojui.
+
+\textbf{Raktiniai žodžiai:} šnekos sintezė, kelių kalbėtojų balsų sintezė, mažai išteklių turinti kalba, Tacotron 2, Glow-TTS
 
 \singlespacing
 \selectlanguage{english}
@@ -78,124 +121,113 @@ researchers for centuries. One of the earliest known attempts dates back to the
 machine''~\cite{dudley1950speaking} that utilized a bellows-driven lung and
 physical models of the tongue and lips to produce rudimentary speech sounds.
 
-Over the centuries, understanding of human speech and advancements in
+Over the centuries, our understanding of human speech and advancements in
 technology have driven significant progress in this field. Today's
 state-of-the-art Text-to-Speech (TTS) systems, dominated by end-to-end (E2E)
 neural models such as Tacotron~2~\cite{shen2018natural} and
-Glow-TTS~\cite{kim2020glowtts} have achieved highly natural speech with
+Glow-TTS~\cite{kim2020glowtts}, have achieved highly natural speech with
 unprecedented acoustic quality. Notably, these E2E systems have unified the
 entire synthesis process into one or two neural networks, learning to map text
-inputs (graphemes or phonemes) directly to audio outputs, and eliminating the
-need for complex multi-stage pipelines.
+inputs (graphemes or phonemes) directly to audio outputs, eliminating the need
+for complex, brittle multi-stage pipelines.
 
 These advancements have transformed TTS from a niche area of academic curiosity
-to become essential tools in daily life. High-quality speech synthesis now
-powers popular virtual assistants~\cite{hoy2018alexa} and navigation systems,
-serving as a primary interface for human-computer interaction. More
-importantly, it plays a critical role in accessibility, enabling screen readers
-for the visually impaired~\cite{isewon2014design, taylor2009text}, providing a
-voice for the non-verbal, and facilitating access to
+into essential tools for daily life. High-quality speech synthesis now powers
+popular virtual assistants~\cite{hoy2018alexa} and navigation systems, serving
+as a primary interface for human-computer interaction. More importantly, it
+plays a critical role in accessibility, enabling screen readers for the
+visually impaired~\cite{isewon2014design, taylor2009text}, providing a voice
+for the non-verbal, and facilitating access to
 information~\cite{taylor2009text}.
 
 However, the transition to deep learning techniques has introduced a new
 dependency: data. While modern neural TTS models are capable of producing
-remarkably natural speech, these models lack any explicit linguistic prior
-knowledge, making them heavily reliant on large amounts of high-quality
-training data to learn implicit mappings from text to speech. The common
-recommendation is to use at least 10 to 20~hours of high-quality recorded
-speech from a single speaker to achieve good synthesis quality. The majority of
-existing research and commercial TTS systems focus on high-resource languages
-like English, where professionally recorded single-speaker datasets (e.g.,
+remarkably natural speech, they lack explicit linguistic prior knowledge,
+making them heavily reliant on large amounts of high-quality training data to
+learn implicit mappings from text to speech. The common recommendation is to
+use at least 10 to 20~hours of high-quality recorded speech from a single
+speaker to achieve good synthesis quality. The majority of existing research
+and commercial TTS systems focus on high-resource languages like English, where
+professionally recorded single-speaker datasets (e.g.,
 LJSpeech~\cite{ljspeech17} with 24 hours of speech) are readily available.
 
-% TODO multi-speaker TTS requirements (hours)
+However, low-resource languages, such as Lithuanian, often lack such extensive
+datasets, and available corpora tend to be crowd-sourced with multiple speakers
+contributing small amounts of data each. In contrast, multi-speaker TTS models
+can achieve convergence and reasonable intelligibility with significantly less
+data per speaker --- as little as 15 to 30 minutes --- provided the total
+pooled dataset is sufficiently large to learn the language's phonetics and
+prosody.
 
-% In low-resource scenarios, this poses a significant risk: if the
-% model fails to learn robust attention alignments due to data sparsity, the
-% resulting synthesis suffers from critical failure modes such as babbling,
-% skipping words, or endless repetition~\cite{ren2019fastspeech}. Consequently,
-% investigating the composition of data required to stabilize these alignment
-% mechanisms is crucial for adapting E2E models to languages lacking `Gold
-% Standard'' corpora.
+Liepa-2~\cite{liepa2project} is a Lithuanian speech corpus, released in 2020,
+that contains 1000~hours of annotated speech; this data is distributed across
+2621~speakers, with most speakers contributing under 30~minutes each. The top
+speaker has under 2.5~hours of recorded speech, well below the standard
+recommendation for training a high-fidelity single-speaker TTS model.
 
-However, less-resourced languages, such as Lithuanian, often lack such
-extensive datasets, and available corpora tend to be crowd-sourced with
-multiple speakers contributing small amounts of data each.
-
-Liepa~2~\cite{liepa2project} is a Lithuanian speech corpus, released in 2020,
-that contains 1000~hours of annotated speech; however, this data is distributed
-across 2621~speakers, with most speakers contributing under 30~minutes each.
-The top speaker has only around 2.5~hours of recorded speech, well below the
-standard recommendation for single-speaker TTS training.
-
-Having such a fragmented dataset presents an engineering challenge. Using a
-single speaker's data from such a corpus yields insufficient data for
-high-quality synthesis. On the other hand, training on the entire 1000-hour
-corpus is a time-consuming and computationally prohibitive process, especially
-in the scope of a master's thesis. Therefore, multi-speaker TTS models must be
-utilized to aggregate data from multiple speakers.
+Having such a fragmented dataset, or crowd-sourced data, presents an
+engineering challenge. Using a single speaker's data from such a corpus yields
+insufficient data for high-quality synthesis. On the other hand, training on
+the entire 1000-hour corpus is a computationally prohibitive process for the
+scope of this work. Therefore, a multi-speaker TTS architecture is the
+necessary solution. It allows for the aggregation of data from a selected
+subset of speakers, provided the model can learn to disentangle speaker
+identity from shared linguistic features.
 
 This necessitates a choice between two competing strategies under a fixed
 computational budget: prioritizing \textbf{breadth} (many speakers with little
 data each) or \textbf{depth} (fewer speakers with more data each).
-Consequently, the question that arises is: what is the optimal strategy for
-sampling multi-speaker data to maximize synthesis quality?
+Consequently, the question that arises is: \textit{what is the optimal strategy
+      for sampling multi-speaker data to maximize synthesis quality?}
 
 Current literature generally advocates for transfer learning from large
 pre-trained models to improve low-resource TTS performance. However, there is a
 lack of research specifically addressing the internal composition of the
-training set for morphologically complex languages like Lithuanian.
+training set for morphologically complex languages like Lithuanian. To address
+this gap and isolate the effects of data distribution without the bias of
+pre-training, this thesis investigates the optimal data selection strategy for
+training Lithuanian multi-speaker TTS models from scratch.
 
-In order to address this gap, this thesis investigates the optimal data
-selection strategy for training Lithuanian multi-speaker TTS models under a
-fixed data budget. It aims to measure how varying the balance between training
-dataset breadth (number of speakers) and depth (duration per speaker) affects
-the synthesis quality of multi-speaker TTS models. The hypothesis is that depth
-is a more critical factor, and quality will degrade as the number of speakers
-increases, given a constant total training duration.
+The primary \textbf{research aim} of this thesis is to: measure how varying the
+balance between training dataset \textit{breadth} (number of speakers) and
+\textit{depth} (duration per speaker) affects the synthesis quality of
+multi-speaker TTS models. The \textbf{hypothesis} is that depth is a more
+critical factor --- more specifically, that synthesis quality will degrade as
+the number of speakers increases, given a constant total training duration.
 
-To achieve this aim, the following research objectives are defined:
+To achieve this aim, the following \textbf{research objectives} are defined:
 
 \begin{itemize}
-      \item Create three distinct TTS training datasets (with 30, 60, 180 speakers) that
+      \item Process the Liepa-2 dataset to prepare three TTS training datasets that
             maintain a constant total duration but vary in speaker distribution.
-      \item Implement a text processing pipeline capable of handling Lithuanian
-            accentuation and grapheme-based input.
-      \item Train two distinct acoustic model architectures (one autoregressive, one
-            non-autoregressive) on each of the created datasets.
-      \item Evaluate the models using objective metrics and conduct a subjective Mean
-            Opinion Score listening test with native Lithuanian speakers to assess
-            naturalness.
+      \item Configure and train two distinct acoustic model architectures (one
+            autoregressive, one non-autoregressive) on each of the created datasets.
+      \item Evaluate the synthesis quality of the trained models using objective metrics.
+      \item Develop a subjective evaluation application and conduct a Mean Opinion Score
+            listening test with native Lithuanian speakers to assess naturalness.
 \end{itemize}
 
-% TODO this is the first reference to 22.5 h, Tacotron 2 and Glow-TTS
-
-In this study, the scope is exclusively focused on the Lithuanian language and
-the Liepa~2 speech corpus. It investigates a fixed total training data size of
-22.5~hours to simulate a realistic resource budget. The models are limited to
-Tacotron~2 and Glow-TTS architectures within the Coqui TTS framework, and a
-pre-trained HiFi-GAN vocoder is used to isolate the performance of the acoustic
-models.
-
-The remainder of this thesis is organized as follows: \textbf{Literature
-      review} presents a literature review of relevant concepts in digital signal
-processing, neural TTS architectures, and the specific challenges of Lithuanian
-TTS\@. \textbf{Methodology} describes the data selection, model configurations,
-and the experimental design. \textbf{Results} presents the findings of the
-objective and subjective synthesis quality evaluations, analyzing the failure
-modes of the models. Finally, \textbf{Conclusion} summarizes the key findings
-and offers potential recommendations for future research directions in
-low-resource TTS synthesis.
+The remainder of this thesis is organized as follows: The \textbf{Literature
+      Review} presents an overview of relevant concepts in digital signal processing,
+neural TTS architectures, and the specific challenges of Lithuanian TTS\@.
+\textbf{Methodology} describes the data selection, model configurations, and
+experimental design. \textbf{Results} presents the findings of the objective
+and subjective synthesis quality evaluations, analyzing the failure modes of
+the models. Finally, the \textbf{Conclusion} summarizes the key findings and
+offers potential recommendations for future research in low-resource TTS
+synthesis.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Literature review
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Literature review}
+\section{Literature Review}
 
-This section reviews the key concepts related to text-to-speech synthesis, and
-reviews the evolution from traditional methods to modern neural architectures.
+This section reviews the key concepts related to text-to-speech synthesis and
+traces the evolution from traditional methods to modern neural architectures.
+The topics are presented in a bottom-up manner, building up from fundamental
+signal processing concepts to high-level TTS architectures.
 
-\subsection{Digital representation of audio}
+\subsection{Digital Representation of Audio}
 
 At its core, the objective of a TTS system is to generate an audio signal --- a
 continuous pressure wave --- that the human ear perceives as speech. The key
@@ -207,25 +239,23 @@ two main steps: sampling and quantization.
 Sampling is the process of measuring the amplitude of the sound wave at regular
 time intervals. The rate at which these samples are taken is called the
 sampling rate. Increasing the sampling rate allows for capturing higher
-frequency components of the audio signal, however, it also increases the amount
+frequency components of the audio signal; however, it also increases the amount
 of data that needs to be processed and stored. Thus, there is a trade-off
 between audio quality and data efficiency. According to the
 Nyquist-Shannon~\cite{shannon1949communication} sampling theorem, accurate
 reconstruction of a continuous signal requires a sampling rate that is strictly
-greater than twice the highest frequency present in the signal. Frequencies in
-the range between 300~Hz and 3400~Hz contribute most to human speech
-intelligibility and recognition~\cite{jothilakshmi2016large}. However, for
-highly natural-sounding synthesized speech, higher sampling rates are
-preferred. In TTS applications, common sampling rates for audio are 22.05~kHz
-and 24~kHz, which can capture frequencies up to approximately 11~kHz and
-12~kHz, respectively.
+greater than twice the highest frequency present in the signal. While
+frequencies in the range of 300~Hz to 3400~Hz contribute most to human speech
+intelligibility and recognition~\cite{jothilakshmi2016large}, high-fidelity
+synthesis typically uses sampling rates of 22.05~kHz and 24~kHz, which can
+capture frequencies up to approximately 11~kHz and 12~kHz, respectively.
 
-Quantization (also known as bit depth) is the mapping of continuous amplitude
-values to discrete levels for digital representation, which determines the
-precision of the representation. Similar to sampling rate, there is a trade-off
-between audio quality and data size. Common bit depths for audio are 16-bit and
-24-bit formats. A visual representation of both sampling and quantization is
-provided in Figure~\ref{fig:sampling}.
+Quantization (or bit depth) is the mapping of continuous amplitude values to
+discrete levels for digital representation, which determines the precision of
+the representation. Similar to sampling rate, there is a trade-off between
+audio quality and data size. Common bit depths for audio are 16-bit and 24-bit
+formats. A visual representation of both sampling and quantization is provided
+in Figure~\ref{fig:sampling}.
 
 \begin{figure}[ht]
       \centering
@@ -233,14 +263,12 @@ provided in Figure~\ref{fig:sampling}.
       \caption[Visual representation of Analog-to-Digital conversion]{Visual representation of Analog-to-Digital conversion. The continuous grey line represents the analog signal. The vertical lines represent the \textbf{sampling rate} (time intervals), and the horizontal grid lines represent \textbf{quantization levels} (bit depth).}\label{fig:sampling}
 \end{figure}
 
-\subsubsection{Pre-emphasis}
-
-In the context of neural TTS systems, which typically operate on
-frequency-domain representations like Mel-spectrograms (discussed below),
-pre-emphasis is a common audio pre-processing step applied to the raw waveform.
-Natural speech signals tend to have more energy in the lower frequencies, with
-a gradual drop-off towards higher frequencies (typically around -6~dB per
-octave). This spectral tilt can lead to models focusing disproportionately on
+In neural TTS systems, which typically operate on frequency-domain
+representations like Mel-spectrograms (discussed below), \textbf{Pre-Emphasis}
+is a common audio pre-processing step applied to the raw waveform. Natural
+speech signals tend to have more energy in the lower frequencies, with a
+gradual drop-off towards higher frequencies (approximately -6~dB per octave).
+This spectral tilt can lead to models focusing disproportionately on
 low-frequency components, potentially neglecting important high-frequency
 details. Pre-emphasis compensates for this spectral tilt by boosting high
 frequencies using a first-order high-pass filter, which is defined as:
@@ -253,54 +281,57 @@ where \( y[n] \) is the pre-emphasized signal, \( x[n] \) is the original
 signal, \( \alpha \) is the pre-emphasis coefficient (typically between 0.9 and
 1.0, and often set to 0.97), and \( n \) is the sample index.
 
-This transformation balances the frequency spectrum, improving the
-signal-to-noise ratio for higher frequencies and preventing the model from
-optimizing only for low-frequency components.
+This improves the signal-to-noise ratio for high frequencies and prevents the
+model from neglecting higher-frequency components.
 
 \subsection{Time-Frequency Analysis}
 
-\subsubsection{Fourier Transform}
+\subsubsection*{Fourier Transform}
 
 TTS systems typically do not operate directly on the raw waveform. Instead,
 they rely on time-frequency representations that capture the spectral content
 of the signal over time.
 
-Fourier Transform (FT) is a mathematical technique that transforms a
-time-domain signal (such as an audio waveform) into its frequency-domain
+The \textbf{Fourier Transform} (FT) is a mathematical technique that transforms
+a time-domain signal (such as an audio waveform) into its frequency-domain
 representation. The signal is decomposed into a sum of sine and cosine waves at
 various frequencies, each with a specific amplitude and phase. This allows us
 to analyze the frequency content of the signal.
 
-Short-Time Fourier Transform (STFT)~\cite{gabor1946theory} extends the FT by
-applying it to short, overlapping segments (frames) of the signal. This
-transformation provides a time-frequency representation, showing how the
+The \textbf{Short-Time Fourier Transform} (STFT)~\cite{gabor1946theory} extends
+the FT by applying it to short, overlapping segments (frames) of the signal.
+This transformation provides a time-frequency representation, showing how the
 frequency content of the signal changes over time --- precisely the features
 needed for modeling speech.
 
 In TTS applications, the STFT is computed by dividing the audio signal into
 short frames (usually 20--50~ms) with a certain overlap (usually 50--75\%)
-between frames, windowed by a Hamming or Hann function to reduce the spectral
+between frames, windowed by a Hamming or Hann function to reduce spectral
 leakage.
 
-\subsubsection{Spectrogram and Mel-spectrogram}
+\subsubsection*{Spectrogram and Mel-Spectrogram}
 
-The spectrogram is a visual representation of the STFT, displaying frequency on
-the vertical axis, time on the horizontal axis, and amplitude represented by
-the color intensity.
+The \textbf{spectrogram} is a visual representation of the STFT, displaying
+frequency on the vertical axis, time on the horizontal axis, with amplitude
+represented by color intensity. In TTS systems, spectrogram values are the
+typical intermediate representation between an acoustic model and a vocoder
+(discussed later) --- the spectrogram being the target output of the acoustic
+model.
 
-While the spectrogram provides a detailed frequency analysis, it uses a linear
-frequency scale. However, the human ear does not perceive frequencies linearly
---- it is more sensitive to pitch differences at lower frequencies than higher
-ones. To mimic this perceptual characteristic, the Mel
-scale~\cite{stevens1937scale} maps linear frequency \( f \) (in Hz) to a
-perceptual scale \( m \) (in Mels) using the following formula:
+The regular spectrogram uses a linear frequency scale. While it allows a
+detailed frequency analysis, this has limitations when modeling human speech.
+The human ear does not perceive frequencies linearly --- it is more sensitive
+to pitch differences at lower frequencies than higher ones. To mimic this
+perceptual characteristic, the Mel scale~\cite{stevens1937scale} maps linear
+frequency \( f \) (in Hz) to a perceptual scale \( m \) (in Mels) using the
+following formula:
 
 \begin{equation}
       m = 2595 \cdot \log_{10}\left(1 + \frac{f}{700}\right)
 \end{equation}
 
-Mel-spectrograms are computed by applying a Mel filterbank of overlapping
-triangular filters to the (magnitude) spectrogram obtained from the STFT\@.
+\textbf{Mel-spectrograms} are computed by applying a Mel filterbank of overlapping
+triangular filters (spaced uniformly on the Mel scale) to the magnitude spectrogram obtained from the STFT\@.
 Finally, the dynamic range of the amplitudes is compressed by taking the
 logarithm (usually resulting in decibels), as human loudness perception is
 logarithmic. This results in a compressed representation of the audio signal
@@ -309,7 +340,7 @@ are commonly used as input features for modern TTS systems. The differences
 between the raw waveform, the standard spectrogram, and the Mel-spectrogram are
 illustrated in Figure~\ref{fig:waveform_spectrograms}. Note how the
 Mel-spectrogram has a higher resolution in the lower frequencies, where the
-majority of the speech energy is concentrated.
+majority of speech energy is concentrated.
 
 \begin{figure}[ht]
       \centering
@@ -321,23 +352,23 @@ It is important to note that converting a waveform to a Mel-spectrogram is
 lossy: phase information is discarded during the magnitude operation, and
 frequency resolution is reduced by the Mel filterbank. As a result,
 reconstructing a high-fidelity audio waveform from a generated Mel-spectrogram
-requires a specialized model component, typically referred to as a Vocoder
-(which will be discussed in section~\ref{sec:vocoder}).
+requires a specialized model component, typically referred to as a vocoder
+(discussed in Section~\ref{sec:vocoder}).
 
-\subsection{Linguistic Representation (Text Pre-processing)}
+\subsection{Linguistic Representation}
 
 In TTS systems, the input text must be pre-processed and converted into a
 suitable linguistic representation that the synthesis model can use. Although
 theoretically an end-to-end TTS model could learn to map raw text directly to
-audio, in practice, pre-processing the text makes the model convergence easier
-and improves the quality of the synthesized speech.
+audio, in practice, pre-processing the text facilitates model convergence and
+improves the quality of the synthesized speech.
 
 The main goal of this stage is to map the raw sentences into a sequence of
 symbols that can be more closely mapped to the acoustic features of speech.
 This process typically involves several steps, such as text normalization,
 grapheme-to-phoneme conversion, and possibly prosody prediction.
 
-\subsubsection{Text normalization}
+\subsubsection{Text Normalization}
 
 Text normalization~\cite{sproat2001normalization} is the process of converting
 raw written text with non-standard words into a more standardized ``spoken''
@@ -346,7 +377,6 @@ form. Typical steps include expanding abbreviations (e.g., expanding ``Dr.'' to
 converting ``123'' to ``one hundred twenty-three''), and lowercasing. While
 some non-standard punctuation is removed, structural punctuation (commas,
 periods) is often retained or mapped to special pause tokens to guide prosody.
-
 As an example, the input text ``Dr.\ Smith has 2 cats.'' could be normalized to
 ``doctor smith has two cats'', which bears closer resemblance to the spoken
 form.
@@ -355,9 +385,9 @@ Text normalization helps reduce the variability and complexity in the input
 text, decreases the number of unique symbols, and removes the ambiguities that
 could confuse the TTS model. The resulting normalized text is not only easier
 for the model to process, but can also be further converted into phonemes,
-which provide an even closer representation of the spoken language.
+which provide an even closer representation of spoken language.
 
-\subsubsection{Graphemes vs. Phonemes}
+\subsubsection{Graphemes versus Phonemes}
 
 Text-to-speech systems use a discrete input representation derived from text,
 generally divided into grapheme-based or phoneme-based sequences.
@@ -367,7 +397,7 @@ approach simplifies the inference pipeline by eliminating the dependency on
 external grapheme-to-phoneme (G2P) converters. However, it forces the model to
 implicitly learn pronunciation rules from data, which can be a significant
 challenge for languages with complex orthographies or heteronyms (e.g., English
-``read'' /riːd/ vs.\ ``read'' /rɛd/, depending on the tense).
+``read'' /riːd/ and ``read'' /rɛd/, depending on the tense).
 
 In contrast, the phoneme-based approach uses a phonetic transcription of the
 text, typically in the International Phonetic Alphabet or ARPABET form. By
@@ -387,25 +417,26 @@ transcription, particularly in languages where stress placement alters meaning.
 
 \subsubsection{Challenges in Lithuanian TTS}
 
-Lithuanian is a Baltic language with a rich inflectional morphology and complex
+Lithuanian is a Baltic language with rich inflectional morphology and a complex
 prosodic structure. It is a pitch-accent language with free stress, meaning the
-stress can fall on any syllable in a word, and can change the position
-depending on the grammatical form.
+stress can fall on any syllable in a word, and can change position depending on
+the grammatical form.
 
 In the context of TTS synthesis, Lithuanian presents several challenges. First,
 the extensive inflection leads to a high number of unique word forms, which is
 significantly higher than in English. This results in data sparsity issues,
-where many valid word forms may not appear in the training set, i.e., a high
-out-of-vocabulary word rate. Second, the free stress system complicates
+where many valid word forms may not appear in the training set (i.e., a high
+out-of-vocabulary word rate). Second, the free stress system complicates
 pronunciation modeling. Typically, stress marks are omitted in written
 Lithuanian. However, stress position and tone (acute, circumflex, or short)
-determine the meaning of monographic words. Examples are shown in
+determine the meaning of homographs. Examples are shown in
 Table~\ref{tab:lithuanian_ambiguity}. A grapheme-based model with accentuation
 marks has been shown to improve synthesis quality in
 Lithuanian~\cite{kasparaitis2023investigation}.
 
 \begin{table}[ht]
       \centering
+      \caption[Lithuanian homographs with accentuation ambiguity]{Examples of Lithuanian homographs where accentuation determines meaning. A grapheme-only model cannot distinguish these without context or explicit stress marks.}\label{tab:lithuanian_ambiguity}
       \begin{tabular}{lcc}
             \toprule
             \textbf{Word}          & \textbf{Accentuation}       & \textbf{Meaning}      \\
@@ -417,39 +448,33 @@ Lithuanian~\cite{kasparaitis2023investigation}.
                                    & \textit{kasà} (Short)       & Braid/Pancreas (noun) \\
             \bottomrule
       \end{tabular}
-      \caption[Lithuanian homographs with accentuation ambiguity]{Examples of Lithuanian homographs where accentuation determines meaning. A grapheme-only model cannot distinguish these without context or explicit stress marks.}\label{tab:lithuanian_ambiguity}
 \end{table}
 
-From a neural modeling perspective, the high inflectional nature of Lithuanian
-increases the effective sequence length of the input. Autoregressive TTS models
-with location-sensitive attention, such as Tacotron~2, are known to degrade in
-performance as input sequences grow longer~\cite{battenberg2020location}. The
-complex G2P mapping inherent in Lithuanian free stress further complicates the
-learning objective. The model must reserve capacity to memorize stress patterns
-for specific inflections rather than just generalizing on acoustic features.
-This suggests that for Lithuanian, the stability of the alignment mechanism is
-not only dependent on the amount of available data, but is also affected by the
+From a neural modeling perspective, the highly inflectional nature of
+Lithuanian increases the effective sequence length of the input. Autoregressive
+TTS models with location-sensitive attention, such as Tacotron~2, are known to
+degrade in performance as input sequences grow
+longer~\cite{battenberg2020location}. The complex G2P mapping inherent in the
+Lithuanian free stress system further complicates the learning objective. The
+model must reserve capacity to memorize stress patterns for specific
+inflections rather than just generalizing on acoustic features. This suggests
+that for Lithuanian, the stability of the alignment mechanism is not only
+dependent on the amount of available data, but is also affected by the
 linguistic complexity of the input.
 
 To overcome these challenges, tools like
 \textbf{Kirčiuoklis}~\cite{kirciuoklis} (Vytautas Magnus University) are often
 employed in the text normalization pipeline. Kirčiuoklis automatically assigns
-stress marks to raw text. One weakness of Kirčiuoklis is that it relies on
-simple word-dictionary lookup, which does not take into account the context of
-the word. Thus, it suggests multiple possible accentuation variants for
-homographs, leaving it up to the user to select the correct one.
+stress marks to each word in the input text. One weakness of Kirčiuoklis is
+that it relies on a simple word-dictionary lookup, which does not take into
+account the context of the word. Thus, it suggests multiple possible
+accentuation variants for homographs, leaving it up to the user to select the
+correct one.
 
-In the absence of a high-quality, context-aware G2P converter for Lithuanian,
-this thesis will focus on grapheme-based TTS synthesis with accentuation marks
-provided by Kirčiuoklis. In cases where Kirčiuoklis suggests multiple
-accentuation variants for a word, no stress marks will be added, forcing the
-TTS model to rely on the context to resolve the ambiguity, rather than
-providing potentially incorrect explicit labels.
-
-\subsection{Text-to-speech synthesis}
+\subsection{Text-to-Speech Synthesis}
 
 Text-to-Speech (TTS) synthesis, also known as speech synthesis, is the process
-of converting written text into human-like spoken words. Nowadays TTS is a key
+of converting written text into human-like spoken words. Nowadays, TTS is a key
 technology in numerous applications, including virtual assistants,
 accessibility tools, and language learning platforms.
 
@@ -461,7 +486,7 @@ variations~\cite{jawaid2024style}. Thus, TTS is inherently a
 the original waveform from incomplete data (text) requires inferring missing
 information.
 
-\subsubsection{Traditional TTS approaches}
+\subsubsection{Traditional TTS Approaches}
 
 Early attempts at artificial speech synthesis evolved from the first mechanical
 devices in the 18th century to electronic systems. Wolfgang von Kempelen's
@@ -476,9 +501,9 @@ methods.
 In the decades that followed, two main approaches for speech synthesis emerged:
 concatenative synthesis and parametric synthesis.
 
-\subsubsection{Concatenative synthesis}
+\subsubsection{Concatenative Synthesis}
 
-The concatenative synthesis approach~\cite{hunt1996unit} synthesizes speech by
+The concatenative synthesis approach~\cite{hunt1996unit} generates speech by
 piecing together pre-recorded segments of human speech. This method involves
 several steps. First, it requires pre-recording a large database of speech
 segments spoken by a human voice actor in pristine, highly controlled studio
@@ -515,7 +540,7 @@ word units~\cite{kuligowska2018speech}. These rigid requirements are especially
 challenging for languages with rich morphology, and especially for low-resource
 languages like Lithuanian.
 
-\subsubsection{Parametric synthesis}
+\subsubsection{Parametric Synthesis}
 
 In contrast, statistical parametric speech synthesis~\cite{zen2009statistical}
 (SPSS) uses statistical models, typically Hidden Markov Models
@@ -545,7 +570,7 @@ parametric methods. However, the flexibility of the parametric approach laid
 the groundwork for modern Deep Learning methods, which eventually solved the
 over-smoothing problem and surpassed concatenative systems in naturalness.
 
-\subsection{Deep learning for end-to-end TTS}
+\subsection{Deep Learning for End-to-End TTS}
 
 The limitations of complex, multi-stage pipelines motivated the creation of E2E
 models. E2E systems learn the entire speech synthesis process --- from input
@@ -564,50 +589,39 @@ performance. Extrapolating from results in language modeling, it is observed
 that model performance follows general scaling laws~\cite{kaplan2020scaling},
 improving as the amount of training data increases.
 
-However, in the context of multi-speaker synthesis, there is a trade-off
-between the breadth of the data (number of distinct speakers) and the depth of
-the data (duration of audio per speaker). In theory, training on a dataset with
-a massive number of speakers, even with limited data per speaker, may allow the
-model to learn a more generalized latent space of voice characteristics. This
-high variance in the training data could act as a form of regularization,
-preventing overfitting to noise and idiosyncrasies of individual speakers, and
-leading to a more robust internal representation. However, in low depth
-scenarios, the model may struggle to converge on stable speaker identities,
-resulting in an ``average'' voice that lacks distinctiveness and naturalness.
-In contrast, datasets with fewer speakers but high duration per speaker allow
-the model to capture fine-grained prosodic details specific to those voices,
-potentially achieving lower generalization, but higher fidelity for the
-speakers present in the training set. It remains an open question whether the
-regularization benefit of speaker diversity outweighs the noise introduced by
-insufficient speaker profiling.
-
-\subsection{Foundational architectures}
+\subsection{Foundational Neural Network Components}
 
 In order to understand modern TTS systems, it is necessary to review the
-underlying neural architectures that enable sequence modeling.
+underlying neural network components that form the building blocks of these
+architectures.
 
-\subsubsection{Embeddings and Representation Learning}
+\subsubsection*{Embeddings and Representation Learning}
 
-In machine learning, embeddings are dense vector representations of discrete
-entities (such as words, characters, or speakers) to a high-dimensional
-continuous vector space. Unlike one-hot encodings, which are sparse and highly
+In machine learning, embeddings are dense vector representations that map
+discrete entities (such as words, characters, or speaker IDs) to a continuous
+vector space. Unlike one-hot encodings, which are sparse and highly
 dimensional, embeddings provide a dense, lower-dimensional representation that
-captures semantic relationships between underlying entities. For instance, in
-word embeddings, similar words tend to have more similar (correlated) vector
-representations, while dissimilar words map to more distant points in the
-vector space~\cite{mikolov2013efficient}. Just as similar words map to nearby
-points, in the TTS context, input characters that sound similar (e.g., `p' and
-`b') often acquire similar embedding representations during training.
+captures semantic relationships. For instance, in word embeddings, semantically
+similar words (e.g., `king' and `queen') tend to map to nearby points in the
+vector space~\cite{mikolov2013efficient}. Capturing such relationships enables
+models to generalize better --- for example, understanding that the letters `b'
+and `p' are phonetically similar can help in learning pronunciation patterns.
 
-\subsubsection{Text Embeddings}
+Technically, an embedding layer acts as a \textbf{lookup table} of parameters
+that can be either fixed (computed by an external model) or learnable during
+training. When the network processes an input entity ID, it retrieves the
+corresponding vector from this table. In trainable embedding layers, the
+vectors are updated via backpropagation along with the rest of the model
+parameters, allowing the model to optimize the embeddings in order to minimize
+the total loss.
 
-The ``Encoder'' part of a TTS model is responsible for converting a sequence of
-input symbols (characters or phonemes) into a sequence of feature vectors.
-Usually, this is done using an embedding layer, which maps each ``categorical''
-input symbol to a learnable fixed-size vector representation. During training,
-these embeddings are learned jointly with the rest of the TTS model.
+In TTS encoders, which are explained in more detail in the following sections,
+\textbf{character embeddings} are responsible for converting a sequence of
+input symbols (characters or phonemes) into continuous, differentiable feature
+vectors that can be processed by downstream neural network layers and trained
+jointly with the rest of the model.
 
-\subsubsection{Feedforward neural networks}
+\subsubsection*{Feedforward Neural Networks}
 
 Feedforward Neural Networks (FNNs) are the simplest type of artificial neural
 networks, consisting of layers of interconnected nodes (neurons) where
@@ -619,15 +633,16 @@ suitable for sequence modeling in TTS tasks on their own, though they remain
 building blocks within larger architectures (e.g., projection layers or
 post-processing nets).
 
-\subsubsection{Recurrent Neural Networks}
+\subsubsection*{Recurrent Neural Networks}
 
-Recurrent Neural Networks (RNNs) are a class of neural networks designed
-specifically for processing sequential data. Unlike Feedforward networks, RNNs
-possess an internal state (memory) that allows information to persist across
-time steps. For every element in the input sequence, the network performs the
-same task, with the output depending on both the current input and the previous
-computations. This makes them naturally suited for speech synthesis, where the
-current acoustic frame is highly dependent on the preceding ones.
+Recurrent Neural Networks (RNNs)~\cite{rumelhart1986learning} are a class of
+neural networks designed specifically for processing sequential data. Unlike
+Feedforward networks, RNNs possess an internal state (memory) that allows
+information to persist across time steps. For every element in the input
+sequence, the network performs the same task, with the output depending on both
+the current input and the previous computations. This makes them naturally
+suited for speech synthesis, where the current acoustic frame is highly
+dependent on the preceding ones.
 
 However, standard RNNs suffer from the ``vanishing gradient'' problem, making
 it difficult to learn dependencies over long
@@ -636,43 +651,59 @@ Short-Term Memory (LSTM)~\cite{hochreiter1997long} and Gated Recurrent Units
 (GRU)~\cite{cho2014learning} were introduced. These architectures utilize
 gating mechanisms to control the flow of information, allowing the network to
 retain or forget information over longer intervals. In the context of TTS,
-Bi-directional RNNs (Bi-LSTMs) are often used in the encoder to capture
-linguistic context from both past and future text inputs simultaneously.
+Bi-directional RNNs~\cite{schuster1997bidirectional} are often used in the
+encoder to capture linguistic context from both past and future text inputs
+simultaneously.
 
-\subsubsection{Attention mechanism}
+\subsubsection*{Attention Mechanism}
 
 One of the key challenges in sequence-to-sequence TTS is the misalignment
 between input and output sequences --- the length of the input text
 (characters) does not match the length of the output audio (frames). The
 Attention mechanism~\cite{bahdanau2016neural} solves this by allowing the
 decoder to focus on different parts of the input sequence at every step of
-generation. Rather than compressing the entire input into a single fixed-length
-vector, attention creates a context vector that is a weighted sum of the input
-states, where the weights represent the ``relevance'' of each input token to
-the current output step.
+generation.
 
-In TTS, the alignment must be monotonic (the model should read text from left
-to right without skipping back and forth) and continuous. Standard
-content-based attention can fail in this regard, leading to issues like
+In this framework, the decoder's current hidden state functions as a
+\textbf{query} ($Q$) that seeks relevant information. The encoded input text is
+projected into sets of \textbf{keys} ($K$) and \textbf{values} ($V$). At each
+decoding step, the model compares the current query against all keys to
+calculate attention weights, which represent the relevance of each input token.
+These weights are then used to aggregate (weighted sum) the corresponding
+values into a context vector.
+
+In mathematical terms, this operation can be expressed as:
+
+\begin{equation}
+      \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\end{equation}
+where $d_k$ is the dimensionality of the keys. The dot product $QK^T$
+computes the similarity between the decoder's state (query) and the encoder's
+representations (keys), determining how much focus to place on each respective
+value~\cite{vaswani2023attention}.
+
+In TTS, the alignment must be monotonic (reading text from left to right) and
+continuous. Standard content-based attention (relying solely on the similarity
+between query and key vectors) can fail in this regard, leading to issues like
 skipping words or repeating phrases. To solve this, TTS systems typically use
-\textit{Location-Sensitive Attention}~\cite{chorowski2015attention}. This
-variant adds the previous alignment history as an input to the attention
-scoring mechanism, effectively allowing the model to know ``where it was'' in
-the text at the last time step, and ensuring a stable and monotonic progression
-through the sentence.
+Location-Sensitive Attention~\cite{chorowski2015attention}. This variant
+extends the standard attention mechanism by allowing the query to access the
+previous alignment history. By incorporating the model's past ``location'' into
+the scoring of keys, it encourages the attention mechanism to move forward
+sequentially, ensuring a stable and monotonic progression through the sentence.
 
-\subsubsection{Encoder-Decoder framework}
+\subsubsection*{Encoder-Decoder Framework}
 
 The Encoder-Decoder architecture is a neural network design consisting of two
-components, namely an encoder and a decoder. The encoder processes the input
-data and compresses it into a high-dimensional latent representation. This
-vector captures the meaningful features of the input. The decoder uses this
-latent representation as context to generate the final output. This
-architecture is commonly used in sequence-to-sequence (seq2seq)
+components: an encoder and a decoder. The encoder processes the input data and
+compresses it into a high-dimensional latent representation. This vector
+captures the meaningful features of the input. The decoder uses this latent
+representation as context to generate the final output. This architecture is
+commonly used in sequence-to-sequence (seq2seq)
 tasks~\cite{sutskever2014sequence}, such as machine translation (text-to-text)
 and text-to-speech synthesis (mapping text to audio frames).
 
-\subsubsection{Autoregressive and Non-autoregressive models}
+\subsubsection*{Autoregressive and Non-autoregressive Models}
 
 Within the sequence-to-sequence framework, TTS models can be generally
 categorized into autoregressive and non-autoregressive (parallel) models based
@@ -699,7 +730,7 @@ While these models achieve significant speed-ups during inference, they may
 struggle to capture fine temporal dependencies, potentially leading to lower
 naturalness compared to autoregressive models.
 
-\subsection{TTS pipeline and acoustic models}
+\subsection{TTS Pipeline and Acoustic Models}
 
 As shown in Figure~\ref{fig:tts_pipeline}, modern neural TTS systems generally
 follow a two-stage pipeline. An \textbf{Acoustic model} first generates
@@ -710,22 +741,20 @@ waveform.
 \begin{figure}[ht]
       \centering
       \includegraphics[width=\textwidth]{figures/tts_pipeline.pdf}
-      \caption[Text-to-Speech synthesis pipeline]{Text-to-Speech synthesis pipeline. The TTS model generates Mel-spectrograms from input text, which are then converted to raw audio waveforms by a neural vocoder.}\label{fig:tts_pipeline}
+      \caption[Text-to-Speech synthesis pipeline]{Text-to-Speech synthesis pipeline. The TTS model generates Mel-spectrograms from input text, which are then converted to raw audio waveforms by a vocoder.}\label{fig:tts_pipeline}
 \end{figure}
 
 The following sections detail the specific acoustic models used in this work.
 
-\subsubsection{Tacotron~2 (Autoregressive)}
+\subsubsection{Tacotron~2}
 
 Tacotron~\cite{wang2017tacotron} and Tacotron~2~\cite{shen2018natural} are
 notable TTS models based on the autoregressive sequence-to-sequence
 architecture. The variant that this thesis primarily focuses on is Tacotron~2
 with Dynamic Convolution Attention (DCA)~\cite{battenberg2020location}. The
 complete architecture of Tacotron~2 is depicted in
-Figure~\ref{fig:tacotron2_architecture}.
-
-The architecture has three main components, an encoder, an attention mechanism,
-and a decoder.
+Figure~\ref{fig:tacotron2_architecture}. The architecture has three main
+components: an encoder, an attention mechanism, and a decoder.
 
 The \textbf{Encoder}'s input is a character or phoneme sequence. A stack of
 convolutional layers followed by a bidirectional LSTM converts the character
@@ -734,7 +763,7 @@ sequence into a high-level hidden feature representation.
 The \textbf{Attention mechanism} bridges the encoder and decoder --- it
 determines which parts of the input text should be attended to when generating
 each of the output audio frames. While the original Tacotron~2 used
-location-sensitive attention~\cite{chorowski2015attention}, a more modern
+Location-Sensitive Attention~\cite{chorowski2015attention}, a more modern
 variant employs DCA~\cite{battenberg2020location}, which offers robust
 alignment for long inputs and prevents the model from repeating or skipping
 words.
@@ -755,14 +784,14 @@ alignment.
 \begin{figure}[ht]
       \centering
       \includegraphics[width=0.6\textwidth]{figures/tacotron2_architecture.png}
-      \caption[Tacotron~2 architecture]{Tacotron~2 architecture, diagram taken from the original paper~\cite{shen2018natural}. Note the recurrent connections in the decoder and the attention mechanism aligning encoder outputs to decoder steps.}\label{fig:tacotron2_architecture}
+      \caption[Tacotron~2 architecture]{Tacotron~2 architecture, diagram taken from the original paper~\cite{shen2018natural}. The Attention module connects the Encoder (upstream blocks) with the Decoder (downstream blocks). WaveNet is not part of the acoustic model and is not used in this work.}\label{fig:tacotron2_architecture}
 \end{figure}
 
 The model is optimized by minimizing a combination of losses: the mean squared
 error (MSE) between the predicted and ground truth Mel-spectrograms (both the
 Decoder and Post-net outputs) and the binary cross-entropy loss for the stop
-token prediction. Modern implementations of Tacotron~2 often include additional
-loss terms, such as the spectral similarity index (SSIM) loss, and the ``guided
+token prediction. Modern implementations of Tacotron~2 include additional loss
+terms, such as the spectral similarity index (SSIM) loss, and the ``guided
 attention'' loss to encourage diagonal alignments.
 
 While Tacotron~2 can generate high-quality speech, being an autoregressive
@@ -770,30 +799,29 @@ model, it suffers from slow inference times. Additionally, the attention
 mechanism can suffer from stability issues, such as attention failures that
 result in skipped or repeated words in the synthesized speech.
 
-\subsubsection{Glow-TTS (Non-autoregressive)}
+\subsubsection{Glow-TTS}
 
-Glow-TTS~\cite{kim2020glowtts} is a notable non-autoregressive TTS model that
-applies flow-based generative models (Normalizing Flows), which allow for
-complex distributions to be modeled by transforming a simple distribution
-through a series of invertible mappings. Unlike Tacotron~2, Glow-TTS generates
-the entire Mel-spectrogram in parallel, significantly speeding up inference.
+Glow-TTS~\cite{kim2020glowtts} is a non-autoregressive TTS model that applies
+flow-based generative models (normalizing flows~\cite{rezende2016variational}),
+which allow for complex distributions to be modeled by transforming a simple
+distribution through a series of invertible mappings. Unlike Tacotron~2,
+Glow-TTS generates the entire Mel-spectrogram in parallel, significantly
+speeding up inference.
 
-A distinguishing feature of Glow-TTS is its ability to learn alignment
-internally, treating it as a latent variable. This eliminates the dependency on
-external aligners or priors often required by early parallel models, or
-original implementations of models like FastPitch~\cite{lancucki2020fastpitch}.
-To achieve this, Glow-TTS employs Monotonic Alignment Search (MAS) to find the
-most probable monotonic path between the input text and the target
-Mel-spectrogram, maximizing the log-likelihood of the data. Architecturally,
-the decoder uses a stack of normalizing flows --- specifically invertible $1
-      \times 1$ convolutions and affine coupling layers --- to transform a simple
-prior distribution (conditioned on the text encoder outputs) into the complex
-distribution of Mel-spectrograms.
+Compared with earlier parallel models like FastSpeech~\cite{ren2019fastspeech}
+or FastPitch~\cite{lancucki2020fastpitch}, a distinguishing feature of Glow-TTS
+is its ability to learn alignment internally, eliminating the dependency on
+external aligners. To achieve this, Glow-TTS employs Monotonic Alignment Search
+(MAS) to find the most probable monotonic path between the input text and the
+target Mel-spectrogram, maximizing the log-likelihood of the data.
+Architecturally, the decoder uses a stack of normalizing flows ---
+specifically, invertible $1 \times 1$ convolutions and affine coupling layers
+--- to transform a simple prior distribution (conditioned on the text encoder
+outputs) into the complex distribution of Mel-spectrograms.
 
 By utilizing the properties of flows, Glow-TTS allows for varied speech
 synthesis by sampling from the latent space and manipulating the noise
-temperature. Furthermore, the duration of the speech can be controlled by
-modifying the predicted duration of the alignment.
+temperature.
 
 The high-level architecture of Glow-TTS is illustrated in
 Figure~\ref{fig:glow_tts_arch}, showing both the training and inference
@@ -801,7 +829,7 @@ procedures.
 
 \begin{figure}[ht]
       \centering
-      \begin{subfigure}[a]{.49\textwidth}
+      \begin{subfigure}[b]{.49\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/glow_tts_arch_training.pdf}
             \caption{An abstract diagram of the training procedure.}\label{fig:glow_tts_arch_training}
@@ -814,31 +842,18 @@ procedures.
       \caption[Glow-TTS training and inference procedures]{Glow-TTS training and inference procedures. During training (a), the model learns to map text to Mel-spectrograms by maximizing the likelihood of the data using Monotonic Alignment Search (MAS). During inference (b), the model generates Mel-spectrograms in parallel by sampling from a prior distribution conditioned on the text encoder outputs~\cite{kim2020glowtts}.}\label{fig:glow_tts_arch}
 \end{figure}
 
-The primary advantages of Glow-TTS over Tacotron~2 are inference speed,
-robustness (the monotonic constraint prevents skipping or repeating words), and
-the elimination of the need for an external aligner during training.
+The primary advantages of Glow-TTS over Tacotron~2 are inference speed and
+robustness (the MAS alignment prevents skipping or repeating words).
 
-% TODO
-% In the context of the proposed low-resource experiments, the distinction
-% between Tacotron~2's soft attention and Glow-TTS's Monotonic Alignment Search
-% (MAS) is critical. Tacotron~2 must learn to attend from scratch, which is
-% notoriously data-inefficient and prone to collapse on small datasets.
-% Conversely, Glow-TTS enforces a hard monotonic constraint. Theoretically, this
-% inductive bias should make Glow-TTS significantly more data-efficient, as it
-% restricts the search space of possible alignments. This thesis tests whether
-% this architectural hardness allows Glow-TTS to produce intelligible speech in
-% the extreme low-data regime (7.5 minutes per speaker) where the soft attention
-% of Tacotron~2 is hypothesized to fail.
-
-\subsubsection{Other notable TTS models}
+\subsubsection{Other Notable TTS Models}
 
 Besides Tacotron~2 and Glow-TTS, other notable TTS architectures include
 \textbf{FastPitch}~\cite{lancucki2020fastpitch}, which uses a feed-forward
 Transformer architecture with explicit pitch and duration predictors, and
 \textbf{VITS} (Conditional Variational Autoencoder with Adversarial
 Learning)~\cite{kim2021conditional}, which combines the acoustic TTS model
-(Glow-TTS) with a neural vocoder (HiFi-GAN) into a single end-to-end
-architecture.
+(Glow-TTS) with a neural vocoder (HiFi-GAN~\cite{kong2020hifi}) into a single
+end-to-end architecture.
 
 \subsection{Vocoders}~\label{sec:vocoder}
 
@@ -857,7 +872,7 @@ artifacts and lower quality compared to natural speech. Modern TTS systems use
 neural vocoders --- deep generative models trained to map acoustic features to
 raw waveforms.
 
-\subsubsection{Evolution of neural vocoders}
+\subsubsection*{Evolution of Neural Vocoders}
 
 \textbf{WaveNet}~\cite{oord2016wavenet} was one of the first autoregressive
 models to produce high-fidelity audio, but its sequential generation process
@@ -868,12 +883,16 @@ introduced.
 \textbf{HiFi-GAN}~\cite{kong2020hifi} is currently
 one of the state-of-the-art neural vocoders. It consists of a Generator that
 upsamples the Mel-spectrograms using transposed convolutions and a set of
-Discriminators (multi-scale and multi-period discriminators) that ensure the
-generated audio is indistinguishable from real human speech. HiFi-GANs are
-highly efficient and capable of Real-Time Factor significantly less than 1.0
+Discriminators (multi-scale and multi-period discriminators) that have the role
+of distinguishing between real and synthesized audio. The adversarial training
+between the Generator and Discriminators trains the Generator to produce
+high-quality waveforms that closely resemble natural speech. HiFi-GANs are
+highly efficient and capable of a Real-Time Factor significantly less than 1.0
 on consumer hardware while maintaining high perceptual quality.
+HiFi-GAN is also part of the state-of-the-art end-to-end TTS model
+VITS~\cite{kim2021conditional}.
 
-\subsubsection{Cross-lingual vocoding}
+\subsubsection*{Cross-Lingual Vocoding}
 
 The framework used in this thesis, Coqui TTS~\cite{coqui2021}, provides a
 pre-trained HiFi-GAN vocoder trained on the VCTK dataset~\cite{veaux2019cstr},
@@ -891,28 +910,44 @@ parameters (sampling rate, FFT size, Mel-filterbank limits, etc.) of the input
 Mel-spectrograms are configured to match those used during the vocoder's
 training.
 
-\subsection{Multi-speaker TTS}
+\subsection{Multi-Speaker TTS}
 
 Multi-speaker TTS models are designed to synthesize speech in the voices of
-multiple speakers. In order to achieve this, these models are indeed trained on
-data from many different speakers, allowing them to learn the characteristics
-of each voice and synthesize speech that sounds like a specific individual,
-while still being able to generalize the shared linguistic and acoustic
-patterns across speakers.
+multiple speakers within a single model. While the obvious utility of such
+systems is to provide voice options for virtual assistants or content creation,
+another motivation for their development is data efficiency.
 
-\subsubsection{Speaker embeddings}
+The standard recommendation for high-quality \textit{single-speaker} TTS is 10
+to 20~hours of clean, studio-recorded speech from a professional voice actor.
+The majority of existing research focuses on high-resource languages like
+English, where such datasets (e.g., LJSpeech~\cite{ljspeech17} with 24 hours of
+speech) are readily available. However, for low-resource languages such as
+Lithuanian, acquiring such extensive single-speaker datasets is often not
+feasible. Available resources tend to be crowd-sourced, with multiple speakers
+contributing small amounts of data to a fragmented corpus.
+
+Multi-speaker TTS addresses this by decoupling the learning of linguistic
+features from speaker identity. By pooling data from multiple speakers, the
+model learns shared linguistic features --- such as phoneme duration and stress
+patterns --- from the global dataset. At the same time, it learns to model
+individual speaker characteristics through speaker-specific embeddings. This
+allows the model to synthesize high-quality speech for individuals who
+contribute only a fraction of the data normally required for single-speaker
+training, effectively enabling the system to learn ``how to speak'' from the
+group and ``how to sound'' from the individual.
+
+\subsubsection{Speaker Embeddings}
 
 To enable multi-speaker synthesis, TTS models require a representation of
-speaker identity. In multi-speaker architectures, the network is conditioned on
-a speaker embedding vector. The model learns a shared representation of
-phonetics (how text maps to sound generally) while using this additional input
---- the speaker embedding --- to adjust the timbre and prosodic characteristics
-specific to a target voice.
+speaker identity to condition the generation process. In these architectures,
+the network is conditioned on a speaker embedding vector. The model learns a
+shared representation of phonetics (how text maps to sound generally) while
+using this additional input --- the speaker embedding --- to adjust the timbre
+and prosodic characteristics specific to a target voice.
 
 Early successful implementations of this approach include Deep Voice
 2~\cite{arik2017deep}, which demonstrated effective multi-speaker synthesis by
 learning speaker-specific embeddings jointly with the generative model.
-
 Contemporary approaches generally fall into two categories: external
 pre-computed embeddings (such as d-vectors and x-vectors) and internal
 learnable embeddings.
@@ -936,56 +971,45 @@ speaker verification (telling speakers apart), which may not align perfectly
 with the objective of high-quality speech synthesis.
 
 In the \textbf{learnable speaker embeddings} approach, a \textbf{learnable}
-embedding layer (Lookup Table) is initialized within the TTS model. Each
+embedding layer (lookup table) is initialized within the TTS model. Each
 speaker ID in the training set is mapped to a unique, dense vector. These
 vectors are initialized randomly and updated via backpropagation during TTS
 model training. This method cannot generalize to new, unseen speakers at
 inference time, but it is simple and effective when the number of speakers is
 fixed and known in advance.
 
-In this work, learnable speaker embeddings are used for both Tacotron~2 and
-Glow-TTS models. While external embeddings allow for zero-shot capabilities,
-learnable embeddings were chosen. The primary reason is that this study focuses
-on synthesis for a known set of speakers, where learnable embeddings typically
-outperform pre-computed vectors. They allow each model to learn a specialized
-latent representation for each voice that reflects the features most relevant
-for each model architecture, rather than features used specifically to
-distinguish between speakers in a classification task. This eliminates the
-information bottleneck or noise introduced by an external verification model.
-
-% TODO
-% The choice of learnable embeddings over pre-computed vectors (e.g., x-vectors)
-% is specifically motivated by the fragmented nature of the Liepa~2 corpus.
-% Pre-computed embeddings rely on the assumption that the reference audio is of
-% sufficient duration and stability to extract a text-independent speaker
-% signature. In the target dataset, where some speakers may have limited,
-% variable-quality samples, an external encoder might produce noisy or
-% inconsistent embeddings. By using learnable embeddings, the TTS model can
-% optimize the speaker vector to maximize the likelihood of the specific training
-% samples available, effectively ``overfitting'' the speaker identity to the
-% available data, which is a desirable trait when the goal is to maximize quality
-% for a closed set of speakers rather than zero-shot generalization.
-
 \subsubsection{Challenges}
 
-One key challenge in multi-speaker TTS is ensuring that the model can
-generalize across many speakers while still maintaining high quality for each.
-As discussed in \textbf{Deep learning for end-to-end TTS}, there is a trade-off
-between the \textit{breadth} and \textit{depth} of the training data.
+Compared to single-speaker models, multi-speaker models can achieve convergence
+and reasonable intelligibility with significantly less data per speaker --- as
+little as 15 to 30 minutes --- provided the total pooled dataset is
+sufficiently large to learn the shared linguistic features. However, one
+critical question in this domain is data composition: determining the optimal
+structure of the training dataset to maximize synthesis quality.
 
-Standard TTS systems historically required 10 to 20 hours of recorded speech
-for a single professional speaker. However, deep learning models capable of
-\textit{transfer learning} can produce intelligible speech for a new speaker
-with significantly less data, potentially as little as a few minutes --- if the
-base model has been pre-trained on a sufficiently diverse multi-speaker
-dataset.
+In the context of multi-speaker synthesis, there is a trade-off between the
+\textbf{breadth} of the data (number of distinct speakers) and the
+\textbf{depth} of the data (duration of audio per speaker). In theory, training
+on a dataset with a massive number of speakers, even with limited data per
+speaker, may allow the model to learn a more generalized latent space of voice
+characteristics. This high variance in the training data could act as a form of
+regularization, preventing overfitting to noise and idiosyncrasies of
+individual speakers, and leading to a more robust internal representation.
+However, in low depth scenarios, the model may struggle to converge on stable
+speaker identities, resulting in an `average' voice that lacks distinctiveness
+and naturalness. In contrast, datasets with fewer speakers but high duration
+per speaker allow the model to capture fine-grained prosodic details specific
+to those voices, potentially achieving lower generalization, but higher
+fidelity for the speakers present in the training set. It remains an open
+question whether the regularization benefit of speaker diversity outweighs the
+noise introduced by insufficient speaker profiling.
 
-\subsection{Evaluation metrics}
+\subsection{Evaluation Metrics for TTS}
 
 Evaluating Text-to-Speech systems is notoriously difficult because ``quality''
 and ``naturalness'' are subjective metrics defined by human perception.
 
-\subsubsection{Objective metrics}
+\subsubsection*{Objective Metrics}
 
 Several objective metrics have been proposed to quantify the quality of
 synthesized speech. While there is no single mathematical function that
@@ -993,32 +1017,33 @@ perfectly aligns with human judgement of naturalness and intelligibility, these
 metrics are easy to compute and can provide useful insights during model
 development. Common objective metrics are summarized in
 Table~\ref{tab:objective_metrics}. Each metric captures a different aspect of
-speech quality, including spectral similarity (MCD), pitch accuracy ($F_0$
-RMSE), and perceived audio quality (PESQ).
+speech quality, including spectral similarity (MCD), pitch accuracy
+($F_0$~RMSE), and perceived audio quality (PESQ).
 
 \begin{table}[ht]
       \centering
+      \caption[Common objective metrics for TTS evaluation]{Common objective metrics for TTS evaluation. These metrics provide quantitative measures of spectral similarity, pitch accuracy, and perceived audio quality.}\label{tab:objective_metrics}
       \begin{tabular}{lll}
             \toprule
             \textbf{Acronym}              & \textbf{Full name}       & \textbf{Description}                                     \\
             \midrule
             MCD~\cite{kubichek1993mel}    & Mel-Cepstral Distortion  & Measures spectral distortion between synthesized and     \\
                                           &                          & reference audio. Lower values indicate better quality.   \\
-            $F_0$ RMSE                    & Fundamental Frequency    & Quantifies pitch accuracy by computing the root mean     \\
+            $F_0$~RMSE                    & Fundamental Frequency    & Quantifies pitch accuracy by computing the root mean     \\
                                           & Root Mean Square Error   & square error of fundamental frequency (pitch). Lower is  \\
                                           &                          & better.                                                  \\
             PESQ~\cite{rix2001perceptual} & Perceptual Evaluation of & Predicts perceived audio quality on a scale from -0.5 to \\
-                                          & Speech Quality           & 4.5. Higher is better.                                   \\
+                                          & Speech Quality           & 4.5. Requires aligned reference audio for comparison.    \\
+                                          &                          & Higher is better.                                        \\
             \bottomrule
       \end{tabular}
-      \caption[Common objective metrics for TTS evaluation]{Common objective metrics for TTS evaluation. These metrics provide quantitative measures of spectral similarity, pitch accuracy, and perceived audio quality.}\label{tab:objective_metrics}
 \end{table}
 
-\subsubsection{Subjective metrics: Mean Opinion Score}
+\subsubsection*{Subjective Metrics}
 
-The gold standard for evaluating speech synthesis quality is the Mean Opinion
-Score (MOS), originally derived from telecommunications quality standards
-(ITU-T P.800)~\cite{itup800}.
+The gold standard for evaluating speech synthesis quality remains the Mean
+Opinion Score (MOS), originally derived from telecommunications quality
+standards (ITU-T P.800)~\cite{itup800}.
 
 In a MOS test, human listeners (raters) are presented with a set of synthesized
 speech audio samples and asked to rate them on a 5-point Likert scale. The
@@ -1026,6 +1051,7 @@ standard scale for ``naturalness'' is presented in Table~\ref{tab:mos_scale}.
 
 \begin{table}[ht]
       \centering
+      \caption[Mean Opinion Score (MOS) scale for TTS evaluation]{Mean Opinion Score (MOS) scale for TTS evaluation. Raters assign scores based on the perceived naturalness of synthesized speech samples.}\label{tab:mos_scale}
       \begin{tabular}{cl}
             \toprule
             \textbf{Score} & \textbf{Description}                                  \\
@@ -1037,7 +1063,6 @@ standard scale for ``naturalness'' is presented in Table~\ref{tab:mos_scale}.
             1              & Bad (Very annoying / Unintelligible)                  \\
             \bottomrule
       \end{tabular}
-      \caption[Mean Opinion Score (MOS) scale for TTS evaluation]{Mean Opinion Score (MOS) scale for TTS evaluation. Raters assign scores based on the perceived naturalness of synthesized speech samples.}\label{tab:mos_scale}
 \end{table}
 
 The final score is the arithmetic mean of all ratings collected for a specific
@@ -1045,7 +1070,7 @@ TTS system. Although MOS is subjective, with a sufficient number of raters
 (typically, at least 15--20), the scores tend to converge and provide a
 reliable ranking between different models.
 
-\subsubsection{Latin square design}
+\subsubsection*{Latin Square Design}
 
 A major challenge in subjective listening tests is controlling for biases. If a
 rater hears the same sentence produced by different TTS systems in a row, their
@@ -1060,6 +1085,7 @@ experimental design:
 
 \begin{enumerate}
       \item A set of test sentences (utterances) is selected.
+      \item Multiple TTS systems (models) generate audio for each test sentence.
       \item The listeners are divided into groups.
       \item The presentation is balanced such that each listener hears every test sentence
             exactly once, and every TTS system (model) exactly once per block of trials,
@@ -1068,20 +1094,19 @@ experimental design:
 
 \begin{figure}[ht]
       \centering
-      \includegraphics[width=0.6\textwidth]{figures/latin_square_design.pdf}
+      \includegraphics[width=0.7\textwidth]{figures/latin_square_design.pdf}
       \caption[Latin square design for TTS evaluation]{Latin square design for TTS evaluation. Each listener group hears each sentence exactly once, and each TTS system exactly once per block, ensuring balanced exposure and mitigating order/repetition biases.}\label{fig:latin_square}
 \end{figure}
-
-An example Latin square design for 4 TTS systems and 4 test sentences is
-illustrated in Figure~\ref{fig:latin_square}.
 
 For a multi-speaker TTS evaluation (as is the case in this thesis), the Latin
 square design ensures that the ratings reflect the quality of the model rather
 than the linguistic content of the sentence or listener fatigue. By rotating
 the systems and sentences across listener groups, the influence of specific
-difficult sentences is averaged out across all models.
+difficult sentences is averaged out across all models. An example Latin square
+design for 4 TTS systems and 4 test sentences is illustrated in
+Figure~\ref{fig:latin_square}.
 
-\subsection{Research gap}
+\subsection{Research Gap}
 
 While the literature demonstrates the capabilities of modern deep learning TTS
 architectures like Tacotron~2 and Glow-TTS to produce highly natural-sounding
@@ -1107,10 +1132,12 @@ high-depth datasets may improve the model's naturalness for the target
 speakers.
 
 Secondly, most multi-speaker TTS research assumes access to large-scale
-datasets with thousands of utterances per speaker. There is a lack of research
-exploring how different TTS architectures (autoregressive vs.
-non-autoregressive) perform when the data per speaker is scarce (e.g., under 10
-minutes).
+datasets with thousands of utterances per speaker. There have been few studies
+investigating severe low-depth scenarios --- a recent study examined
+fine-tuning Tacotron, however, it relied on a pre-trained model and did not
+explore training from scratch~\cite{jain2022text}. There is a lack of research
+exploring how different TTS architectures perform when the data per speaker is
+scarce (e.g., under 10 minutes).
 
 This thesis aims to fill the research gap by systematically evaluating the
 efficiency of Tacotron~2 and Glow-TTS models trained on Lithuanian speech data.
@@ -1124,7 +1151,7 @@ To summarize, the key research questions this thesis seeks to answer are:
       \item How does the trade-off between data breadth (number of speakers) and data depth
             (minutes per speaker) affect the performance of multi-speaker TTS models for
             Lithuanian?
-      \item How do different TTS architectures (Tacotron~2 vs. Glow-TTS) perform under
+      \item How do different TTS architectures (Tacotron~2 and Glow-TTS) perform under
             varying data selection strategies in low-resource settings?
 \end{itemize}
 
@@ -1153,7 +1180,7 @@ speech has been discussed.
 
 We have reviewed the entire TTS pipeline --- from signal processing (sampling,
 quantization, Fourier transforms, and Mel-spectrogram extraction), through text
-normalization and representation (graphemes vs.\ phonemes), to deep learning
+normalization and representation (graphemes versus phonemes), to deep learning
 architectures for acoustic modeling and vocoding. The literature highlights two
 architectures for acoustic modeling: the autoregressive Tacotron~2, known for
 high-quality spectral output but slow inference and stability issues, and the
@@ -1161,16 +1188,16 @@ non-autoregressive Glow-TTS, which offers parallel generation and improved
 robustness.
 
 We have examined the challenges specific to Lithuanian TTS synthesis. Unlike
-English, Lithuanian languages's high inflectional morphology leads to a large
-number of unique word forms, and its prosodic system requires handling of free
-stress and pitch accents, necessitating the use of tools like Kirčiuoklis for
-accentuation marking.
+English, the Lithuanian language's high inflectional morphology leads to a
+large number of unique word forms, and its prosodic system requires handling of
+free stress and pitch accents, necessitating the use of tools like Kirčiuoklis
+for accentuation marking.
 
 Finally, we have reviewed the role of speaker embeddings in enabling
 multi-speaker synthesis and the use of neural vocoders, specifically HiFi-GAN,
 to reconstruct high-fidelity waveforms from Mel-spectrograms. Despite these
-advancements, a gap remains in understanding how data diversity versus quantity
-affects model performance for complex, low-resource languages --- a challenge
+advancements, a gap remains in understanding how data diversity and quantity
+affect model performance for complex, low-resource languages --- a challenge
 this thesis addresses through the experiments detailed in the following
 chapters.
 
@@ -1181,11 +1208,11 @@ chapters.
 
 This chapter details the experimental setup, data processing pipeline, training
 configurations, and evaluation protocol used to determine the optimal
-composition of multi-speaker training data for Lithuanian TTS\@. The study uses
-factorial design to compare the performance of two distinct architectures ---
-Tacotron~2 (autoregressive) and Glow-TTS (non-autoregressive) --- under varying
-degrees of data breadth and depth, while controlling for the total training
-budget.
+composition of multi-speaker training data for Lithuanian TTS\@. The study
+employed a factorial design to compare the performance of two distinct
+architectures --- Tacotron~2 (autoregressive) and Glow-TTS (non-autoregressive)
+--- under varying degrees of data breadth and depth, while controlling for the
+total training budget.
 
 The high-level experimental workflow is illustrated in
 Figure~\ref{fig:pipeline}.
@@ -1219,31 +1246,29 @@ Figure~\ref{fig:pipeline}.
             \node [right=0.2cm of train, text width=2.5cm, align=center] {\scriptsize Tacotron 2\\ Glow-TTS};
             \node [below=0.2cm of eval, text width=2.5cm, align=center] {\scriptsize Objective\\ Subjective (MOS)};
       \end{tikzpicture}
-      \caption{Experimental pipeline overview. The process flows from raw corpus selection to comparative evaluation.}\label{fig:pipeline}
+      \caption[Experimental pipeline overview]{Experimental pipeline overview. The process flows from raw corpus selection to comparative evaluation.}\label{fig:pipeline}
 \end{figure}
 
 \subsection{Research Design}
 
 To investigate the impact of data distribution on synthesis quality, the
-experiments vary the balance between the number of speakers ($N$) and the
+experiments varied the balance between the number of speakers ($N$) and the
 amount of data per speaker.
 
-\subsubsection{Variables}
-
 \begin{description}
-      \item {Independent Variables:} \hfill
+      \item [Independent Variables:] \hfill
             \begin{itemize}
-                  \item \textbf{Data selection strategy:} Three subsets varying in speaker count versus duration per speaker (breadth vs.\ depth).
-                  \item \textbf{Model architecture:} Autoregressive (Tacotron~2) vs. Non-autoregressive (Glow-TTS).
+                  \item \textbf{Data selection strategy:} Three subsets varying in speaker count and duration per speaker (breadth versus depth).
+                  \item \textbf{Model architecture:} Tacotron~2 (autoregressive) and Glow-TTS (non-autoregressive).
             \end{itemize}
 
-      \item {Dependent Variables:} \hfill
+      \item [Dependent Variables:] \hfill
             \begin{itemize}
-                  \item \textbf{Objective metrics:} MCD, F0~RMSE, and attention alignment convergence.
+                  \item \textbf{Objective metrics:} MCD, $F_0$~RMSE, and attention alignment convergence.
                   \item \textbf{Subjective metrics:} Naturalness ratings via MOS\@.
             \end{itemize}
 
-      \item {Controlled Variables:} \hfill
+      \item [Controlled Variables:] \hfill
             \begin{itemize}
                   \item \textbf{Training budget:} Fixed at 22.5 hours of audio data per model.
                   \item \textbf{Training duration:} 90k steps for Tacotron~2 and 180k steps for Glow-TTS, adjusted for convergence characteristics.
@@ -1252,20 +1277,21 @@ amount of data per speaker.
             \end{itemize}
 \end{description}
 
-\subsection{The Liepa~2 Dataset}
+\subsection{The Liepa-2 Dataset}
 
-The primary dataset of this study is the \textbf{Liepa~2} Lithuanian speech
-corpus~\cite{liepa2project}. The full corpus contains 1,000 hours of annotated
-audio from 2,621~unique speakers. Of this, 939~hours are transcribed speech,
-while the remaining 61~hours consist of non-speech noise segments. The
-recordings span diverse speech styles and contexts, including read speech
-(audiobooks, studio recordings, dictaphone) and spontaneous speech (phone,
-radio, TV), sampled at 16~kHz in 16-bit PCM WAV format.
-
-The dataset was obtained from the authors upon request for research purposes.
+The primary dataset of this study is the \textbf{Liepa-2} Lithuanian speech
+corpus~\cite{liepa2project}. The dataset was obtained from the authors upon
+request for research purposes. To the best of the author's knowledge, this is
+currently the largest freely available annotated multi-speaker Lithuanian
+speech dataset. The full corpus contains 1,000 hours of annotated audio from
+2,621~unique speakers. Of this, 939~hours are transcribed speech, while the
+remaining 61~hours consist of non-speech noise segments. The recordings span
+diverse speech styles and contexts, including read speech (audiobooks, studio
+recordings, dictaphone) and spontaneous speech (phone, radio, TV), sampled at
+16~kHz in 16-bit PCM WAV format.
 
 According to the documentation, the dataset filenames encode metadata about
-each recording. The filenames were used to retrieve the following information
+each recording. These filenames were used to retrieve the following information
 about each audio file: lossiness (lossy or raw), speech type (read or
 spontaneous), recording type (audiobook, dictaphone, phone, radio, studio, TV),
 gender (male or female), age group (0--12, 13--17, 18--25, 26--60, 60+),
@@ -1273,45 +1299,39 @@ speaker ID, recording sequence number, and utterance number.
 
 The documentation notes that speaker IDs are unique only within the context of
 an annotator, but not globally across the entire corpus. However, the
-documentation claims that duplicate speakers are rare and not specifically
+documentation claims that duplicate speakers are rare, though not specifically
 marked in the dataset. Thus, speaker IDs were treated as globally unique for
 the purposes of this study.
 
 \subsubsection{Corpus Analysis and Filtering}
 
 The dataset was analyzed to determine the distribution of audio duration,
-sentence lengths, and speaker counts across different speech types and
-recording conditions. Due to the large size of the dataset, the duration was
-estimated using metadata extraction rather than loading and processing each
-file, which would be computationally expensive.
+sentence length, and speaker distributions across different speech types and
+recording conditions.
 
-Analysis reveals that the entire Liepa~2 corpus contains 939~hours of
-transcribed speech. Of this, spontaneous speech constitutes under 9\%
-(84~hours), while read speech makes up the majority (855~hours). Spontaneous
-speech is more challenging for TTS training due to its inconsistent
-pronunciation, disfluencies, and variable prosody. Read speech, on the other
-hand, is generally more suitable for TTS training due to its consistent
+Analysis revealed that of the 939~hours of transcribed speech, read speech
+constitutes the majority (855~hours), while spontaneous speech accounts for
+under 9\% (84~hours). Synthesizing spontaneous speech is more challenging due
+to disfluencies, high variability, and syntactic conventions different from
+those of written language~\cite{szekely2019spontaneous}. Read speech, on the
+other hand, is generally more suitable for TTS training due to its consistent
 pronunciation and prosody.
 
 Of the read speech, studio recordings account for the largest portion (577
 hours, 67\%), followed by dictaphone (220 hours, 25\%) and audiobooks (25
 hours, 3\%). The remaining 33 hours (4\%) are from TV, phone, and radio
-recordings. It was decided to focus on read speech from studio, dictaphone, and
-audiobook sources to ensure higher quality and consistency in the training
-data.
-
-% Finally, TV, phone, and radio recordings were excluded due to the less
-% controlled recording conditions and potential background noise, which could
-% degrade the quality of the synthesized speech. These categories account for 6\%
-% of the total read speech duration. Thus, the final filtered dataset focuses on
-% the following categories:
+recordings. The latter three categories of read speech recordings were excluded
+due to the potentially less controlled recording conditions, or distinct
+acoustic characteristics that could introduce unwanted variability into the
+training data. Thus, the focus was placed on the more abundant studio,
+dictaphone, and audiobook sources, all of which were deemed more likely to be
+recorded in controlled environments favourable for TTS training.
 
 Additionally, it was decided to exclude speakers under 18 years of age to
-maintain compatibility with the HiFi-GAN vocoder, which was pre-trained on
-adult speakers (VCTK dataset~\cite{veaux2019cstr}) and will be used for
-waveform generation. Speakers in the 0--17 age group constitute a small
-fraction (76 hours, 8\%) of the total corpus duration, so their exclusion is
-not expected to significantly impact the available training data.
+maintain compatibility with the pre-trained HiFi-GAN vocoder. Speakers in the
+0--17 age group constitute a small fraction (76 hours, 8\%) of the total corpus
+duration, so their exclusion was not expected to significantly impact the
+available training data.
 
 Finally, samples shorter than 1 second or longer than 15 seconds were filtered
 out. Samples under 1 second are very short utterances that provide limited
@@ -1321,7 +1341,7 @@ to cause GPU memory overflows during Tacotron~2 training due to the increased
 sequence lengths. Longer samples account for 34 minutes (0.07\%) of the read
 speech data.
 
-To summarize, the filtering criteria applied to the Liepa~2 dataset are as
+To summarize, the filtering criteria applied to the Liepa-2 dataset were as
 follows:
 
 \begin{itemize}
@@ -1331,15 +1351,15 @@ follows:
       \item Duration: Between 1 and 15 seconds
 \end{itemize}
 
-After applying these filters, the resulting dataset contains 723 hours of read
+After applying these filters, the resulting dataset contained 723 hours of read
 speech from 1,794 unique adult speakers. Table~\ref{tab:filtered_liepa2_stats}
-summarizes the statistics of the filtered Liepa~2 dataset. A number of speakers
+summarizes the statistics of the filtered Liepa-2 dataset. A number of speakers
 have multiple recording types (e.g., both studio and dictaphone), so the total
 unique speaker count is less than the sum across categories.
 
 \begin{table}[htbp]
       \centering
-      \caption{Statistics of the filtered Liepa~2 dataset (Adult Read Speech).}\label{tab:filtered_liepa2_stats}
+      \caption[Statistics of the filtered Liepa-2 dataset]{Statistics of the filtered Liepa-2 dataset.}\label{tab:filtered_liepa2_stats}
       \small
       \begin{tabular}{llrrrrr}
             \toprule
@@ -1356,26 +1376,43 @@ unique speaker count is less than the sum across categories.
 
 \subsection{Experimental Training Data Subsets}
 
-The Liepa~2 corpus presents a challenge as most speakers contribute under
-30~minutes of audio. Three datasets were generated from the filtered Liepa~2
-data. All strategies maintain a fixed total training budget of 22.5 hours to
-ensure fair comparison across experiments. The configurations are defined in
-Table~\ref{tab:data_subsets} and visually represented in
+The Liepa-2 corpus presents a challenge as most speakers contribute under
+30~minutes of audio, while the speaker with the most data has only 2.5~hours of
+annotated speech. In order to isolate the impact of data breadth and depth, it
+was decided to create controlled training subsets from the filtered Liepa-2
+data that vary in the number of speakers and the amount of data per speaker.
+However, the duration per speaker within each subset had to be uniform to
+prevent speaker imbalance from confounding the results.
+
+The filtered Liepa-2 dataset was analyzed to determine feasible data
+configurations. For each gender (male and female), the speakers were sorted by
+total available duration. Figure~\ref{fig:speaker_duration} shows the rank
+against cumulative duration to visualize the depth versus breadth trade-off. It
+was determined that the \textit{15-th} most data-rich male and female speakers
+had approximately 47 and 48 minutes of audio, respectively, while the
+\textit{180-th} most data-rich speakers had 30 (male) and 34 (female) minutes.
+Data depth was clearly the limiting factor, as very few speakers had more than
+1~hour of audio.
+
+\begin{figure}[htbp]
+      \centering
+      \includegraphics[width=\textwidth]{figures/liepa_speaker_duration.png}
+      \caption[Speaker duration distribution in the filtered Liepa-2 dataset]{Speaker duration distribution in the filtered Liepa-2 dataset. The plot illustrates the trade-off between the number of speakers (X axis) and available data per speaker (Y axis).}\label{fig:speaker_duration}
+\end{figure}
+
+Thus, three training datasets were generated from the filtered Liepa-2 data.
+All strategies maintained a fixed total training budget of 22.5 hours. Based on
+the speaker duration analysis (Figure~\ref{fig:speaker_duration}), it was
+decided that the dataset with the highest depth would have 45~minutes per
+speaker, allowing for 30 speakers (15 male, 15 female), and two additional
+datasets would contain 60 and 180 speakers, respectively. The configurations
+are defined in Table~\ref{tab:data_subsets} and visually represented in
 Figure~\ref{fig:data_strategy}.
 
-\begin{table}[htbp]
-      \centering
-      \caption[Experimental Training Data Subsets]{Experimental training data subsets. Total duration is constant, while speaker count ($N$) and duration per speaker vary inversely.}\label{tab:data_subsets}
-      \begin{tabular}{ccc}
-            \toprule
-            \textbf{Number of Speakers ($N$)} & \textbf{Time/Speaker} & \textbf{Total Time} \\
-            \midrule
-            30                                & 45.0 min              & 22.5 hours          \\
-            60                                & 22.5 min              & 22.5 hours          \\
-            180                               & 7.5 min               & 22.5 hours          \\
-            \bottomrule
-      \end{tabular}
-\end{table}
+The validation set was not predefined --- a random 1\% subset of each training
+dataset was selected for validation. In order to ensure that different training
+jobs on the same dataset used the same validation set, a fixed random seed was
+used when sampling the validation data.
 
 \begin{figure}[htbp]
       \centering
@@ -1396,56 +1433,153 @@ Figure~\ref{fig:data_strategy}.
             \draw[fill=blue!30, opacity=0.8] (0,0) rectangle (2, 5);
             \node[align=center, font=\footnotesize, text=white] at (1, 3.8) {\textbf{Depth}\\(30 spk)};
 
-            % Instead of a straight line, we use a smooth curve connecting the corners
-            % Corners are at: (2,5), (4,2.5), (10,1)
+            % Curve
             \draw[dashed, thick, black!80] plot [smooth] coordinates {(2,5) (3,3.33) (4,2.5) (6,1.67) (8,1.25) (10,1)};
 
             % Label for the line
             \node[fill=white, inner sep=2pt, font=\footnotesize, sloped] at (6, 3) {Fixed Budget Curve};
 
-            % Optional: Dots at the intersection points to emphasize them
+            % Dots at the intersection points
             \filldraw (2,5) circle (2pt);
             \filldraw (4,2.5) circle (2pt);
             \filldraw (10,1) circle (2pt);
       \end{tikzpicture}
-      \caption{Visual representation of the data strategies. The area of each rectangle (Total Audio) remains constant ($\approx 22.5 hours$), illustrating the trade-off between speaker diversity (Breadth) and data density (Depth).}\label{fig:data_strategy}
+      \caption[Visual representation of the data strategies]{Visual representation of the data strategies. The area of each rectangle (Total Audio) remains constant ($\approx$ 22.5 hours), illustrating the trade-off between speaker diversity (Breadth) and data density (Depth).}\label{fig:data_strategy}
 \end{figure}
 
 Only speakers with at least the required minimum duration for the specific
 subset were eligible for selection (e.g., at least 45 minutes for the
 30-speaker set). For each selected speaker, a fixed set of utterances (10 per
-speaker) was held out for validation and testing. The durations listed in
-Table~\ref{tab:data_subsets} represent the training partition only.
+speaker) was held out for testing. The durations listed in
+Table~\ref{tab:data_subsets} represent idealized targets, with actual durations
+varying slightly due to the discrete nature of utterance selection.
+
+\begin{table}[htbp]
+      \centering
+      \caption[Experimental training data subsets]{Experimental training data subsets. Total duration is constant, while speaker count ($N$) and duration per speaker vary inversely.}\label{tab:data_subsets}
+      \begin{tabular}{ccc}
+            \toprule
+            \textbf{Number of Speakers ($N$)} & \textbf{Time/Speaker} & \textbf{Total Time} \\
+            \midrule
+            30                                & 45.0 min              & 22.5 hours          \\
+            60                                & 22.5 min              & 22.5 hours          \\
+            180                               & 7.5 min               & 22.5 hours          \\
+            \bottomrule
+      \end{tabular}
+\end{table}
 
 To ensure fair evaluation, speaker sets were nested: the 30 speakers in the
-30-speaker set are included in the 60-speaker set, which are included in the
-180-speaker set. An exact 50/50 male-female split was maintained in all
+30-speaker set were included in the 60-speaker set, which were in turn included
+in the 180-speaker set. An exact 50/50 male-female split was maintained in all
 datasets to avoid gender bias.
 
-This nesting strategy ensures that the `core' 30 speakers are present in every
-model. This enables a direct, side-by-side comparison of synthesis quality for
+This nesting strategy ensured that the `core' 30 speakers were present in every
+model. This enabled a direct, side-by-side comparison of synthesis quality for
 the exact same target voices, effectively isolating the impact of the trainset
 composition without confounding factors from speaker identity.
 
-\subsection{Preprocessing}
+The datasets were generated using a custom Python script. In order to ensure
+that each speaker would have at least the required minimum duration, speakers
+were first filtered based on their total available audio. From each eligible
+speaker, a random subset of utterances was selected until the cumulative
+duration met or exceeded the target.
+
+The statistics of the actual training datasets are summarized in
+Table~\ref{tab:final_data_stats}. The slight variations in total utterance
+count and total word count could be attributed to speakers having varying
+speaking rates and utterance lengths --- these differences are minimal and not
+expected to significantly impact the results. The minimum and maximum durations
+within each dataset are very similar, confirming that there is no significant
+speaker-level imbalance.
+
+\begin{table}[htbp]
+      \centering
+      \caption[Final statistics of the experimental training datasets]{Final statistics of the experimental training datasets.}\label{tab:final_data_stats}
+      \begin{tabular}{lrrrr}
+            \toprule
+            \textbf{Speakers} & \textbf{Utterances} & \textbf{Total Words} & \textbf{Unique Words} & \textbf{Duration per Speaker (s), Min / Max} \\
+            \midrule
+            30                & 29,091              & 164,347              & 46,138                & 2700.2 / 2705.3                              \\
+            60                & 30,372              & 163,883              & 46,746                & 1350.1 / 1356.5                              \\
+            180               & 30,493              & 168,738              & 49,581                & 450.0 / 458.0                                \\
+            \bottomrule
+      \end{tabular}
+\end{table}
+
+\subsection{Data Preparation}
 
 \subsubsection{Text Normalization and Accentuation}
 
-Raw Liepa~2 transcripts are largely normalized (numbers, dates, abbreviations,
-and acronyms are expanded), however, some additional normalization was required
-to standardize the text for grapheme-based TTS training:
+In the absence of a high-quality, context-aware G2P converter for Lithuanian,
+this study focused on grapheme-based TTS synthesis. The raw transcripts from
+the Liepa-2 dataset were pre-processed to standardize the text. A prior
+study~\cite{kasparaitis2023investigation} has shown that text normalization has
+a significant impact on grapheme-based TTS quality for Lithuanian.
+
+Raw Liepa-2 transcripts are largely normalized --- numbers, dates,
+abbreviations, and acronyms are expanded. An analysis of the raw text revealed
+that some annotators did not use any punctuation (e.g., commas, periods), while
+others used punctuation consistently. Otherwise, the transcripts were of high
+quality. Due to the high volume of training samples, no manual correction of
+transcripts was performed. Some examples of raw transcripts are presented
+below:
+
+\begin{quote}
+      \textit{``Berželio Sodų šeštoji septyniolika''} (ordinal and number written out) \\
+      \textit{``Anoniminis darbdavys pasiūlė šimtas penkiasdešim tūkstančių eurų už tai''} (number 150,000 written out) \\
+      \textit{``ir kabindavo makaronus apie vė dė vė didybę ir galingumą''} (acronym VDV written as it was pronounced) \\
+      \textit{``nenumanau šypsodamasis atsakė jis bet spėju kad netrukus sužinosime''} (punctuation omitted) \\
+\end{quote}
+
+However, additional normalization was required to standardize the text for
+grapheme-based TTS training. The following normalization steps were applied:
 
 \begin{enumerate}
       \item \textbf{Cleaning:} Rare and non-standard punctuation was mapped to a standard set (.,-?!) and remaining extraneous characters were removed.
       \item \textbf{Whitespace:} Consecutive whitespace characters were collapsed, and leading/trailing whitespace was trimmed.
-      \item \textbf{Accentuation:} Raw text was processed using \textbf{Kirčiuoklis}~\cite{kirciuoklis} for automatic stress assignment. The stress marks were decomposed into separate characters (`´' for acute, ``' for grave, `~' for circumflex) and inserted immediately after the accented grapheme. Ambiguous homographs were left unaccentuated, relying on the model to infer prosody from context.
+      \item \textbf{Accentuation:} Raw text was processed using \textbf{Kirčiuoklis}~\cite{kirciuoklis} for automatic stress assignment. The stress marks were decomposed into separate characters (`´' for acute, ``' for grave, `~' for circumflex) and inserted immediately after the accented grapheme.
       \item \textbf{Lowercasing:} All text was converted to lowercase to reduce the vocabulary size.
       \item \textbf{Letter substitution:} Non-Lithuanian letters were replaced with equivalents (`q' $\to$ `k', `w' $\to$ `v', `x' $\to$ `ks').
 \end{enumerate}
 
-As a result of these normalization steps, the vocabulary size is reduced from
-140~characters to 41~characters. The final alphabet used for training consists
-of the following characters:
+The accentuation step required dealing with ambiguity. As discussed in the
+literature review, the Lithuanian language has many homographs that can have
+different stress patterns, depending on the word's meaning and context.
+Kirčiuoklis, being a word dictionary-based tool, does not take into account the
+context of the word, and returns all possible accentuation options for
+homographs. Of 406 thousand unique words in the entire filtered Liepa-2 corpus,
+72\% (293 thousand) had a single accentuation option, 18\% (75 thousand) had
+none (e.g., proper nouns (`Trento'), foreign words (`siut'), typos and
+neologisms (`babkių')), and 9\% (38 thousand) had multiple accentuation options
+(e.g., `namo', `pažintų'). In order to avoid introducing incorrect accents into
+the training data, only unambiguous words were accented --- the rest of the
+words were left unaccentuated, instead relying on the models to infer prosody
+from context. Listening tests revealed that implementing Kirčiuoklis-based
+accentuation moderately improved the prosody of synthesized speech, especially
+for certain complex words. Overall, 82\% of words in the training datasets were
+accentuated.
+
+A few examples of raw and normalized text pairs are presented in
+Table~\ref{tab:text_normalization}.
+
+\begin{table}[htbp]
+      \centering
+      \caption[Examples of text normalization and accentuation]{Examples of text normalization and accentuation.}\label{tab:text_normalization}
+      \begin{tabular}{p{8cm} p{8cm}}
+            \toprule
+            \textbf{Raw Text}                                           & \textbf{Normalized Text}                                   \\
+            \midrule
+            \texttt{Antrasis vyras – gerokai jaunesnis}                 & \texttt{antra`sis vy´ras - gero´kai jaune`snis}            \\
+            \texttt{(...) pusšimtį kilogramų Extasy}                    & \texttt{(...) pu`sšimtį kilogra\char`\~mų ekstasy}         \\
+            \texttt{Visa tai atskleidžiama „Karaliaus Lyro“ pradžioje,} & \texttt{visa tai atskleidžiama karaliaus lyro pradžioje`,} \\
+            \bottomrule
+      \end{tabular}
+\end{table}
+
+As a result of these normalization steps, the character vocabulary size was
+reduced from 140~characters to 41~characters. The final alphabet used for
+training contains only lowercase Lithuanian letters, stress marks, space, and
+basic punctuation:
 \begin{center}
       \texttt{a ą b c č d e ę ė f g h i į y j k l m n o p r s š t u ų ū v z ž ´ ` \textasciitilde{} (space) . , - ? !}
 \end{center}
@@ -1454,24 +1588,25 @@ of the following characters:
 
 Audio recordings were resampled from their original \textbf{16,000 Hz} to
 \textbf{22,050 Hz}. While resampling to a higher frequency does not add new
-information, the resampling was performed to match the pre-trained vocoder.
-Leading and trailing silence was trimmed. Acoustic features were extracted
-using the parameters in Table~\ref{tab:audio_params}.
+information, the resampling was performed to match the pre-trained HiFi-GAN
+vocoder described in the \textbf{Vocoder} section below. Leading and trailing
+silence was trimmed. Acoustic features were extracted using the parameters in
+Table~\ref{tab:audio_params}.
 
 \begin{table}[htbp]
       \centering
-      \caption{Mel-spectrogram extraction parameters.}\label{tab:audio_params}
+      \caption[Mel-spectrogram extraction parameters]{Mel-spectrogram extraction parameters.}\label{tab:audio_params}
       \begin{tabular}{lr}
             \toprule
-            \textbf{Parameter} & \textbf{Value}        \\
+            \textbf{Parameter}       & \textbf{Value}        \\
             \midrule
-            Sampling Rate      & 22,050 Hz             \\
-            FFT Size           & 1024 samples (46 ms)  \\
-            Hop Length         & 256 samples (11.6 ms) \\
-            Window Length      & 1024                  \\
-            Mel Channels       & 80                    \\
-            Frequency Range    & 0--8000 Hz            \\
-            Pre-emphasis       & 0.98                  \\
+            Sampling rate            & 22,050 Hz             \\
+            FFT size                 & 1024 samples (46 ms)  \\
+            Hop length               & 256 samples (11.6 ms) \\
+            Window length            & 1024                  \\
+            Mel-spectrogram channels & 80                    \\
+            Frequency range          & 0--8000 Hz            \\
+            Pre-emphasis             & 0.98                  \\
             \bottomrule
       \end{tabular}
 \end{table}
@@ -1481,26 +1616,49 @@ Appendix~\ref{appendix:audio_params}.
 
 \subsection{Model Architectures}
 
-Models were implemented using the \textbf{Coqui TTS}~\cite{coqui2021}
-framework.
+For each data selection strategy, two acoustic models were trained: an
+autoregressive Tacotron~2 and a non-autoregressive Glow-TTS\@. These
+architectures were chosen due to their popularity and to represent two modern
+TTS paradigms, namely seq2seq attention-based generation and flow-based
+parallel generation. VITS, despite its state-of-the-art quality, was not
+included due to substantially higher computational requirements required for
+training, and VITS being a combination of Glow-TTS acoustic model and HiFi-GAN
+vocoder, which is already covered in this study. It was decided to isolate the
+acoustic model performance, before considering end-to-end models like VITS in
+future work. All models were implemented using the \textbf{Coqui
+      TTS}~\cite{coqui2021} framework.
 
-\subsubsection{Tacotron~2 (Autoregressive)}
+\subsubsection{Vocoder}
 
-The autoregressive model used is \textbf{Tacotron~2}, modified with DCA to
-improve alignment stability for long-form utterances.
+\textbf{HiFi-GAN}~\cite{kong2020hifi} was chosen as the vocoder for this study due to its widespread adoption and ability to generate high-fidelity audio with significantly lower computational latency compared to autoregressive vocoders (e.g., WaveNet~\cite{oord2016wavenet}, WaveGlow).
+
+More specifically, a HiFi-GAN model pre-trained on the multi-speaker VCTK
+corpus~\cite{veaux2019cstr} was used. The vocoder's weights were frozen to
+isolate the performance differences to the acoustic models only. As described
+in the \textbf{Audio Preprocessing} section, the acoustic parameters of both
+Tacotron~2 and Glow-TTS were matched to those of the pre-trained HiFi-GAN to
+ensure compatibility.
+
+\subsubsection{Tacotron~2}
+
+The autoregressive model used was \textbf{Tacotron~2}, modified with DCA to
+improve alignment stability for long-form utterances, on which the standard
+location-sensitive attention was observed to struggle.
 
 The architecture details are displayed in Table~\ref{tab:tacotron_arch}.
 
 \begin{table}[htbp]
       \centering
-      \caption{Tacotron~2 with DCA architecture details.}\label{tab:tacotron_arch}
+      \caption[Tacotron~2 with DCA architecture details]{Tacotron~2 with DCA architecture details.}\label{tab:tacotron_arch}
       \begin{tabular}{lr}
             \toprule
-            \textbf{Component}  & \textbf{Configuration}                               \\
+            \textbf{Component}  & \textbf{Configuration}                    \\
             \midrule
-            Text Encoder        & 3-layer convolution + bidirectional-LSTM (512 units) \\
-            Attention Mechanism & Dynamic Convolution Attention (DCA)                  \\
-            Decoder             & 2-layer LSTM (1024 units)                            \\
+            Text Encoder        & 3-layer convolution + Bi-LSTM (512 units) \\
+            Attention Mechanism & Dynamic Convolution Attention (DCA)       \\
+            Separate Stopnet    & True                                      \\
+            Decoder             & 2-layer LSTM (1024 units)                 \\
+            Speaker Embedding   & 512 dimensions                            \\
             \bottomrule
       \end{tabular}
 \end{table}
@@ -1510,85 +1668,115 @@ losses:
 \begin{equation}
       \mathcal{L}_{T2} = \mathcal{L}_{L1} + \mathcal{L}_{Post} + \lambda_{SSIM}(\mathcal{L}_{SSIM}) + \lambda_{attn}(\mathcal{L}_{Guided}) + \lambda_{stop}(\mathcal{L}_{Stop})
 \end{equation}
-Where $\mathcal{L}_{Guided}$ enforces diagonal attention alignment, critical for long-form synthesis.
+Where $\mathcal{L}_{Guided}$ enforces diagonal attention alignment, critical for preventing repeating or skipping words in long-form synthesis.
 
-\subsubsection{Glow-TTS (Non-autoregressive)}
+\subsubsection{Glow-TTS}
 
-The non-autoregressive model is \textbf{Glow-TTS}, a flow-based architecture
-with MAS\@. The backbone of the model is a Transformer encoder and a flow-based
-decoder. The alignment between text and spectrogram frames is learned via
-unsupervised Soft-DTW (Dynamic Time Warping), eliminating the need for external
-aligners. The duration predictor is an explicit 1D-convolutional network.
+The non-autoregressive model used was \textbf{Glow-TTS}, a flow-based
+architecture. The main architectural hyperparameters used in this study are
+detailed in Table~\ref{tab:glow_arch}.
 
-% TODO Soft-DTW? review this entire section
+\begin{table}[htbp]
+      \centering
+      \caption[Glow-TTS architecture details]{Glow-TTS architecture details.}\label{tab:glow_arch}
+      \begin{tabular}{lr}
+            \toprule
+            \textbf{Component}        & \textbf{Configuration} \\
+            \midrule
+            Encoder Type              & Rel. Pos. Transformer  \\
+            Encoder Layers            & 6                      \\
+            Encoder Heads             & 2                      \\
+            Encoder Hidden Dimensions & 192                    \\
+            Decoder Hidden Dimensions & 192                    \\
+            Decoder Flow Blocks       & 12                     \\
+            Decoder Block Layers      & 4                      \\
+            Decoder Kernel Size       & 5                      \\
+            Duration Predictor        & 256 hidden channels    \\
+            Speaker Embedding         & 512 dimensions         \\
+            \bottomrule
+      \end{tabular}
+\end{table}
 
-% TODO expand architecture according to the paper
-
-The objective function is the exact log-likelihood of the data:
+The objective function maximizes the log-likelihood of the data:
 \begin{equation}
       \log P_X(x|c) = \sum_{j=1}^{T_{mel}} \log \left| \det \frac{\partial z_j}{\partial x_j} \right| + \sum_{j=1}^{T_{mel}} \log \mathcal{N}(z_j; \mu, \sigma)
 \end{equation}
-Additionally, a duration predictor is trained via MSE loss $\mathcal{L}_{dur}$ to predict phoneme durations.
+Additionally, a duration predictor is trained via MSE loss $\mathcal{L}_{Dur}$ to predict phoneme durations.
 
 \subsubsection{Speaker Conditioning}
 
-To enable multi-speaker synthesis, speaker identity was provided via learnable
-embeddings.
+In this work, learnable speaker embeddings (Look-Up Tables) are used for both
+Tacotron~2 and Glow-TTS models. The primary reason is that this study focuses
+on synthesis for a known set of speakers, where learnable embeddings can
+outperform pre-computed vectors~\cite{arik2017deep}. They allow each model to
+learn a latent representation for each voice that reflects the features most
+relevant for each model architecture, rather than features used specifically to
+distinguish between speakers in a classification task. This eliminates the
+information bottleneck or noise introduced by an external verification model.
 
 In Tacotron~2, the speaker embedding is broadcast-concatenated with the output
 of the text encoder. This conditions the decoder at every time step, allowing
-the attention mechanism to factor in speaker identity when generating each
+the autoregressive mechanism to factor in speaker identity when generating each
 Mel-spectrogram frame.
 
-In Glow-TTS, the embedding conditions the flow-based decoder. It is used to
-predict the distribution (mean and variance) of the latent variables for each
-speaker, effectively shifting the latent space to match the target voice
-identity before the normalizing flow transforms it into a spectrogram.
+In Glow-TTS, the embedding conditions the flow-based decoder. Specifically, it
+is applied as global conditioning within the affine coupling layers of the flow
+steps~\cite{kim2020glowtts}. This allows the model to learn a multi-speaker
+distribution by adapting the flow transformation function to map the
+speaker-agnostic latent representation to the target speaker's Mel-spectrogram.
 
-\subsubsection{Vocoder}
+\subsection{Model Training Configurations}
 
-A \textbf{HiFi-GAN}~\cite{kong2020hifi} model, pre-trained on the multi-speaker
-VCTK corpus~\cite{veaux2019cstr}, was used as the vocoder for all acoustic
-models. All weights were frozen to isolate the performance differences to the
-acoustic models only.
-
-\subsection{Model training configurations}
-
-\subsubsection{Environment and Framework}
+\subsubsection*{Environment and Framework}
 
 Experiments were conducted on a personal workstation equipped with an AMD Epyc
 7642 CPU, 256 GB RAM, and NVIDIA GeForce RTX 3090 (24 GB) GPU\@. The software
 environment included Ubuntu 25.04, Python 3.13.3, Coqui TTS v0.27.2, and CUDA
 13.0 for GPU acceleration. The pipeline was automated via Make, with separate
 steps for data preprocessing, model training, inference, and synthesized sample
-deployment to the evaluation web app.
+deployment to an evaluation web app.
 
 The exact Python environment configuration is provided in the accompanying
 GitHub repository, file \texttt{pyproject.toml}.
 
 In the TTS training stage, the validation loss was evaluated every epoch
-($\approx$ 450 steps) using a held-out 1\% validation split. The best model
-checkpoint was selected based on the lowest validation loss.
+($\approx$ 450 steps) using a held-out (randomly selected) 1\% validation
+split. The best model checkpoint was selected based on the lowest validation
+loss.
 
-\subsubsection{Tacotron~2 configuration}
-
-The Tacotron~2 model was trained using the DCA mechanism to improve alignment
-stability.
+\subsubsection*{Tacotron~2 Configuration}
 
 The model optimization utilized a composite loss function consisting of Decoder
 L1 loss ($\alpha=0.25$), Post-net L1 loss ($\alpha=0.25$), Decoder and Post-net
 SSIM losses ($\alpha=0.25$ each), Guided Attention loss ($\alpha=5.0$), and a
-weighted Stop token loss (weight=$15.0$).
+weighted Stop token loss (weight $= 15.0$).
 
-Notably, the default NoamLR learning rate scheduler caused high gradient
-values, instability, and sub-optimal convergence for Tacotron~2. Therefore, a
-MultiStepLR scheduler with more aggressive decay of 0.5 every 10,000 steps was
-used instead after empirical testing. The main hyperparameters are shown in
-Table~\ref{tab:tacotron_config}.
+The default learning rate scheduler in Coqui TTS, NoamLR, was experimentally
+found to cause high gradient values, instability, and slow convergence for
+Tacotron~2. The original Tacotron~2 implementation~\cite{shen2018natural} used
+an exponential decay schedule with a starting learning rate of 0.001, which at
+50,000 steps began exponentially decaying to $10^{-5}$. Coqui TTS
+configurations do not support starting gradual exponential decay at a specific
+step. Additionally, the original Tacotron~2 learning rate of 0.001 was found to
+cause numerical instability and exploding gradients in preliminary experiments,
+hence the lower starting learning rate of 0.0005 was chosen. To approximate a
+decay profile similar to the original Tacotron~2 paper, a MultiStepLR scheduler
+with stepwise decay of 0.5 every 10,000 steps (20k, 30k, \dots, 70k) was used
+instead, starting from an initial learning rate of $0.0005$, and reaching
+$\approx 7.81 \times 10^{-8}$ at 70,000 steps. Unlike the original Tacotron~2
+paper, no warmup period was used, as it was found to be unnecessary for
+training from scratch.
+
+This schedule yielded more stable training and faster convergence, as observed
+in TensorBoard plots. Additionally, the RAdam optimizer~\cite{liu2021variance}
+was used instead of the default Adam, as it provided more stable convergence in
+preliminary experiments. The total training duration was set to 200 epochs
+($\approx$ 90,000 steps), which took approximately 22 hours per model to train.
+The main training hyperparameters are shown in Table~\ref{tab:tacotron_config}.
 
 \begin{table}[h!]
       \centering
-      \caption{Tacotron~2 with DCA training configuration.}\label{tab:tacotron_config}
+      \caption[Tacotron~2 with DCA training configuration]{Tacotron~2 with DCA training configuration.}\label{tab:tacotron_config}
       \begin{tabular}{lr}
             \toprule
             \textbf{Parameter}    & \textbf{Value}                                        \\
@@ -1599,73 +1787,78 @@ Table~\ref{tab:tacotron_config}.
             Optimizer             & RAdam                                                 \\
             LR schedule           & MultiStepLR (Decay 0.5 at steps 20k, 30k, \dots, 70k) \\
             Max epochs            & 200 ($\approx$ 90,000 steps)                          \\
-            Attention type        & Dynamic Convolution                                   \\
-            Separate stopnet      & True                                                  \\
-            Speaker embedding dim & 512                                                   \\
+            Reduction factor      & 2                                                     \\
             Number of speakers    & 30 / 60 / 180                                         \\
             \bottomrule
       \end{tabular}
 \end{table}
 
-\subsubsection{Glow-TTS configuration}
+\subsubsection*{Glow-TTS Configuration}
 
-The Glow-TTS was trained using Negative Log-Likelihood (NLL) for the flow
-decoder and a monotonic alignment search. Unlike Tacotron~2, Glow-TTS converged
-stably with the NoamLR scheduler, but required a higher number of epochs for
-convergence. The configuration is shown in Table~\ref{tab:glow_config}.
+The Glow-TTS model was trained using Negative Log-Likelihood (NLL) for the flow
+decoder and a monotonic alignment search. Glow-TTS converged stably with the
+NoamLR scheduler used in the original implementation, but required a higher
+number of epochs (400 epochs, or $\approx$ 180,000 steps) for convergence. The
+loss function was a combination of NLL loss for the flow-based decoder, and MSE
+for the duration predictor.
+
+Based on preliminary experiments, the models were trained for 300 epochs
+($\approx$ 135,000 steps) with the NoamLR scheduler, followed by an additional
+100 epochs ($\approx$ 45,000 steps) with an exponentially decaying learning
+rate (ExponentialLR scheduler), with a starting LR of 0.001, decay rate 0.95
+every epoch, final LR $\approx$ 0.00008. This two-stage schedule yielded small
+but consistent improvements in all tracked loss metrics on the training and
+validation sets, as observed in TensorBoard plots. The total training time per
+model was approximately 25 hours. The configuration is shown in
+Table~\ref{tab:glow_config}.
 
 \begin{table}[h!]
       \centering
-      \caption{Glow-TTS training configuration.}\label{tab:glow_config}
+      \caption[Glow-TTS training configuration]{Glow-TTS training configuration.}\label{tab:glow_config}
       \begin{tabular}{lr}
             \toprule
-            \textbf{Parameter}       & \textbf{Value}                \\
+            \textbf{Parameter}         & \textbf{Value}                                  \\
             \midrule
-            Validation split         & 1\%                           \\
-            Batch size               & 64                            \\
-            Maximum Learning Rate    & 0.001                         \\
-            Optimizer                & RAdam                         \\
-            LR scheduler             & NoamLR                        \\
-            Warmup steps             & 4000                          \\
-            Max epochs               & 400 ($\approx$ 180,000 steps) \\
-            Encoder type             & Rel. Pos. Transformer         \\
-            Encoder layers           & 6                             \\
-            Encoder heads            & 2                             \\
-            Encoder hidden dim       & 192                           \\
-            Decoder hidden dim       & 192                           \\
-            Decoder flow blocks      & 12                            \\
-            Decoder block layers     & 4                             \\
-            Mel-spectrogram channels & 80                            \\
-            Speaker embedding dim    & 512                           \\
-            Number of speakers       & 30 / 60 / 180                 \\
+            Validation split           & 1\%                                             \\
+            Batch size                 & 64                                              \\
+            Maximum Learning Rate      & 0.001                                           \\
+            Optimizer                  & RAdam                                           \\
+            LR scheduler               & NoamLR (300 epochs), ExponentialLR (100 epochs) \\
+            Warmup steps (NoamLR)      & 4000                                            \\
+            Decay rate (ExponentialLR) & 0.95 per epoch                                  \\
+            Max epochs                 & 300 + 100 ($\approx$ 180,000 steps)             \\
+            Number of speakers         & 30 / 60 / 180                                   \\
             \bottomrule
       \end{tabular}
 \end{table}
 
-The loss function was a combination of NLL loss for the flow-based decoder, and
-MSE for the duration predictor.
-
-\subsection{Evaluation protocol}
+\subsection{Evaluation Protocol}
 
 The synthesized speech from the trained models was evaluated using a
 combination of objective and subjective metrics.
 
-\subsubsection{Model convergence}
+\subsubsection{Model Convergence}
 
 Alignment stability during training was monitored via attention alignment
 plots, provided by the TensorBoard~\cite{abadi2016tensorflow} integration in
 Coqui TTS\@.
 
 The \textbf{attention alignment plots} were generated during every epoch, and
-inspected regularly. A failure to converge to a diagonal alignment indicates
-that the model has failed to learn the text-to-audio mapping. This is
+inspected regularly. A failure to converge to a diagonal alignment would
+indicate that the model has failed to learn the text-to-audio mapping. This was
 especially relevant for the 180-speaker scenario to detect convergence failures
 caused by data sparsity.
 
-\subsubsection{Objective evaluation}
+\subsubsection{Objective Evaluation}
 
-A held-out test set of 60 standardized sentences (using seen speakers) was used
-to calculate objective metrics: MCD, F0~RMSE, and PESQ\@.
+A held-out test set of 60 standardized sentences (using 6 seen speakers) was
+used to calculate objective metrics. The metrics selected for evaluation were
+MCD and $F_0$~RMSE, as they capture different aspects of synthesis quality:
+spectral fidelity and intonation accuracy, respectively.
+PESQ~\cite{rix2001perceptual} was considered for inclusion, but ultimately not
+used due to its sensitivity to slight temporal misalignments between
+synthesized and reference audio --- a known limitation when evaluating
+generative TTS models that produce valid but non-aligned prosody.
 
 \textbf{Mel-Cepstral Distortion (MCD):} MCD~\cite{kubichek1993mel} evaluates the timbre and spectral envelope of synthesized speech. It measures the difference between the Mel-frequency cepstral coefficients of the synthesized and reference speech. A lower MCD value indicates closer spectral similarity, i.e., better timbre reconstruction. The MCD is defined as:
 \begin{equation}
@@ -1673,63 +1866,105 @@ to calculate objective metrics: MCD, F0~RMSE, and PESQ\@.
 \end{equation}
 where $c_n^{\text{synth}}$ and $c_n^{\text{ref}}$ are the $n$-th coefficients of the synthesized and reference frames, respectively, and $K$ is the number of coefficients (here: 24).
 
-\textbf{Fundamental Frequency Root Mean Square Error ($F_0$ RMSE):} $F_0$ RMSE measures the Root Mean Square Error between the fundamental frequency ($F_0$) contours of the synthesized and reference speech. Lower $F_0$ RMSE values indicate better pitch accuracy, i.e., closer intonation reproduction. $F_0$ RMSE is defined as:
+\textbf{Fundamental Frequency Root Mean Square Error ($F_0$~RMSE):} $F_0$~RMSE measures the Root Mean Square Error between the fundamental frequency ($F_0$) contours of the synthesized and reference speech. Lower $F_0$~RMSE values indicate better pitch accuracy, i.e., closer intonation reproduction. $F_0$~RMSE is defined as:
 \begin{equation}
       \text{RMSE}_{F_0} = \sqrt{\frac{1}{T} \sum_{t=1}^{T} (F_0^{\text{synth}}(t) - F_0^{\text{ref}}(t))^2}
 \end{equation}
-$F0_t^{(syn)}$ and $F0_t^{(gt)}$ are the fundamental frequency values at time $t$ for
+$F_0^{\text{synth}}(t)$ and $F_0^{\text{ref}}(t)$ are the fundamental frequency values at time $t$ for
 synthesized and ground truth speech, respectively, and $T$ is the total number of frames where both signals are voiced. Lower values indicate more accurate intonation.
 
-\textbf{Perceptual Evaluation of Speech Quality (PESQ):} PESQ~\cite{rix2001perceptual} is an industry-standard algorithm designed to predict human perception of speech quality. It uses a psychoacoustic model that accounts for masking effects and auditory sensitivity to compare the synthesized speech to a reference signal. PESQ score ranges from -0.5 to 4.5, with higher scores indicating higher perceived quality and intelligibility.
+\subsubsection{Subjective Evaluation}
 
-Since the original and synthesized audio may differ in length due to alignment
-variations, Dynamic Time Warping (DTW) is applied to align the Mel-spectrograms
-and F0 contours before computing MCD and F0~RMSE\@.
-
-\subsubsection{Subjective evaluation (MOS)}
-
-Naturalness was evaluated via a web-based listening test employing a
-\textbf{Latin square design} to mitigate order and repetition biases. The
-application was developed specifically for this study, and the source code is
-available in the accompanying GitHub repository linked in the
-Appendix~\ref{appendix:github}, folder \texttt{tts\_rating\_app}.
-
-The participants were 21 native Lithuanian speakers recruited through
-university networks and social media platforms. Each rater evaluated a
-randomized block of sentences, ensuring balanced exposure to all models and
-sentences.
+Subjective evaluation was conducted via a web-based listening test employing a
+\textbf{Latin square design} to mitigate order and repetition biases. An
+application was developed specifically for this study, using the \textbf{Flask}
+web framework, \textbf{Google Cloud Run} app hosting service, \textbf{Google
+      Cloud Storage} for audio file hosting, and \textbf{PostgreSQL} for storing
+ratings. The complete source code is available in the accompanying GitHub
+repository linked in the Appendix~\ref{appendix:github}, folder
+\texttt{tts\_rating\_app}.
 
 Naturalness was rated using the standard 5-point MOS scale. The test samples
-were generated using the 6 experimental models plus a human ground truth,
-evaluated on the same set of 60 held-out test sentences uttered by 6 speakers
-(3 male, 3 female, 10 sentences each) randomly selected from the 30-speaker
-subset.
+were generated using the 6 experimental models plus a human ground truth
+baseline. The test samples were 60 sentences from the held-out test set: for 6
+randomly selected speakers (3 male, 3 female, from the 30-speaker subset), 10
+held-out sentences were selected from the Liepa-2 dataset, resulting in a total
+of 60 test samples.
 
-\subsubsection{Rating procedure}
+The participants were native Lithuanian speakers recruited through university
+networks and social media platforms. Each rater evaluated a randomized block of
+sentences, ensuring balanced exposure to all models and sentences.
 
-Raters accessed the web application via a public URL\@.
+\subsubsection{Rating Procedure}
 
-The interface presented one audio sample at a time, along with the
-corresponding text prompt. Raters listened to each sample and rated its
-naturalness on a scale from 1 (Bad) to 5 (Excellent). They could replay samples
-as needed before submitting their ratings. A progress bar indicated the number
-of samples rated out of the expected total (60 samples per rater).
+Raters accessed the web application via a public
+URL\@\footnote{\url{https://tts-rating-app-6128007182.europe-west1.run.app/}}.
+The application required raters to sign in using their Google account
+(Appendix~\ref{appendix:app_screens}, Figure~\ref{fig:app_screens}~(a)). This
+was done to automatically assign a unique internal identifier and prevent
+duplicate submissions. Upon signing in, raters were presented with a welcome
+page detailing the study's purpose, data usage, confidentiality assurances, and
+explaining the rating procedure (Appendix~\ref{appendix:app_screens},
+Figure~\ref{fig:app_screens}~(b)). Only those who provided informed consent
+could proceed to the evaluation.
 
-A screenshot of the web application interface is shown in
-Figure~\ref{fig:mos_app}.
+Once the evaluation began, raters were presented with audio samples one at a
+time, along with the corresponding text prompt
+(Appendix~\ref{appendix:app_screens}, Figure~\ref{fig:app_screens}~(c)). Raters
+listened to each sample and rated its naturalness on a scale from 1 (Bad) to 5
+(Excellent). Audio samples could be replayed multiple times as needed before
+submitting each rating. Submitted ratings were immediately stored in a
+PostgreSQL database, and the next sample was presented. A progress bar
+indicated the number of samples rated out of the expected total (60 samples per
+rater). Once a rater completed all assigned samples, they were thanked for
+their participation and informed that their responses had been recorded
+(Appendix~\ref{appendix:app_screens}, Figure~\ref{fig:app_screens}~(d)).
 
-\begin{figure}[htbp]
-      \centering
-      \includegraphics[width=0.8\textwidth]{figures/mos_app_screenshot.png}
-      \caption[Screenshot of the web-based MOS evaluation application]{Screenshot of the web-based MOS evaluation application. Raters listen to audio samples and rate their naturalness on a 5-point scale.}\label{fig:mos_app}
-\end{figure}
+\subsubsection{Statistical Analysis}
 
-\subsubsection{Statistical analysis}
+Collected MOS ratings were screened for outliers and inconsistencies. Only
+raters who completed 100\% of their assigned samples were included in the final
+analysis. The mean MOS ratings and 95\% confidence intervals (CI) were computed
+for each model and data subset.
 
-Collected MOS ratings were screened for outliers and inconsistencies. The mean
-MOS and 95\% confidence intervals were computed for each model and data subset,
-as well as for any cross-sections of interest (e.g., model type, data strategy,
-speaker ID).
+The 95\% confidence intervals were calculated using the Student's
+t-distribution:
+\begin{equation}
+      CI = \bar{x} \pm t_{0.975, N-1} \cdot \frac{s}{\sqrt{N}}
+\end{equation}
+where $\bar{x}$ is the arithmetic mean of the ratings, $s$ is the sample
+standard deviation, $N$ is the number of ratings, and $t_{0.975, N-1}$ is the
+critical t-value for a two-tailed 95\% confidence level with $N-1$ degrees of
+freedom.
+
+To determine whether the observed differences in MOS were statistically
+significant, a one-way Analysis of Variance (ANOVA) was conducted. The
+F-statistic is calculated as the ratio of between-group variance to
+within-group variance:
+\begin{equation}
+      F = \frac{MS_{between}}{MS_{within}}
+\end{equation}
+
+Upon finding significant main effects (i.e., $p < 0.05$), Tukey's Honestly
+Significant Difference (HSD) post-hoc test was applied to identify specific
+pairwise differences. Two means are considered significantly different if their
+absolute difference exceeds the HSD critical value:
+\begin{equation}
+      HSD = q_{\alpha, k, \nu} \sqrt{\frac{MS_{within}}{N}}
+\end{equation}
+where $q$ is the critical value from the Studentized range distribution for
+significance level $\alpha$, $k$ groups, and $\nu$ degrees of freedom, and $N$
+is the number of samples per group. All statistical tests were performed at a
+significance level of $\alpha=0.05$.
+
+\subsection{Qualitative Analysis}
+
+A qualitative analysis of these speakers' original recordings, transcripts, and
+synthesis outputs was conducted by the study author. The primary goal was to
+identify possible factors related to synthesis quality. This included examining
+aspects such as audio quality, voice characteristics, and prosody. Particular
+attention was paid to speakers exhibiting extreme synthesis quality (both high
+and low) to identify potential contributing factors.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Results and analysis
@@ -1738,90 +1973,118 @@ speaker ID).
 
 This chapter presents the quantitative and qualitative findings of the study.
 The performance of the autoregressive (Tacotron~2) and non-autoregressive
-(Glow-TTS) models is analyzed across the three data subsets defined in
+(Glow-TTS) models was analyzed across the three data subsets defined in
 Chapter~3: 30 speakers (45 minutes per speaker), 60 speakers (22.5 minutes per
 speaker), and 180 speakers (7.5 minutes per speaker).
 
-\subsection{Objective evaluation}
+\subsection{Objective Evaluation}
 
-Table~\ref{tab:objective_results} summarizes the MCD and F0~RMSE on the
+Table~\ref{tab:objective_results} summarizes the MCD and $F_0$~RMSE on the
 held-out test set.
 
 \begin{table}[htbp]
       \centering
-      \caption{Objective evaluation results. Lower is better. \textbf{Bold} indicates best performance per architecture.}\label{tab:objective_results}
+      \caption[Objective synthesized speech evaluation results]{Objective synthesized speech evaluation results. Lower is better. Bold indicates best performance per architecture.}\label{tab:objective_results}
       \begin{tabular}{llcc}
             \toprule
-            \textbf{Model} & \textbf{Speaker Count ($N$)} & \textbf{MCD (dB)} & \textbf{F0~RMSE (Hz)} \\
+            \textbf{Model} & \textbf{Speaker Count ($N$)} & \textbf{MCD (dB)} & \textbf{$F_0$~RMSE (Hz)} \\
             \midrule
             \multirow{3}{*}{Tacotron~2}
-                           & 30                           & 9.58              & 31.28                 \\
-                           & 60                           & \textbf{9.55}     & \textbf{30.49}        \\
-                           & 180                          & 9.63              & 31.06                 \\
+                           & 30                           & 9.58              & 31.28                    \\
+                           & 60                           & \textbf{9.55}     & \textbf{30.49}           \\
+                           & 180                          & 9.63              & 31.06                    \\
             \midrule
             \multirow{3}{*}{Glow-TTS}
-                           & 30                           & \textbf{9.90}     & 37.86                 \\
-                           & 60                           & 10.00             & 36.18                 \\
-                           & 180                          & 9.98              & \textbf{35.69}        \\
+                           & 30                           & \textbf{9.90}     & 37.86                    \\
+                           & 60                           & 10.00             & 36.18                    \\
+                           & 180                          & 9.98              & \textbf{35.69}           \\
             \bottomrule
       \end{tabular}
 \end{table}
 
-Across all data subsets, Tacotron~2 moderately, but consistently outperformed
-Glow-TTS in pitch accuracy (F0~RMSE). Interestingly, both models showed
-remarkable insensitivity to the data composition strategy in terms of objective
-metrics, with only minor variations observed --- the intra-model differences
-were relatively small for MCD (within 0.1 dB) and for F0~RMSE (within 3 Hz).
-The 180-speaker configuration outperformed the other two in F0~RMSE for
-Glow-TTS, suggesting that increased speaker diversity did not harm pitch
-modeling, and may have even helped generalization.
+Both model architectures showed significant robustness to the data composition
+strategy in terms of objective metrics. Minimal intra-model variations were
+observed for MCD --- the highest difference between data subsets was under 0.1
+dB, with Tacotron~2 achieving its best MCD on the 60-speaker subset, and
+Glow-TTS on the 30-speaker subset. Similarly, $F_0$~RMSE varied only slightly
+across datasets for both architectures --- less than 1.0 Hz difference was
+observed for Tacotron~2, and under 2.2 Hz for Glow-TTS\@. The 180-speaker
+configuration achieved the best $F_0$~RMSE for Glow-TTS (35.69 Hz), suggesting
+that increased speaker diversity did not harm pitch modeling, and may have even
+helped generalization. Across all data subsets, Tacotron~2 moderately but
+consistently outperformed Glow-TTS in MCD (between 0.32--0.45 dB lower) and
+$F_0$~RMSE (between 4.63--6.58 Hz lower).
 
-\subsubsection{Alignment convergence}
+\subsubsection{Alignment Convergence}
 
 \textbf{Tacotron~2} demonstrated no visible sensitivity to data sparsity. On all subsets, the attention mechanism converged to a clear diagonal alignment within 10k steps. While there were occasional minor misalignments during training, by the end of training, all models exhibited stable alignments on all test sentences.
 
 As seen in Figure~\ref{fig:alignments}, the attention maps for Tacotron~2
 remain stable across all data subsets, indicating robust alignment learning
-even in low-resource conditions.
+even in low-resource conditions. Glow-TTS, utilizing MAS, also converged
+successfully across all three subsets.
 
 \begin{figure}[htbp]
       \centering
+
+      % Tacotron 2 row
       \begin{subfigure}{0.32\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/taco2_alignment_30spk.png}
-            \caption{30 speakers}
+            \caption{Tacotron~2, 30 speakers}
       \end{subfigure}
       \hfill
       \begin{subfigure}{0.32\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/taco2_alignment_60spk.png}
-            \caption{60 speakers}
+            \caption{Tacotron~2, 60 speakers}
       \end{subfigure}
       \hfill
       \begin{subfigure}{0.32\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/taco2_alignment_180spk.png}
-            \caption{180 speakers}
+            \caption{Tacotron~2, 180 speakers}
       \end{subfigure}
-      \caption[Example Tacotron~2 attention alignments across data subsets]{Example Tacotron~2 attention alignments after training on different data subsets. All configurations exhibit clear diagonal alignments, indicating successful convergence.}\label{fig:alignments}
-\end{figure}
 
-\textbf{Glow-TTS}, utilizing MAS, also converged successfully across all three subsets. However, despite robust alignment, the audio reconstruction quality was significantly lower than Tacotron~2.
+      \vspace{0.5em}
+
+      % Glow-TTS row
+      \begin{subfigure}{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/glow_alignment_30spk.png}
+            \caption{Glow-TTS, 30 speakers}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/glow_alignment_60spk.png}
+            \caption{Glow-TTS, 60 speakers}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}{0.32\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/glow_alignment_180spk.png}
+            \caption{Glow-TTS, 180 speakers}
+      \end{subfigure}
+
+      \caption[Attention alignments across architectures and data subsets]{Attention alignments after training: Tacotron~2 (a--c) and Glow-TTS (d--f) across 30, 60, and 180 speaker configurations. All models exhibit clear monotonic alignments, indicating successful convergence.}\label{fig:alignments}
+\end{figure}
 
 \subsubsection{Pitch and Spectral Accuracy}
 
-Tacotron~2 consistently outperformed Glow-TTS in pitch accuracy (F0~RMSE),
+Tacotron~2 consistently outperformed Glow-TTS in pitch accuracy ($F_0$~RMSE),
 achieving values around 31~Hz compared to Glow-TTS's 36~Hz. Furthermore,
 Tacotron~2 achieved slightly lower MCD scores on all subsets, suggesting it
 captures fine-grained spectral details better than the flow-based decoder. The
-raters noted that Glow-TTS outputs often sounded monotone and robotic, possibly
-due to Glow-TTS not having an explicit pitch predictor.
+raters noted that Glow-TTS outputs often sounded monotone, though the predicted
+pitch contours had sudden jumps and drops in the fundamental frequency,
+possibly due to Glow-TTS not having an explicit pitch predictor.
 
-Spectral analysis confirms the objective metrics. As illustrated in the
-Mel-spectrogram comparison Figure~\ref{fig:spectrogram_comparison}, Tacotron~2
-captures visibly more fine-grained spectral details and intonation contours
-more accurately than Glow-TTS, which tends to produce flatter, less dynamic
-outputs.
+Spectral analysis confirms the objective metrics. As illustrated in an example
+of Mel-spectrogram comparison Figure~\ref{fig:spectrogram_comparison},
+Tacotron~2 captures visibly more fine-grained spectral details and intonation
+contours more accurately than Glow-TTS, which tends to produce flatter, less
+dynamic outputs.
 
 \begin{figure}[htbp]
       \centering
@@ -1843,81 +2106,90 @@ outputs.
             \caption{Glow-TTS output}
       \end{subfigure}
       \caption[Mel-spectrogram comparison of Tacotron~2 and Glow-TTS outputs]{Comparison of ground truth Mel-spectrogram (a),
-            Tacotron~2 (b) and Glow-TTS (c) outputs for the same speaker and input text. Tacotron~2 captures more intonation variability, while Glow-TTS produces flatter contours.}\label{fig:spectrogram_comparison}
+            Tacotron~2 (b) and Glow-TTS (c) outputs for the same speaker and input text. Note how Glow-TTS produces flatter pitch contours.}\label{fig:spectrogram_comparison}
 \end{figure}
 
-\subsection{Subjective evaluation (MOS)}
+\subsection{Subjective Evaluation}
 
-Naturalness was evaluated via a Latin square design listening test with 21
+Naturalness was evaluated via a Latin square design listening test with 24
 native speakers, who rated samples from all six experimental models plus the
-ground truth on a 5-point MOS scale. The results are presented in
-Table~\ref{tab:mos_results}.
+ground truth on a 5-point MOS scale. 3 raters were excluded for incomplete
+submissions, resulting in a final count of 21 raters. Each rater evaluated 60
+samples, yielding a total of 1,260 ratings (21 raters $\times$ 60 samples). The
+results are presented in Table~\ref{tab:mos_results}.
 
 \begin{table}[htbp]
       \centering
-      \caption{5-point MOS results with 95\% Confidence Intervals.}\label{tab:mos_results}
+      \caption[MOS results per model and data subset]{MOS results per model and data subset with 95\% confidence intervals. Bold indicates best performance per architecture.}\label{tab:mos_results}
       \begin{tabular}{llc}
             \toprule
-            \textbf{Model}        & \textbf{Speaker count ($N$)} & \textbf{MOS (95\% CI)}   \\
+            \textbf{Model}        & \textbf{Speaker count ($N$)} & \textbf{MOS (95\% CI)} \\
             \midrule
-            \textbf{Ground Truth} & ---                          & \textbf{4.84} $\pm$ 0.06 \\
+            \textbf{Ground Truth} & ---                          & $\bm{4.84 \pm 0.06}$   \\
             \midrule
             \multirow{3}{*}{Tacotron~2}
-                                  & 30                           & 3.11 $\pm$ 0.16          \\
-                                  & 60                           & \textbf{3.12} $\pm$ 0.17 \\
-                                  & 180                          & 3.03 $\pm$ 0.18          \\
+                                  & 30                           & $3.11 \pm 0.16$        \\
+                                  & 60                           & $\bm{3.12 \pm 0.17}$   \\
+                                  & 180                          & $3.03 \pm 0.18$        \\
             \midrule
             \multirow{3}{*}{Glow-TTS}
-                                  & 30                           & 2.13 $\pm$ 0.12          \\
-                                  & 60                           & 2.17 $\pm$ 0.15          \\
-                                  & 180                          & 2.02 $\pm$ 0.14          \\
+                                  & 30                           & $2.13 \pm 0.12$        \\
+                                  & 60                           & $2.18 \pm 0.15$        \\
+                                  & 180                          & $2.03 \pm 0.14$        \\
             \bottomrule
       \end{tabular}
 \end{table}
 
-These results are in line with the objective findings --- Tacotron~2
-outperforms Glow-TTS in naturalness across all data strategies. Interestingly,
-the models exhibited very little sensitivity to data composition in terms of
-MOS\@. In both architectures, the 180-speaker configuration resulted in a
-slight drop in naturalness compared to the other two, however, the differences
-were not statistically significant.
+\subsubsection*{Statistical Significance}
 
-\subsubsection{Architecture comparison}
+The one-way ANOVA revealed significant differences among the six experimental
+models ($F(5, 1074) = 46.8490, p < 0.001$). Tukey's HSD post-hoc analysis
+identified 9 significant pairwise differences at $\alpha=0.05$. The full list
+of tested pairs and their significance is provided in
+Appendix~\ref{appendix:anova}, Table~\ref{tab:anova_results}. When analyzing
+the significant differences, all of them were between different model
+architectures (Tacotron~2 vs. Glow-TTS) rather than data subsets within the
+same architecture.
 
-The MOS results reveal a significant performance gap between the two
+Notably, within each architecture, there were no statistically significant
+differences between the three data composition strategies (30, 60, or 180
+speakers). While the 60-speaker configuration achieved marginally higher mean
+MOS scores for both models (3.12 for Tacotron~2, 2.18 for Glow-TTS), and the
+180-speaker setup showed slights decreases (3.03 for Tacotron~2, 2.03 for
+Glow-TTS), these differences were not statistically significant. ANOVA tests
+conducted separately for Tacotron~2 ($p = 0.71$) and Glow-TTS ($p = 0.34$) also
+failed to reject the null hypothesis that speaker count affects MOS, indicating
+that data composition did not have a measurable impact on naturalness within
+the tested range.
+
+\subsubsection*{Architecture Comparison}
+
+The MOS results revealed a significant performance gap between the two
 architectures.
 
-\textbf{Tacotron~2} achieved the highest synthesis quality in the study, with the 60-speaker configuration scoring $3.12 \pm 0.17$. Listeners noted that when Tacotron~2 works, it produces highly expressive prosody. Increasing the speaker count to 180 caused a moderate drop in naturalness to $3.03 \pm 0.18$.
+\textbf{Tacotron~2} achieved a consistently higher synthesis quality in the study, with the 60-speaker configuration scoring $3.12 \pm 0.17$. Listeners noted that Tacotron~2 produces highly expressive prosody for some of the speakers. Increasing the speaker count to 180 caused a moderate, albeit statistically insignificant, drop in naturalness to $3.03 \pm 0.18$.
 
-\textbf{Glow-TTS} lagged behind Tacotron~2 in naturalness, with the 60-speaker configuration scoring $2.17 \pm 0.15$. The listeners reported that Glow-TTS seemed to have strong robotic artifacts, and was at times unintelligible. This was especially pronounced in the 180-speaker condition where the MOS dropped to $2.02 \pm 0.14$.
+\textbf{Glow-TTS} lagged behind Tacotron~2 in naturalness, with the 60-speaker configuration scoring $2.18 \pm 0.15$. The listeners reported that Glow-TTS seemed to have strong robotic artifacts, and was at times unintelligible. This was especially pronounced in the 180-speaker condition where the MOS dropped to $2.03 \pm 0.14$.
 
-\subsubsection{Optimal composition}
-
-There was no clear winner between the data strategies across both
-architectures. The 60-speaker configuration had a marginal (insignificant) edge
-over the 30-speaker setup in MOS for both models. Both models performed worse
-in the 180-speaker scenario, however, the reduction in quality was not
-statistically significant.
-
-\subsubsection{Speaker analysis}
+\subsubsection*{Speaker MOS Analysis}
 
 An analysis of individual speakers' MOS scores was conducted to identify any
 patterns related to speaker identity. Table~\ref{tab:speaker_mos} summarizes
-the average MOS per speaker across all models.
+the average MOS per speaker and model architecture.
 
 \begin{table}[ht]
       \centering
-      \caption{Average MOS per speaker across all models.}\label{tab:speaker_mos}
+      \caption[MOS results per speaker and model architecture]{MOS results per speaker and model architecture with 95\% confidence intervals. Bold indicates highest score per architecture.}\label{tab:speaker_mos}
       \begin{tabular}{lcc}
             \toprule
-            \textbf{Speaker ID} & \textbf{Tacotron~2 MOS}  & \textbf{Glow-TTS MOS}    \\
+            \textbf{Speaker ID} & \textbf{Tacotron~2 MOS} & \textbf{Glow-TTS MOS} \\
             \midrule
-            AS009               & \textbf{$4.17 \pm 0.20$} & \textbf{$2.61 \pm 0.23$} \\
-            IS031               & $3.26 \pm 0.20$          & $2.13 \pm 0.19$          \\
-            IS038               & $3.48 \pm 0.21$          & $2.50 \pm 0.19$          \\
-            MS052               & $2.26 \pm 0.17$          & $1.87 \pm 0.16$          \\
-            VP131               & $2.43 \pm 0.19$          & $1.93 \pm 0.16$          \\
-            VP427               & $2.92 \pm 0.22$          & $1.59 \pm 0.14$          \\
+            AS009               & $\bm{4.17 \pm 0.20}$    & $\bm{2.61 \pm 0.23}$  \\
+            IS031               & $3.26 \pm 0.20$         & $2.13 \pm 0.19$       \\
+            IS038               & $3.48 \pm 0.21$         & $2.51 \pm 0.19$       \\
+            MS052               & $2.26 \pm 0.17$         & $1.88 \pm 0.16$       \\
+            VP131               & $2.43 \pm 0.19$         & $1.93 \pm 0.16$       \\
+            VP427               & $2.92 \pm 0.22$         & $1.60 \pm 0.14$       \\
             \bottomrule
       \end{tabular}
 \end{table}
@@ -1931,183 +2203,367 @@ synthesis quality. On the other hand, speakers like \textbf{MS052} and
 issues or inherent speaker traits (e.g., strong accents, background noise) that
 challenge the TTS models.
 
+\subsection{Qualitative Analysis}
+
+Consistent with the MOS findings, the author observed no subjective correlation
+between synthesis naturalness and the data composition strategy (speaker
+count). Thus, any observations below apply across all data subsets.
+
+\begin{itemize}
+      \item \textbf{AS009 (low male voice):} Source audio is clear, neutral accent; transcripts are unpunctuated. \\
+            \textit{Tacotron~2:} Highly natural output with accurate prosody. Closely resembled the target speaker. \\
+            \textit{Glow-TTS:} Suffered from pitch instability, frequently shifting into a falsetto-like register (approximately one octave higher than the target).
+
+      \item \textbf{IS031 (low female voice):} Source audio is clear, neutral accent; transcripts are unpunctuated. \\
+            \textit{Tacotron~2:} Good prosody, though minor robotic artifacts were audible. \\
+            \textit{Glow-TTS:} Intelligible but had intonation issues --- it was either monotone, or had pitch issues (jumping up by several semitones, or dipping into bass range).
+
+      \item \textbf{IS038 (average male voice):} Source audio is clear, neutral accent; transcripts are unpunctuated. \\
+            \textit{Tacotron~2:} Prosody was accurate, but minor voice artifacts (`scratchy' quality, higher-frequency noise) were present. \\
+            \textit{Glow-TTS:} Intelligible, but failed to capture the speaker's timbre. Exhibited pitch issues similar to IS031.
+
+      \item \textbf{MS052 (average female voice):} Source audio sounds muffled, likely due to room acoustics, neutral accent; transcripts are punctuated. \\
+            \textit{Tacotron~2:} Mostly good prosody and intonation, but a muffled voice quality, more pronounced than in the original audio. \\
+            \textit{Glow-TTS:} Mostly intelligible, but the voice did not match the original audio. Monotone, often very low-pitched intonation in the male range.
+
+      \item \textbf{VP131 (young, higher female voice):} Source audio has slight reverberation, neutral accent; transcripts are punctuated. \\
+            \textit{Tacotron~2:} Intelligible, good prosody, but the voice sounded muffled and older than the target speaker. \\
+            \textit{Glow-TTS:} Mostly intelligible and matched the true voice quite well, but had monotone intonation and `scratchy' voice quality. Interestingly, no pitch jump artifacts were observed for this speaker.
+
+      \item \textbf{VP427 (young, higher male voice):} Source audio is clear, but slight accent on certain phonemes; transcripts are punctuated. \\
+            \textit{Tacotron~2:} Good prosody, but had moderate artifacts in the high-frequency range. \\
+            \textit{Glow-TTS:} Significantly distorted, with a `scratchy' voice quality, monotone intonation, and artifacts in the high-frequency range.
+\end{itemize}
+
+A recurring issue with Glow-TTS was the generation of unnatural pitch jumps and
+octave errors. To investigate this, the Glow-TTS outputs were re-synthesized
+using the Griffin-Lim vocoder instead of HiFi-GAN\@.
+
+While the Griffin-Lim samples remained monotone, the prevalence of sudden pitch
+jumps decreased. However, the synthesized voices had strong harmonics,
+indicating poor spectral quality. This suggests that Glow-TTS may have
+generated ambiguous fundamental frequency contours with excessive harmonic
+content. When fed into HiFi-GAN, these ambiguities may have confused the
+vocoder, causing it to `flip' between different harmonics, interpreting them as
+the fundamental frequency.
+
+These observations underline the significant role of audio quality and speaker
+characteristics in determining synthesis quality. Speakers with clean
+recordings free from reverberation (e.g., AS009, IS031) yielded higher
+synthesis quality across both architectures. On the other hand, speakers with
+slightly muffled audio (MS052, VP131) or idiosyncratic vocal features (VP427)
+resulted in degraded performance. Glow-TTS outputs exhibited pronounced issues
+with intonation, often producing monotone speech, or significant pitch jumps to
+unnatural ranges, which were not observed in Tacotron~2 outputs.
+
 \subsection{Discussion}
 
 The results provide several insights into the effects of data composition and
 model architecture on multi-speaker TTS quality in low-resource settings.
 
-Firstly, the autoregressive Tacotron~2 consistently outperformed the
-non-autoregressive Glow-TTS in both objective (F0 RMSE, MCD, PESQ) and
-subjective (MOS) metrics, across all dataset configurations. The 180-speaker
-scenario caused a slight to moderate quality drop for both models, but
-Tacotron~2 was able to produce intelligible speech.
+Firstly, objective metrics ($F_0$~RMSE, MCD) exhibited minor variations across
+the data strategies, with no clear trend indicating a substantial performance
+degradation for higher speaker counts. The maximum observed differences within
+each architecture were under 0.1 dB for MCD and under 2.2 Hz for $F_0$~RMSE\@.
+Glow-TTS achieved its best $F_0$~RMSE in the 180-speaker configuration,
+suggesting that increased speaker diversity did not harm pitch modeling, and
+may have even helped generalization.
 
-The effects of data composition were very subtle. Both models showed only minor
-variations in performance across the three data strategies, with no
-statistically significant differences in MOS between the 30-speaker and
-60-speaker configurations, and only a 0.09 (Tacotron~2) to 0.15 (Glow-TTS)
-point drop in MOS for the 180-speaker setup. This suggests that within the
-tested range, the total amount of data (22.5 hours) is more critical than the
-specific balance between speaker diversity and data density per speaker.
+Secondly, the autoregressive Tacotron~2 moderately but consistently
+outperformed the non-autoregressive Glow-TTS in both objective ($F_0$~RMSE,
+MCD) and subjective (MOS) metrics, across all dataset configurations.
+Tacotron~2 achieved a peak MOS score of \textbf{3.12} in the 60-speaker setup,
+while Glow-TTS reached a maximum MOS of \textbf{2.18}. The consistent
+superiority of Tacotron~2 suggests that in low-resource constraints, the
+stability of its explicit alignment mechanism may outweigh the benefits of
+Glow-TTS and MAS\@.
 
-Finally, speaker-specific analysis revealed that certain speakers consistently
+Data composition had no statistically significant effect on synthesis quality
+within either architecture. One-way ANOVA tests for each model separately
+failed to detect significant differences between the 30-, 60-, and 180-speaker
+configurations (Tacotron~2: $p = 0.71$; Glow-TTS\@: $p = 0.34$). Although small
+numerical variations existed (60-speaker slightly higher, 180-speaker slightly
+lower), these were not beyond statistical noise. This null result suggests that
+within the tested range, the total data volume (22.5 hours) acts as the primary
+constraint, and that the specific distribution strategy (breadth versus depth)
+does not meaningfully impact naturalness. Instead, per-speaker data quality
+appears to be the dominant factor.
+
+Indeed, speaker-specific analysis revealed that certain speakers consistently
 yielded significantly higher synthesis quality across models and data
-strategies, indicating that speaker characteristics and data quality play a
-crucial role in TTS performance.
+strategies. Within both architectures, speaker \textbf{AS009} consistently
+received the highest ratings (Tacotron~2 MOS\@: 4.17, Glow-TTS MOS\@: 2.61),
+while speakers like \textbf{MS052} and \textbf{VP131} scored significantly
+lower, the highest MOS being only 2.43 for Tacotron~2 and 1.93 for Glow-TTS\@.
+Qualitative analysis suggests that speaker characteristics and data quality
+play a crucial role in TTS performance.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Conclusion
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 
-This thesis set out to determine the optimal data selection strategy for
-training multi-speaker TTS models for the Lithuanian language under a fixed
-resource budget. By systematically varying the number of speakers and the
-amount of data per speaker, the performance of one autoregressive (Tacotron~2)
-and one non-autoregressive (Glow-TTS) architecture was evaluated using both
-objective and subjective metrics.
+This thesis set out to measure the effects of training data composition on the
+quality of multi-speaker TTS models for the Lithuanian language under a fixed
+resource budget. All research objectives were achieved. Three training datasets
+were constructed and pre-processed from the Liepa-2 corpus, each containing a
+total of 22.5 hours of speech, but varying in the number of speakers and amount
+of data per speaker: 30 speakers with 45 minutes each, 60 speakers with 22.5
+minutes each, and 180 speakers with 7.5 minutes each. An autoregressive
+(Tacotron~2) and a non-autoregressive (Glow-TTS) architecture was trained on
+each dataset. The synthesis quality of the trained models was evaluated using
+objective metrics ($F_0$~RMSE, MCD) and a subjective MOS listening test using a
+web-based evaluation application developed for this study.
 
-\subsection{Summary of findings}
+\subsubsection*{Summary of Findings}
 
-The experimental results only weakly support the hypothesis that data depth is
-more important than breadth for multi-speaker TTS quality under a fixed budget.
+The experimental results do not support the initial hypothesis that data depth
+is more important than breadth for multi-speaker synthesis quality. Instead,
+the findings indicate that data composition had \textbf{no statistically
+      significant effect} on synthesis quality within either architecture.
+Statistical analysis confirmed that when the total data volume is held constant
+at 22.5 hours, the choice between 30, 60, or 180 speakers does not meaningfully
+affect subjective naturalness. Objective metrics (MCD, $F_0$~RMSE) similarly
+showed minimal variation across data subsets for both architectures.
 
-The impact of data composition was subtle. The balanced strategy (60 speakers
-with 22.5 minutes each) yielded the highest subjective ratings for both
-architectures. On the other hand, the low-depth strategy (180 speakers with 7.5
-minutes each) resulted in the lowest scores for both architectures. However,
-the difference was marginal and only statistically significant for Glow-TTS\@.
-This suggests that the models are relatively insensitive to the exact data
-composition within the tested range, when the total data volume remains
-constant.
+Despite the low data volume per speaker in the 180-speaker subset (7.5
+minutes), both architectures successfully converged. This indicates that 7.5
+minutes of data per speaker is above the `critical threshold' required to learn
+stable alignments and synthesize intelligible speech for Lithuanian,
+contradicting concerns that low-depth settings would prevent convergence.
 
-Objective metrics such as F0 RMSE and MCD similarly exhibited minor variations
-across the data strategies, with no clear trend indicating a substantial
-performance degradation for higher speaker counts.
-
-Despite the low data volume per speaker in the 180-speaker subset, both
-architectures successfully converged, contradicting concerns that low-depth
-settings would cause training issues. This indicates that 7.5 minutes of data
-per speaker is above the `critical threshold' required to learn stable
-alignments and synthesize intelligible speech for Lithuanian.
-
-Tacotron~2 architecture consistently outperformed Glow-TTS across all data
-configurations. Tacotron~2 achieved a peak MOS score of \textbf{3.12} in the
-60-speaker setup, while Glow-TTS lagged behind with a maximum MOS of
-\textbf{2.17}. Qualitatively, listeners noted that Tacotron~2 produced more
-natural and expressive speech, while Glow-TTS outputs were often described as
-robotic and ``scratchy''. It is unclear what specific architectural, language,
-or dataset features led to this gap, but it may be hypothesized to Glow-TTS
-lacking an explicit pitch predictor.
+Regarding the architecture, Tacotron~2 consistently outperformed Glow-TTS
+across all data configurations. Subjective feedback indicated that Tacotron~2
+produced more natural and expressive speech, while Glow-TTS outputs suffered
+from robotic intonation and artifacts, described as `scratchy voice'. It is
+unclear what specific architectural, language, or dataset features led to this
+gap, but it could be attributed to Glow-TTS lacking an explicit pitch
+predictor.
 
 Finally, speaker-specific analysis revealed that certain speakers consistently
-yielded significantly higher synthesis quality across models and data
-strategies, indicating that speaker characteristics and data quality play a
-crucial role in TTS performance. This variability implies that for future
-low-resource datasets, automated filtering based on acoustic metrics (SNR,
-reverberation) or predicted MOS may yield higher gains than simply increasing
-the number of speakers.
+yielded higher-quality synthesis regardless of the data strategy. Qualitative
+analysis suggested that these differences may stem from audio quality issues
+(e.g., muffled recordings, room acoustics) or speaker traits (e.g., accents,
+vocal characteristics).
 
-\subsection{Contributions}
+\subsubsection*{Contributions}
 
 This work makes several contributions to the field of multi-speaker TTS\@.
 
 Firstly, it provides an empirical evaluation of the trade-off between speaker
 breadth and depth for training multi-speaker TTS models for Lithuanian. The
-findings reveal that modern architectures are robust to high data fragmentation
-(up to 180 speakers) under a fixed training budget. This insight can inform
-data collection strategies for low-resource languages.
+primary finding --- a null result --- reveals that modern architectures are
+insensitive to data composition within the tested range (30--180 speakers) when
+total volume is held constant. This negative result is scientifically valuable:
+it suggests that practitioners working with low-resource languages should
+prioritize maximizing total data volume and ensuring high per-speaker quality
+rather than optimizing the breadth-depth balance.
 
 Additionally, this study establishes benchmark results for Tacotron~2 and
-Glow-TTS on the Lithuanian Liepa~2 corpus in several multi-speaker settings. It
+Glow-TTS on the Lithuanian Liepa-2 corpus in several multi-speaker settings. It
 demonstrates that Tacotron~2 can achieve reasonable synthesis quality with as
 little as 7.5 minutes of data per speaker when using learnable speaker
 embeddings.
 
 Finally, the development of a web-based MOS evaluation application for
 Lithuanian TTS provides a reusable tool for future subjective evaluations in
-this language.
+this language. The application source code is made publicly available for reuse
+and adaptation.~\footnote{See Appendix~\ref{appendix:github} for the GitHub
+      repository link.}
 
-\subsection{Limitations of the study}
+\subsubsection*{Limitations}
 
-The study has several limitations that should be acknowledged.
-
-Firstly, the experiments were conducted solely on read speech from the
-Lithuanian Liepa~2 corpus. Therefore, the findings may not generalize to other
-languages, datasets, or speech styles.
+The first limitation of this work is the language and dataset specificity. The
+experiments were exclusively focused on the Lithuanian language and read speech
+from the Liepa-2 speech corpus. Therefore, the findings may not generalize to
+other languages, datasets, or speech styles.
 
 Secondly, the fixed training budget of 22.5 hours is a practical constraint and
-may not reflect performance at other data scales, such as very low-resource
-(e.g., under 5 hours) or high-resource (e.g., 100+ hours) scenarios.
+may not reflect performance in higher-resource settings (e.g., 100 hours or
+more).
 
-Additionally, only two TTS architectures were evaluated. While Tacotron~2 and
-Glow-TTS are popular TTS models, other architectures (e.g., VITS, FastSpeech~2)
-may exhibit different sensitivities to data composition.
+Finally, as discussed in the qualitative analysis, the training data had
+variable quality across speakers. The synthesis quality of certain speakers
+(MS052, VP131, VP427) was consistently rated as poor regardless of data
+strategy or model architecture.
 
-Finally, the subjective evaluation relied on a sample of 21 raters. While the
-confidence intervals were sufficient to establish the performance gaps between
-architectures and speakers, a larger-scale listening test would provide higher
-statistical power to detect the subtle effects of data composition strategies.
-
-\subsection{Future work}
+\subsubsection*{Future Work}
 
 There are several potential directions for future research building on this
-study.
+study. First, replicating the experiments on different languages and datasets
+would help validate the cross-lingual generalizability of the findings. It
+would be valuable to test languages with phonetic or prosodic characteristics
+distinct from Lithuanian (e.g., non-phonemic orthographies like English or
+highly regular orthographies like Italian) to determine if the observed
+insensitivity to data composition holds. Additionally, exploring a wider range
+of data budgets could provide insights into scaling effects; for instance, a
+100-hour budget could reveal different or more pronounced trade-offs than the
+22.5-hour setting used here.
 
-Firstly, extending the study to include more TTS architectures, such as VITS or
+Furthermore, future work should focus on data quality and selection strategies.
+If a cleaner multi-speaker dataset for Lithuanian becomes available,
+replicating the experiments on such a dataset could help isolate the effects of
+data composition from recording artifacts. This would likely achieve higher
+synthesis quality overall. In the absence of new data, automated quality
+assessment could be used to filter out recordings with low signal-to-noise
+ratios or excessive reverberation. Additionally, given the significant
+variability in synthesis quality observed between speakers --- even among those
+with subjectively good audio quality --- future research could aim to
+systematically identify and prioritize speakers with favourable characteristics
+(e.g., vocal clarity, intonation patterns). Such targeted selection of
+high-quality voices may yield greater improvements than simply increasing
+dataset size or performing manual curation.
+
+Finally, extending the study to include more TTS architectures, such as VITS or
 FastSpeech~2, would provide a broader understanding of how different model
-types respond to data composition strategies, and potentially identify
-architectures more robust to low-depth settings.
-
-Secondly, future work could investigate methods for automated selection of
-`TTS-friendly' speakers. Given the significant quality variability observed
-between speakers (regardless of data strategy or model architecture),
-developing techniques to automatically identify high-quality speakers or
-utterances could yield greater improvements than manual data curation or simply
-increasing dataset size.
-
-Replicating the experiments on different languages and datasets would help
-validate the cross-lingual generalizability of the findings. Additionally,
-exploring a wider range of data budgets could provide insights into scaling
-effects. For instance, testing with a 10-hour or 50-hour budget could reveal
-different trade-offs.
-
-The evaluation could be expanded to include intelligibility metrics (e.g., word
-error rate from ASR systems) to assess how data composition impacts not just
-naturalness, but also clarity of the synthesized speech.
-
-\sectionbreak
+types respond to data composition strategies. This could help identify
+architectures that possess greater robustness to low-depth data settings
+compared to the Tacotron~2 and Glow-TTS models evaluated here.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% References
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{\phantom{Appendix} References}
+\section{References}
 
 \printbibliography[heading=none]
 
-% TODO Examples are also provided for ChatGPT citation, both in general~\cite{chatgpt_bendrai} and for a specific conversation~\cite{chatgpt_pokalbis}.
+\sectionnonum{Appendix 1: AI Tool Usage}\label{appendix:ai_usage}
 
-\section{\phantom{Appendix} Appendix: GitHub repository with source code}\label{appendix:github}
+This appendix documents the use of Generative AI tools in the preparation of
+this thesis. Table~\ref{tab:ai_tools} lists the specific versions and access
+dates of the tools employed.
 
-The complete source code for data preprocessing, model training, inference, and
-evaluation is available in the GitHub repository:
+\begin{table}[ht]
+      \centering
+      \caption[List of AI tools used]{List of AI tools used}\label{tab:ai_tools}
+      \begin{tabular}{lll}
+            \toprule
+            \textbf{Tool Name}                                      & \textbf{Models/Versions}       & \textbf{Usage Dates}   \\ \midrule
+            Google Gemini~\cite{google2026gemini}                   & 2.5 Flash, 3.0 Flash           & 2025-09-02--2026-01-03 \\
+            \midrule
+            GitHub Copilot Code Generation~\cite{github2026copilot} & Claude Haiku 4--4.5            & 2025-09-02--2026-01-03 \\
+                                                                    & Claude Sonnet 4--4.5           &                        \\
+            \midrule
+            GitHub Copilot Code Completion~\cite{github2026copilot} & Plugin versions 1.5.53--1.5.62 & 2025-09-02--2026-01-03 \\
+            \bottomrule
+      \end{tabular}
+\end{table}
 
-\begin{center}
-      \url{https://github.com/spacegrapefruit/msc-thesis}
-\end{center}
+\subsection*{Text Drafting and Refinement}
+
+\noindent\textbf{Tool used:} Google Gemini~\cite{google2026gemini} 2.5 Flash, 3.0 Flash \\
+\noindent\textbf{Extent of usage:} The tool was used for drafting specific subsections of the literature review and methodology, suggesting citations, refining the author's original text (paraphrasing, grammar correction), and providing critical feedback on logical flow.
+
+\noindent\textbf{Method of usage:}
+Interaction was text-based via the chat interface. An author's prompt would be
+submitted, and the AI-generated response was reviewed and edited by the author.
+
+\begin{itemize}
+      \item \textit{Drafting literature review, methodology:} Generating the initial outline and draft text for specific subsections of the literature review based on provided key points, unstructured notes, and reference lists. \\
+            \textit{Prompt pattern:} ``Based on my notes below and this list of references, draft a latex outline / literature review subsubsection on [Topic]: --- Notes: [Insert Notes] --- References: [Insert References]''
+      \item \textit{Citation suggestions:} The author provided a topic or claim, and the AI suggested relevant academic references to support it. All suggested references were manually verified for existence and actual relevance. \\
+            \textit{Prompt pattern:} ``Find academic references for these claims: --- [Insert Claims]''
+      \item \textit{Refinement and paraphrasing:} The author pasted original drafts to improve clarity. \\
+            \textit{Prompt pattern:} ``Review the following MSc thesis draft for academic tone, grammar errors, and sentence structure. Paraphrase only where unclear. Do not change the technical meaning unless necessary: [Insert Text]''
+      \item \textit{Critique:} Used to identify gaps in argumentation. \\
+            \textit{Prompt pattern:} ``Act as a thesis reviewer. Read the following thesis subsection, identify notable logical gaps, unclear explanations, missing citations. Provide critique and suggest improvement. --- [Insert Text]''
+\end{itemize}
+
+\noindent\textbf{Author contribution:}
+The author conducted the primary literature review, selected all references, and defined the structure of the review. All AI-suggested drafts were fact-checked against original sources. The author accepted or rejected the AI critiques and phrasing or structure. Over 90\% of AI suggestions were rejected, with the remaining 10\% being used as templates for updates or basis for rephrasing.
+
+\subsection*{Code Completion and Generation}
+
+\noindent\textbf{Tool used:} GitHub Copilot~\cite{github2026copilot} \\
+\noindent\textbf{Extent of usage:} Used for code completion, generating boilerplate code for the MOS rating application, drafting Python code for figure generation, data preprocessing, and dataset generation scripts.
+
+\noindent\textbf{Method of usage:}
+Usage occurred within the Visual Studio Code environment via the GitHub Copilot
+plugin. The author wrote code comments or partial code snippets, and Copilot
+Code Completion provided real-time suggestions for completing lines or generating functions.
+Additionally, the Copilot Code Generation feature was used to generate drafts of larger Python code blocks based on descriptive prompts.
+
+\begin{itemize}
+      \item \textit{Inline code completion:} In the Visual Studio Code editor, GitHub Copilot provided real-time predictive text for line completions based on the active file context (variable names, function definitions). This was used primarily for coding efficiency in Python scripts for data preprocessing, analysis, and MOS rating application development.
+      \item \textit{Generative chat:} The author described functionality to generate/alter specific code blocks for dataset generation and MOS app features. \\
+            \textit{Prompt pattern:} ``Add static consent form that displays study information below, saves user agreement in session storage, and prevents proceeding to /rate if not agreed. Use flask and jinja2 --- study information: [Insert Study Info]''
+      \item \textit{Figure drafting:} The author provided data structures and requested plotting code. \\
+            \textit{Prompt pattern:} ``For pd.DataFrame df with columns [`model', `rating', `user\_email'] plot grouped bar chart using matplotlib, place the legend outside plot area on the upper right''
+\end{itemize}
+
+\noindent\textbf{Author contribution:}
+The author designed the overall model training pipeline, software architecture of the MOS rating app and defined all functional requirements. AI was used strictly as an implementation assistant to speed up generation of boilerplate code and routine functions. The author manually reviewed, tested, and debugged all generated code. The author verified that the generated figures accurately represented the underlying data and manually adjusted visual styles as needed.
+
+\sectionnonum{Appendix 2: Source Code}\label{appendix:github}
+
+All steps outlined in this work were implemented in Python, SQL, or JavaScript
+using open-source libraries. The complete source code for data preprocessing,
+model training, inference, and evaluation is available in the author's GitHub
+repository\@\footnote{\url{https://github.com/spacegrapefruit/msc-thesis}}.
 
 The structure of the repository is as follows:
+\begin{itemize}
+      \item \texttt{configs/}: Configuration files for model hyperparameters and training settings.
+      \item \texttt{data/}: Not included due to size constraints; contains raw and preprocessed audio data.
+      \item \texttt{latex/}: LaTeX source files for the thesis document.
+      \item \texttt{Makefile}: Build instructions for running experiments and generating results.
+      \item \texttt{notebooks/}: Jupyter notebooks for exploratory data analysis and visualization.
+      \item \texttt{pyproject.toml}: Python project configuration file, specifying package dependencies.
+      \item \texttt{python/}: Python scripts for data preprocessing, model training, and evaluation.
+      \item \texttt{training\_output/}: Training logs, checkpoints (not included due to size constraints), and TensorBoard summaries.
+      \item \texttt{tts\_rating\_app/}: Source code for the web-based MOS rating application.
+\end{itemize}
 
-% TODO add tree structure
+The repository relies on the raw Liepa-2 corpus~\cite{liepa2project}, which is
+not included due to size constraints. Liepa-2 is not publicly available due to
+the sheer size of the dataset ($> 100GB$). It was obtained from the authors
+upon request for research purposes.
 
-\section{\phantom{Appendix} Appendix: Audio preprocessing parameters}\label{appendix:audio_params}
+\sectionnonum{Appendix 3: MOS Rating Application Interface}\label{appendix:app_screens}
+
+This appendix presents the complete user interface of the web-based MOS
+evaluation application used for the perceptual study. The application guides
+raters through four main screens: login, consent, rating, and completion.
+
+\begin{figure}[htbp]
+      \centering
+      \begin{subfigure}{0.47\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/app_login.png}
+            \caption{Login screen}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}{0.47\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/app_consent.png}
+            \caption{Consent screen}
+      \end{subfigure}
+
+      \vspace{1em}
+
+      \begin{subfigure}{0.47\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/app_rating.png}
+            \caption{Rating screen}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}{0.47\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{figures/app_thankyou.png}
+            \caption{Completion screen}
+      \end{subfigure}
+
+      \caption[Web application interface screens]{Web application interface: (a) login requiring Google authentication, (b) consent screen with study information and MOS instructions, (c) rating screen with text prompt and audio player, (d) completion screen thanking participants.}\label{fig:app_screens}
+\end{figure}
+
+\sectionnonum{Appendix 4: Audio Preprocessing Parameters}\label{appendix:audio_params}
 
 The following Mel-spectrogram extraction parameters were used by all models
 (Tacotron~2, Glow-TTS, and HiFi-GAN vocoder):
 
 \begin{table}[ht]
       \centering
-      \caption{Complete Mel-spectrogram extraction parameters.}\label{tab:audio_params_full}
+      \caption[Complete Mel-spectrogram extraction parameters]{Complete Mel-spectrogram extraction parameters.}\label{tab:audio_params_full}
       \begin{tabular}{lr}
             \toprule
             \textbf{Parameter}      & \textbf{Value} \\
@@ -2144,6 +2600,37 @@ The following Mel-spectrogram extraction parameters were used by all models
             max\_norm               & 4.0            \\
             clip\_norm              & true           \\
             stats\_path             & null           \\
+            \bottomrule
+      \end{tabular}
+\end{table}
+
+\sectionnonum{Appendix 5: ANOVA Statistical Test Details}\label{appendix:anova}
+
+This appendix provides the full list of tested model pairs and the significance
+of their mean MOS differences.
+
+\begin{table}[htbp]
+      \centering
+      \caption[Tukey's HSD post-hoc test results]{Tukey's HSD post-hoc test results for pairwise comparisons of MOS scores between all model and data composition combinations.}\label{tab:anova_results}
+      \begin{tabular}{llrrrrr}
+            \toprule
+            Model A          & Model B          & Mean Diff. & p-adj    & Lower     & Upper    & Reject \\
+            \midrule
+            Glow-030spk      & Glow-060spk      & 0.050000   & 0.997700 & -0.266600 & 0.366600 & False  \\
+            Glow-030spk      & Glow-180spk      & -0.100000  & 0.946100 & -0.416600 & 0.216600 & False  \\
+            Glow-030spk      & Tacotron2-030spk & 0.977800   & 0.000000 & 0.661200  & 1.294300 & True   \\
+            Glow-030spk      & Tacotron2-060spk & 0.994400   & 0.000000 & 0.677900  & 1.311000 & True   \\
+            Glow-030spk      & Tacotron2-180spk & 0.900000   & 0.000000 & 0.583400  & 1.216600 & True   \\
+            Glow-060spk      & Glow-180spk      & -0.150000  & 0.755200 & -0.466600 & 0.166600 & False  \\
+            Glow-060spk      & Tacotron2-030spk & 0.927800   & 0.000000 & 0.611200  & 1.244300 & True   \\
+            Glow-060spk      & Tacotron2-060spk & 0.944400   & 0.000000 & 0.627900  & 1.261000 & True   \\
+            Glow-060spk      & Tacotron2-180spk & 0.850000   & 0.000000 & 0.533400  & 1.166600 & True   \\
+            Glow-180spk      & Tacotron2-030spk & 1.077800   & 0.000000 & 0.761200  & 1.394300 & True   \\
+            Glow-180spk      & Tacotron2-060spk & 1.094400   & 0.000000 & 0.777900  & 1.411000 & True   \\
+            Glow-180spk      & Tacotron2-180spk & 1.000000   & 0.000000 & 0.683400  & 1.316600 & True   \\
+            Tacotron2-030spk & Tacotron2-060spk & 0.016700   & 1.000000 & -0.299900 & 0.333200 & False  \\
+            Tacotron2-030spk & Tacotron2-180spk & -0.077800  & 0.981800 & -0.394300 & 0.238800 & False  \\
+            Tacotron2-060spk & Tacotron2-180spk & -0.094400  & 0.957500 & -0.411000 & 0.222100 & False  \\
             \bottomrule
       \end{tabular}
 \end{table}

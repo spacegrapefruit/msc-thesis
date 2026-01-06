@@ -67,12 +67,3 @@ uv run python python/run_inference.py \
 * [ ] compute subjective metrics
     ```shell
     ```
-
-
-
-<!-- 
-
-tacotron2, glow-tts - breadth vs depth research?
-
-calculate error bars in SQL
-update app for latin square -->

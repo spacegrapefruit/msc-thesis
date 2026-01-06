@@ -115,12 +115,12 @@
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\parindent}%
   {3.25ex \@plus1ex \@minus.2ex}%
   {-1em}%
-  {\normalfont\normalsize\bfseries\@adddot}}
+  {\normalfont\normalsize\bfseries}}
 
 \renewcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
   {3.25ex \@plus1ex \@minus .2ex}%
   {-1em}%
-  {\normalfont\normalsize\bfseries\@adddot}}
+  {\normalfont\normalsize\bfseries}}
 
 % Lietuviškai formatuojame teoremų antraštes --- pirmiausia eina
 % teoremos numeris, pavadinimas (jei yra), teoremos tipas ir taškas.
@@ -133,7 +133,7 @@
 
 % Dedame tašką po aprašomo dalyko.
 \renewcommand*\descriptionlabel[1]{\hspace\labelsep
-  \normalfont\bfseries #1.}
+  \normalfont\bfseries #1}
 
 \RequirePackage{caption}
 % Teisingai formatuojame lentelių antraštes.

@@ -135,7 +135,7 @@ def create_sampling_quantization_figure():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "sampling_quantization.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated sampling_quantization.pdf")
+    print("Generated sampling_quantization.pdf")
 
 
 def create_waveform_spectrograms_figure():
@@ -164,7 +164,7 @@ def create_waveform_spectrograms_figure():
     # Plot waveform
     time_axis = np.linspace(0, duration, len(waveform))
     axes[0].plot(time_axis, waveform, color="darkblue", linewidth=0.8)
-    axes[0].set_title("Raw audio waveform", fontsize=14)
+    # axes[0].set_title("Raw audio waveform", fontsize=14)
     axes[0].set_ylabel("Amplitude (normalized)", fontsize=12)
     axes[0].set_xlabel("Time (s)", fontsize=12)
     axes[0].grid(True, alpha=0.3)
@@ -182,7 +182,7 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, sr / 2],
         cmap="viridis",
     )
-    axes[1].set_title("Linear frequency spectrogram", fontsize=14)
+    # axes[1].set_title("Linear frequency spectrogram", fontsize=14)
     axes[1].set_ylabel("Frequency (Hz)", fontsize=12)
     axes[1].set_xlabel("Time (s)", fontsize=12)
     axes[1].set_ylim(0, 8000)  # Focus on relevant frequency range
@@ -196,7 +196,7 @@ def create_waveform_spectrograms_figure():
         extent=[0, duration, 0, 80],
         cmap="viridis",
     )
-    axes[2].set_title("Mel-spectrogram", fontsize=14)
+    # axes[2].set_title("Mel-spectrogram", fontsize=14)
     axes[2].set_ylabel("Mel bin index", fontsize=12)
     axes[2].set_xlabel("Time (s)", fontsize=12)
     axes[2].set_xlim(0, duration)
@@ -211,7 +211,7 @@ def create_waveform_spectrograms_figure():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "waveform_spectrograms.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated waveform_spectrograms.pdf")
+    print("Generated waveform_spectrograms.pdf")
 
 
 def create_speaker_encoder_diagram():
@@ -348,7 +348,7 @@ def create_speaker_encoder_diagram():
         FIGURES_DIR / "speaker_encoder_diagram.pdf", dpi=300, bbox_inches="tight"
     )
     plt.close()
-    print("✓ Generated speaker_encoder_diagram.pdf")
+    print("Generated speaker_encoder_diagram.pdf")
 
 
 def create_tacotron2_architecture():
@@ -567,7 +567,7 @@ def create_tacotron2_architecture():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "tacotron2_arch.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated tacotron2_arch.pdf")
+    print("Generated tacotron2_arch.pdf")
 
 
 def create_glow_tts_architecture():
@@ -834,7 +834,7 @@ def create_glow_tts_architecture():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "glow_tts_arch.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated glow_tts_arch.pdf")
+    print("Generated glow_tts_arch.pdf")
 
 
 def create_latin_square_figure():
@@ -881,7 +881,7 @@ def create_latin_square_figure():
                 f"Model {system}",
                 ha="center",
                 va="center",
-                fontsize=10,
+                fontsize=13,
                 fontweight="bold",
             )
             ax.text(
@@ -890,7 +890,7 @@ def create_latin_square_figure():
                 sentence.replace("S", "Sentence "),
                 ha="center",
                 va="center",
-                fontsize=9,
+                fontsize=12,
             )
 
     # Set axis properties
@@ -900,14 +900,14 @@ def create_latin_square_figure():
 
     # Labels
     ax.set_xticks([0.5, 1.5, 2.5, 3.5])
-    ax.set_xticklabels(["Order 1", "Order 2", "Order 3", "Order 4"], fontsize=11)
+    ax.set_xticklabels(["Order 1", "Order 2", "Order 3", "Order 4"], fontsize=13)
     ax.set_yticks([0.5, 1.5, 2.5, 3.5])
-    ax.set_yticklabels(["Group 4", "Group 3", "Group 2", "Group 1"], fontsize=11)
+    ax.set_yticklabels(["Group 4", "Group 3", "Group 2", "Group 1"], fontsize=13)
 
-    ax.set_xlabel("Presentation order (sequence)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Listener group (ID)", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Presentation order (sequence)", fontsize=16, fontweight="bold")
+    ax.set_ylabel("Listener group (ID)", fontsize=16, fontweight="bold")
     # ax.set_title(
-    #     "Latin square design for TTS evaluation", fontsize=14, fontweight="bold", pad=20
+    #     "Latin square design for TTS evaluation", fontsize=16, fontweight="bold", pad=20
     # )
 
     # Add legend
@@ -925,7 +925,7 @@ def create_latin_square_figure():
         handles=legend_elements,
         loc="upper left",
         bbox_to_anchor=(1.02, 1),
-        fontsize=10,
+        fontsize=13,
         frameon=True,
     )
 
@@ -936,7 +936,7 @@ def create_latin_square_figure():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "latin_square_design.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated latin_square_design.pdf")
+    print("Generated latin_square_design.pdf")
 
 
 def create_tts_pipeline_figure():
@@ -1115,7 +1115,7 @@ def create_tts_pipeline_figure():
     plt.tight_layout()
     plt.savefig(FIGURES_DIR / "tts_pipeline.pdf", dpi=300, bbox_inches="tight")
     plt.close()
-    print("✓ Generated tts_pipeline.pdf")
+    print("Generated tts_pipeline.pdf")
 
 
 def main():
@@ -1132,7 +1132,7 @@ def main():
         create_latin_square_figure()
         create_tts_pipeline_figure()
 
-        print("\n✅ All figures generated successfully!")
+        print("\nAll figures generated successfully!")
         print(f"Generated files:")
         for pdf_file in FIGURES_DIR.glob("*.pdf"):
             print(f"  - {pdf_file.name}")
@@ -1142,7 +1142,7 @@ def main():
         )
 
     except Exception as e:
-        print(f"❌ Error generating figures: {e}")
+        print(f"Error generating figures: {e}")
         raise
 
 

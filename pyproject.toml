@@ -22,5 +22,6 @@ dependencies = [
     "seaborn>=0.13.2",
     "speechmos>=0.0.1.1",
     "sqlalchemy>=2.0.44",
+    "statsmodels>=0.14.6",
     "tinytag>=2.1.2",
 ]

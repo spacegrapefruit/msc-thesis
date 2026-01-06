@@ -1,0 +1,12 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces \xpg@aux {}{english}Visual representation of Analog-to-Digital conversion}}{11}{figure.caption.1}%
+\contentsline {figure}{\numberline {2}{\ignorespaces \xpg@aux {}{english}Raw waveform, Spectrogram, and Mel-spectrogram}}{13}{figure.caption.2}%
+\contentsline {figure}{\numberline {3}{\ignorespaces \xpg@aux {}{english}Text-to-Speech synthesis pipeline}}{20}{figure.caption.4}%
+\contentsline {figure}{\numberline {4}{\ignorespaces \xpg@aux {}{english}Tacotron~2 architecture}}{21}{figure.caption.5}%
+\contentsline {figure}{\numberline {5}{\ignorespaces \xpg@aux {}{english}Glow-TTS training and inference procedures}}{22}{figure.caption.6}%
+\contentsline {figure}{\numberline {6}{\ignorespaces \xpg@aux {}{english}Latin square design for TTS evaluation}}{27}{figure.caption.9}%
+\contentsline {figure}{\numberline {7}{\ignorespaces \xpg@aux {}{english}Experimental pipeline overview}}{29}{figure.caption.10}%
+\contentsline {figure}{\numberline {8}{\ignorespaces \xpg@aux {}{english}Speaker duration distribution in the filtered Liepa-2 dataset}}{32}{figure.caption.12}%
+\contentsline {figure}{\numberline {9}{\ignorespaces \xpg@aux {}{english}Visual representation of the data strategies}}{32}{figure.caption.13}%
+\contentsline {figure}{\numberline {10}{\ignorespaces \xpg@aux {}{english}Attention alignments across architectures and data subsets}}{44}{figure.caption.23}%
+\contentsline {figure}{\numberline {11}{\ignorespaces \xpg@aux {}{english}Mel-spectrogram comparison of Tacotron~2 and Glow-TTS outputs}}{44}{figure.caption.24}%
+\contentsline {figure}{\numberline {12}{\ignorespaces \xpg@aux {}{english}Web application interface screens}}{60}{figure.caption.28}%

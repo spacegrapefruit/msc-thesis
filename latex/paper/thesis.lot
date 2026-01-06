@@ -1,0 +1,18 @@
+\contentsline {table}{\numberline {1}{\ignorespaces \xpg@aux {}{english}Lithuanian homographs with accentuation ambiguity}}{14}{table.caption.3}%
+\contentsline {table}{\numberline {2}{\ignorespaces \xpg@aux {}{english}Common objective metrics for TTS evaluation}}{25}{table.caption.7}%
+\contentsline {table}{\numberline {3}{\ignorespaces \xpg@aux {}{english}Mean Opinion Score (MOS) scale for TTS evaluation}}{26}{table.caption.8}%
+\contentsline {table}{\numberline {4}{\ignorespaces \xpg@aux {}{english}Statistics of the filtered Liepa-2 dataset}}{31}{table.caption.11}%
+\contentsline {table}{\numberline {5}{\ignorespaces \xpg@aux {}{english}Experimental training data subsets}}{33}{table.caption.14}%
+\contentsline {table}{\numberline {6}{\ignorespaces \xpg@aux {}{english}Final statistics of the experimental training datasets}}{33}{table.caption.15}%
+\contentsline {table}{\numberline {7}{\ignorespaces \xpg@aux {}{english}Examples of text normalization and accentuation}}{35}{table.caption.16}%
+\contentsline {table}{\numberline {8}{\ignorespaces \xpg@aux {}{english}Mel-spectrogram extraction parameters}}{35}{table.caption.17}%
+\contentsline {table}{\numberline {9}{\ignorespaces \xpg@aux {}{english}Tacotron~2 with DCA architecture details}}{36}{table.caption.18}%
+\contentsline {table}{\numberline {10}{\ignorespaces \xpg@aux {}{english}Glow-TTS architecture details}}{37}{table.caption.19}%
+\contentsline {table}{\numberline {11}{\ignorespaces \xpg@aux {}{english}Tacotron~2 with DCA training configuration}}{38}{table.caption.20}%
+\contentsline {table}{\numberline {12}{\ignorespaces \xpg@aux {}{english}Glow-TTS training configuration}}{39}{table.caption.21}%
+\contentsline {table}{\numberline {13}{\ignorespaces \xpg@aux {}{english}Objective synthesized speech evaluation results}}{43}{table.caption.22}%
+\contentsline {table}{\numberline {14}{\ignorespaces \xpg@aux {}{english}MOS results per model and data subset}}{45}{table.caption.25}%
+\contentsline {table}{\numberline {15}{\ignorespaces \xpg@aux {}{english}MOS results per speaker and model architecture}}{46}{table.caption.26}%
+\contentsline {table}{\numberline {16}{\ignorespaces \xpg@aux {}{english}List of AI tools used}}{57}{table.caption.27}%
+\contentsline {table}{\numberline {17}{\ignorespaces \xpg@aux {}{english}Complete Mel-spectrogram extraction parameters}}{61}{table.caption.29}%
+\contentsline {table}{\numberline {18}{\ignorespaces \xpg@aux {}{english}Tukey's HSD post-hoc test results}}{62}{table.caption.30}%
