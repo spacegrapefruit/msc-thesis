@@ -1118,6 +1118,130 @@ def create_tts_pipeline_figure():
     print("Generated tts_pipeline.pdf")
 
 
+def create_tts_pipeline_mini_figure():
+    """
+    Create a flowchart showing the TTS pipeline:
+    [Text, Speaker Embeddings] -> Acoustic Model -> Mel-Spectrogram -> Vocoder -> Audio
+    """
+    fig, ax = plt.subplots(figsize=(14, 6))
+    ax.axis("off")
+
+    # Define box positions and sizes
+    boxes = {
+        "text": {"pos": (0.3, 5), "width": 1.6, "height": 1, "color": "#E8F4F8"},
+        "speaker": {"pos": (0.3, 3.2), "width": 1.6, "height": 1, "color": "#E8F4F8"},
+        "acoustic": {"pos": (3, 4.0), "width": 2.0, "height": 1, "color": "#FFE5CC"},
+        "mel": {"pos": (6.1, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
+        "vocoder": {"pos": (8.7, 4.0), "width": 2.0, "height": 1, "color": "#FFE5CC"},
+        "audio": {"pos": (11.6, 4.1), "width": 1.6, "height": 0.8, "color": "#E8F4F8"},
+    }
+
+    # Draw boxes
+    for name, props in boxes.items():
+        x, y = props["pos"]
+        w, h = props["width"], props["height"]
+        rect = mpatches.FancyBboxPatch(
+            (x, y),
+            w,
+            h,
+            boxstyle="round,pad=0.1",
+            linewidth=2,
+            edgecolor="#2C3E50",
+            facecolor=props["color"],
+        )
+        ax.add_patch(rect)
+
+    # Add text labels
+    ax.text(
+        1.1, 5.5, "Input text", ha="center", va="center", fontsize=17, fontweight="bold"
+    )
+    ax.text(
+        1.1, 5.1, '"Labas rytas"', ha="center", va="center", fontsize=15, style="italic"
+    )
+
+    ax.text(
+        1.1,
+        3.7,
+        "Speaker\nembedding",
+        ha="center",
+        va="center",
+        fontsize=17,
+        fontweight="bold",
+    )
+    ax.text(1.1, 3.3, "N-dim vector", ha="center", va="center", fontsize=15, style="italic")
+
+    ax.text(
+        4.0,
+        4.5,
+        "ACOUSTIC\nMODEL",
+        ha="center",
+        va="center",
+        fontsize=20,
+        fontweight="bold",
+    )
+
+    ax.text(
+        6.9,
+        4.5,
+        "Mel-\nspectrogram",
+        ha="center",
+        va="center",
+        fontsize=17,
+        fontweight="bold",
+    )
+    ax.text(
+        9.7, 4.5, "VOCODER", ha="center", va="center", fontsize=20, fontweight="bold"
+    )
+    ax.text(
+        12.4,
+        4.5,
+        "Audio\nwaveform",
+        ha="center",
+        va="center",
+        fontsize=17,
+        fontweight="bold",
+    )
+
+    # Draw arrows using FancyArrowPatch for precise alignment
+    arrows = [
+        ("text", "acoustic"),
+        ("speaker", "acoustic"),
+        ("acoustic", "mel"),
+        ("mel", "vocoder"),
+        ("vocoder", "audio"),
+    ]
+
+    for node_from, node_to in arrows:
+        start_pos = list(boxes[node_from]["pos"])
+        start_pos[0] += boxes[node_from]["width"] + 0.1
+        start_pos[1] += boxes[node_from]["height"] / 2
+
+        end_pos = list(boxes[node_to]["pos"])
+        end_pos[0] -= 0.05
+        end_pos[1] += boxes[node_to]["height"] / 2
+
+        arrow = FancyArrowPatch(
+            start_pos,
+            end_pos,
+            arrowstyle="->",
+            mutation_scale=30,
+            linewidth=2,
+            color="#5E768D",
+            zorder=3,
+        )
+        ax.add_patch(arrow)
+
+    # Set axis limits
+    ax.set_xlim(0.15, 13.35)
+    ax.set_ylim(2.6, 6.5)
+    ax.set_aspect("equal")
+
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "tts_pipeline_mini.pdf", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("Generated tts_pipeline_mini.pdf")
+
+
 def main():
     """Generate all thesis figures."""
     print("Generating figures for MSc thesis...")
@@ -1131,6 +1255,7 @@ def main():
         create_glow_tts_architecture()
         create_latin_square_figure()
         create_tts_pipeline_figure()
+        create_tts_pipeline_mini_figure()
 
         print("\nAll figures generated successfully!")
         print(f"Generated files:")
