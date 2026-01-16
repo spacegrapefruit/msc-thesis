@@ -11,6 +11,7 @@
 % \usepackage{subfig}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{multimedia}
 \usepackage{multirow}
 \usepackage{tikz}
 \usepackage{bm}
@@ -79,14 +80,14 @@
 
 \begin{frame}{Context \& Problem Statement}
   \begin{itemize}
-    \item \textbf{Text-to-Speech (TTS)} systems (also known as speech synthesis) are widely used in virtual assistants, navigation, visual aids, and other applications.
+    \item \textbf{Text-to-Speech (TTS)} systems (also known as speech synthesis) are widely used in virtual assistants, visual aids, and other applications.
     \item State-of-the-art \textbf{Neural TTS} typically requires 10--20 hours of
           high-quality \textit{single-speaker} data.
     \item \textbf{Low-resource languages} like Lithuanian rarely possess such datasets.
-    \item The \textit{Liepa-2} corpus contains 939 hours of annotated Lithuanian speech,
+    \item \textit{Liepa-2} corpus contains 939 hours of annotated Lithuanian speech,
           but it is \textbf{fragmented} across 2,621 speakers.
-    \item \textbf{Multi-speaker TTS} is a promising solution to leverage such data.
-    \item \textbf{Question:} What is the optimal strategy for sampling multi-speaker data to maximize synthesis quality?
+    \item \textbf{Multi-speaker TTS} models can leverage such data.
+    \item \textbf{Question:} What is the optimal strategy for composing multi-speaker datasets to maximize synthesis quality?
   \end{itemize}
 \end{frame}
 
@@ -97,7 +98,7 @@
 
   \vspace{1em}
   \textbf{Hypothesis:}
-  Data \textit{depth} is the critical factor. Synthesis quality will degrade as the number of speakers increases if the total training duration remains constant.
+  Data \textit{depth} is the critical factor. Synthesis quality will degrade as the number of speakers increases with the total training duration held constant.
 \end{frame}
 
 \begin{frame}{Research Objectives}
@@ -183,7 +184,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Acoustic Model Architectures}
+\begin{frame}{Model Architectures}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \textbf{Tacotron~2}
@@ -213,7 +214,7 @@
 \begin{frame}{Model Training}
   \begin{itemize}
     \item \textbf{Hardware:} Personal high-performance workstation with a 48-core CPU, 256 GB of RAM, and an NVIDIA RTX 3090 GPU\@.
-    \item \textbf{Hyperparameters:} Based on original papers, with adjustments to Mel-spectrogram parameters (to match vocoder), batch size (due to hardware constraints), learning loss schedules (for a balance between convergence speed and optimal loss values), Lithuanian grapheme set, and other minor tweaks empirically found to reduce validation loss.
+    \item \textbf{Hyperparameters:} Based on default configurations, with adjustments to Mel-spectrogram parameters (to match vocoder), batch size (due to hardware constraints), learning loss schedules (for a balance between convergence speed and optimal loss values), Lithuanian grapheme set, and other minor tweaks empirically found to reduce validation loss.
     \item \textbf{Training:} On each dataset, from scratch, until validation loss convergence.
           \begin{itemize}
             \item Tacotron~2 for 90k steps ($\approx 22$ hours) each.
@@ -238,7 +239,6 @@
         \item 6 randomly selected speakers
         \item 60 identical test sentences for each speaker
         \item Latin Square design
-        \item 21 native Lithuanian listeners
       \end{itemize}
     \end{column}
   \end{columns}
@@ -369,11 +369,11 @@
   \end{table}
 
   \begin{block}{Observations}
-    AS009 consistently yields highest MOS scores across all models and strategies, while MS052, VP131 consistently perform poorly.
+    \textit{\href{run:Smoliakov_audio_sample_AS009.wav}{AS009}} consistently yields highest MOS scores across all models and strategies, while \textit{\href{run:Smoliakov_audio_sample_MS052.wav}{MS052}}, \textit{VP131} consistently perform poorly.
 
     \vspace{0.5em}
-    \textbf{Qualitative analysis} revealed noticeable muffling and reverberation in MS052,
-    VP131 recordings, pointing to data quality issues.
+    \textbf{Qualitative analysis} revealed noticeable muffling and reverberation in \textit{MS052},
+    \textit{VP131} recordings, pointing to data quality issues.
   \end{block}
 \end{frame}
 
@@ -388,8 +388,8 @@
     \item 7.5 minutes per speaker is sufficient for convergence of Tacotron~2 and Glow-TTS\@.
     \item Tacotron~2 outperforms Glow-TTS for naturalness in Lithuanian, likely due to
           better prosody/pitch modeling.
-    \item Audio quality (SNR, reverberation) and/or speaker characteristics have a strong
-          impact on synthesis naturalness.
+    \item Audio quality (reverberation, muffling) and/or speaker characteristics have a
+          strong impact on synthesis naturalness.
   \end{enumerate}
 \end{frame}
 
@@ -398,15 +398,16 @@
   \begin{itemize}
     \item Prioritize maximizing \textbf{total data volume} and ensuring high per-speaker
           quality rather than optimizing the breadth-depth balance.
-    \item Multi-speaker TTS models can be successfully trained using sparse data with 7.5
-          min/speaker.
+    \item Multi-speaker TTS models can be successfully trained from scratch using sparse
+          data with 7.5 min/speaker.
   \end{itemize}
 
   \vspace{0.8em}
   \textbf{Future Work:}
   \begin{itemize}
     \item Investigate more architectures (e.g., VITS, FastSpeech 2).
-    \item Test the ``Breadth vs. Depth'' trade-off at higher budgets (e.g., 100+ hours).
+    \item Test the ``breadth versus depth'' trade-off at higher budgets (e.g., 100+
+          hours).
     \item Implement automated data quality filtering to remove muffled/reverberant
           speakers.
   \end{itemize}
@@ -430,7 +431,20 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Appendix 2: Latin Square Design Example}
+\begin{frame}{Appendix 2: Loss Functions}
+  \textbf{Tacotron 2 optimizes Multi-component Regression Loss:}
+  \begin{equation}
+    \mathcal{L}_{T2} = \mathcal{L}_{Dec(L2+SSIM)} +\mathcal{L}_{Post(L2+SSIM)} + \lambda_{attn}\mathcal{L}_{Guided} + \lambda_{stop}\mathcal{L}_{Stop}
+  \end{equation}
+
+  \vspace{1em}
+  \textbf{Glow-TTS optimizes Negative Log-Likelihood:}
+  \begin{equation}
+    \mathcal{L}_{Glow} = - \sum_{j=1}^{T_{mel}} \left[ \log \mathcal{N}(z_j; \mu, \sigma) + \log \left| \det \frac{\partial z_j}{\partial x_j} \right| \right]
+  \end{equation}
+\end{frame}
+
+\begin{frame}{Appendix 3: Latin Square Design Example}
   \begin{figure}
     \centering
     \includegraphics[width=0.9\textwidth]{figures/latin_square_design.pdf}
