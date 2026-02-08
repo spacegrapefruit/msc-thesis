@@ -15,10 +15,6 @@ RAW_LIEPA2_CHECK_FILE := $(DATA_DIR)/processed/sliced_dataset.parquet
 PROCESSED_LIEPA2_DIR := $(DATA_DIR)/datasets/tts_dataset_liepa2_$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))spk
 PROCESSED_LIEPA2_CHECK_FILE := $(PROCESSED_LIEPA2_DIR)/metadata.csv
 
-# Embedding output paths
-EMBEDDINGS_LIEPA2_DIR := $(PROCESSED_LIEPA2_DIR)
-EMBEDDINGS_LIEPA2_CHECK_FILE := $(EMBEDDINGS_LIEPA2_DIR)/speakers.pth
-
 # Training output path (defined inside config.json, but used for cleanup)
 TRAIN_OUTPUT_DIR := training_output
 
@@ -43,38 +39,22 @@ $(PROCESSED_LIEPA2_CHECK_FILE): $(RAW_LIEPA2_CHECK_FILE) python/create_trainset.
 data-liepa2: $(PROCESSED_LIEPA2_CHECK_FILE) ## Preprocess the Liepa-2 dataset.
 data: data-liepa2 ## Preprocess the Liepa-2 dataset for training.
 
-# 2.5. Compute Speaker Embeddings
-# Liepa-2 speaker embeddings computation
-$(EMBEDDINGS_LIEPA2_CHECK_FILE): $(PROCESSED_LIEPA2_CHECK_FILE) python/compute_embeddings.py
-	@echo "Computing speaker embeddings for the Liepa-2 dataset..."
-	$(EXECUTOR) python python/compute_embeddings.py \
-	  --dataset_path $(PROCESSED_LIEPA2_DIR) \
-	  --output_path $(EMBEDDINGS_LIEPA2_CHECK_FILE)
-	@echo "\nSpeaker embeddings computed. Output at: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
-
-# Embedding computation targets
-compute-embeddings-liepa2: $(EMBEDDINGS_LIEPA2_CHECK_FILE) ## Compute speaker embeddings for the Liepa-2 dataset.
-compute-embeddings: compute-embeddings-liepa2 ## Compute speaker embeddings for the dataset.
-
 # 3. Train Model
-# This target depends on the processed data, embeddings, and the config file.
-train: compute-embeddings-liepa2 $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
+# This target depends on the processed data and the config file.
+train: $(PROCESSED_LIEPA2_CHECK_FILE) $(CONFIG_FILE) ## Start or resume the TTS model training with Liepa-2.
 	@echo "Launching TTS training with $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers using config '$(CONFIG_FILE)'..."
 	@echo "Dataset path: $(PROCESSED_LIEPA2_DIR)"
-	@echo "Speaker embeddings: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
 	@echo "Number of speakers: $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))"
 	$(EXECUTOR) python python/train.py \
 	  --config_path $(CONFIG_FILE) \
 	  --coqpit.datasets.0.path=$(PROCESSED_LIEPA2_DIR)/ \
 	  --coqpit.speakers_file=$(PROCESSED_LIEPA2_DIR)/speakers.json \
-	  --coqpit.d_vector_file=$(EMBEDDINGS_LIEPA2_CHECK_FILE) \
 	  --coqpit.num_speakers=$(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))
 	@echo "\nTraining finished. Check results in '$(TRAIN_OUTPUT_DIR)'."
 
-train-glow-tts: compute-embeddings-liepa2 $(CONFIG_FILE_GLOW_TTS) ## Start or resume the TTS model training with Liepa-2.
+train-glow-tts: $(PROCESSED_LIEPA2_CHECK_FILE) $(CONFIG_FILE_GLOW_TTS) ## Start or resume the TTS model training with Liepa-2.
 	@echo "Launching TTS training with $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2))) speakers using config '$(CONFIG_FILE_GLOW_TTS)'..."
 	@echo "Dataset path: $(PROCESSED_LIEPA2_DIR)"
-	@echo "Speaker embeddings: $(EMBEDDINGS_LIEPA2_CHECK_FILE)"
 	@echo "Number of speakers: $(shell echo $$(($(N_SPEAKERS_PER_GENDER) * 2)))"
 	$(EXECUTOR) python python/train.py \
 	  --config_path $(CONFIG_FILE_GLOW_TTS) \
@@ -100,11 +80,6 @@ clean: ## Remove all generated files (processed data, training output, cache).
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
 	@echo "\nCleanup complete."
-
-clean-embeddings: ## Remove only computed embeddings.
-	@echo "Cleaning up speaker embeddings..."
-	rm -f $(EMBEDDINGS_LIEPA2_CHECK_FILE)
-	@echo "\nEmbeddings cleanup complete."
 
 # 7. Inference
 inference: ## Run inference on test samples.
